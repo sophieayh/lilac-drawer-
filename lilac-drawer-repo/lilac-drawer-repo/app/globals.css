@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand surfaces */
+  --color-cream: #fbf6f0;
+  --color-cream-alt: #fffdfb;
+  --color-mauve-50: #f6eff8;
+  --color-mauve-100: #efe3f2;
+  --color-pink-100: #f3c6d6;
+  --color-pink-200: #f9d6e4;
+  --color-sand: #f5ecd8;
+  --color-border: #f3e6d0;
+  --color-border-mauve: #e6d9f0;
+
+  /* Accents */
+  --color-rose: #d4708f;
+  --color-rose-light: #e888a8;
+  --color-lilac: #c9a3c6;
+  --color-lilac-deep: #d4a5d8;
+  --color-purple: #a97fc9;
+  --color-purple-deep: #7a5a8c;
+  --color-plum: #5a2f45;
+  --color-footer: #4a3550;
+  --color-gold: #c9a13c;
+  --color-sage: #5c8a4a;
+
+  /* Text */
+  --color-ink: #3a2f45;
+  --color-tan: #b89a7a;
+  --color-tan-dark: #8a6f7a;
+
+  --font-heading: "Domine", Georgia, serif;
+  --font-body: "Work Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-script: "Dancing Script", cursive;
+
+  --shadow-card: 0 6px 18px rgba(46, 37, 54, 0.08);
+  --shadow-card-lg: 0 12px 32px rgba(46, 37, 54, 0.12);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-purple-deep);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-pink-100);
+}
+
+a {
+  color: var(--color-gold);
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.reveal-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
