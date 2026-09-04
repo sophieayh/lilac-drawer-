@@ -7,11 +7,13 @@ import Reveal from "@/components/Reveal";
 import JsonLd from "@/components/JsonLd";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import {
+  getHomeSpreadPosts,
   getNewHomePosts,
   getHomeFeaturedDeals,
   getTopPicks,
   getHomeReviews,
   getHomeBlogPreview,
+  getHomeGuidePost,
   formatPrice,
   daysAgoLabel,
   formatDate,
@@ -27,13 +29,19 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function HomePage() {
-  const [newPosts, homeDeals, topPicks, homeReviews, homeBlogPreview] = await Promise.all([
-    getNewHomePosts(),
-    getHomeFeaturedDeals(),
-    getTopPicks(),
-    getHomeReviews(),
-    getHomeBlogPreview(),
-  ]);
+  const [spreadPosts, newPosts, homeDeals, topPicks, homeReviews, homeBlogPreview, homeGuidePost] =
+    await Promise.all([
+      getHomeSpreadPosts(2),
+      getNewHomePosts(),
+      getHomeFeaturedDeals(),
+      getTopPicks(),
+      getHomeReviews(),
+      getHomeBlogPreview(),
+      getHomeGuidePost(),
+    ]);
+
+  const topSpread = spreadPosts[0];
+  const bottomSpread = spreadPosts[1];
 
   return (
     <>
@@ -49,45 +57,80 @@ export default async function HomePage() {
       <SiteHeader />
       <main className="bg-cream text-purple-deep min-h-screen">
         {/* monochrome editorial spread */}
-        <section className="px-6 md:px-12 py-8 max-w-[1200px] mx-auto bg-gradient-to-br from-mauve-50 to-pink-200">
-          <div className="border-t-[3px] border-b-[3px] border-double border-lilac h-1.5 mb-6" />
-          <div className="grid md:grid-cols-2 gap-8 mb-6">
-            <div>
-              <p className="font-heading italic text-[32px] font-bold mb-3.5 text-purple">
-                THE CEDAR METHOD
-              </p>
-              <p className="text-sm leading-relaxed text-tan-dark text-justify">
-                Cedar blocks have kept moths out of closets for generations. Untreated
-                cedarwood, left unsanded, releases a natural oil that moths avoid, and lasts for
-                years, protects wool and cashmere, works in drawers and hanging bags alike, and
-                needs no chemicals, no sprays, and no strong scent left on the clothes
-                themselves.
-              </p>
-            </div>
-            <ImageSlot label="Cedar blocks in a wardrobe drawer" className="w-full h-[260px]" tone="pink" />
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            <ImageSlot label="Garment steamer product photo" className="w-full h-[220px]" tone="mauve" />
-            <div>
-              <p className="font-heading italic text-[19px] font-bold mb-3 text-purple">
-                GARMENT STEAMER PRO
-              </p>
-              <ul className="text-[13.5px] leading-relaxed text-tan-dark pl-4.5 list-disc">
-                <li>Fastest heat-up in our test, ready in under a minute for a full closet of steaming.</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-6 border-2 border-lilac p-1 rounded-2xl">
-            <div className="border border-lilac rounded-[11px] flex justify-between items-center px-6 py-3 bg-gradient-to-r from-rose to-lilac text-white font-heading text-sm font-bold tracking-wide uppercase">
-              <span>Cool Vibes</span>
-              <span>✦ Lilac Drawer ✦</span>
-              <span>Aesthetic</span>
-            </div>
-          </div>
-        </section>
+        {spreadPosts.length > 0 && (
+          <Reveal delay={0}>
+            <section className="px-6 md:px-12 py-8 max-w-[1200px] mx-auto bg-gradient-to-br from-mauve-50 to-pink-200">
+              <div className="border-t-[3px] border-b-[3px] border-double border-lilac h-1.5 mb-6" />
+
+              {topSpread && (
+                <div className="grid md:grid-cols-2 gap-8 mb-6 items-center">
+                  <div>
+                    <Link href={`/blog/${topSpread.slug}`} className="block group">
+                      <p className="font-heading italic text-[30px] md:text-[32px] font-bold mb-3.5 text-purple group-hover:text-rose transition-colors uppercase leading-tight">
+                        {topSpread.title}
+                      </p>
+                    </Link>
+                    <p className="text-sm leading-relaxed text-tan-dark text-justify">
+                      {topSpread.excerpt}
+                    </p>
+                    <Link href={`/blog/${topSpread.slug}`} className="inline-block mt-3 text-xs font-semibold text-rose hover:underline">
+                      Read article →
+                    </Link>
+                  </div>
+                  <Link href={`/blog/${topSpread.slug}`} className="block">
+                    <ImageSlot
+                      label={topSpread.imageLabel}
+                      imageUrl={topSpread.imageUrl}
+                      className="w-full h-[260px]"
+                      shape="rounded"
+                      radius={16}
+                      tone="pink"
+                    />
+                  </Link>
+                </div>
+              )}
+
+              {bottomSpread && (
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  <Link href={`/blog/${bottomSpread.slug}`} className="block order-2 md:order-1">
+                    <ImageSlot
+                      label={bottomSpread.imageLabel}
+                      imageUrl={bottomSpread.imageUrl}
+                      className="w-full h-[220px]"
+                      shape="rounded"
+                      radius={16}
+                      tone="mauve"
+                    />
+                  </Link>
+                  <div className="order-1 md:order-2">
+                    <Link href={`/blog/${bottomSpread.slug}`} className="block group">
+                      <p className="font-heading italic text-[20px] md:text-[22px] font-bold mb-3 text-purple group-hover:text-rose transition-colors uppercase leading-snug">
+                        {bottomSpread.title}
+                      </p>
+                    </Link>
+                    <p className="text-[13.5px] leading-relaxed text-tan-dark">
+                      {bottomSpread.excerpt}
+                    </p>
+                    <Link href={`/blog/${bottomSpread.slug}`} className="inline-block mt-3 text-xs font-semibold text-rose hover:underline">
+                      Read article →
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6 border-2 border-lilac p-1 rounded-2xl">
+                <div className="border border-lilac rounded-[11px] flex justify-between items-center px-6 py-3 bg-gradient-to-r from-rose to-lilac text-white font-heading text-sm font-bold tracking-wide uppercase">
+                  <span>Cool Vibes</span>
+                  <span>✦ Lilac Drawer ✦</span>
+                  <span>Aesthetic</span>
+                </div>
+              </div>
+            </section>
+          </Reveal>
+        )}
 
         {/* main 3-column */}
-        <Reveal>
+        <Reveal delay={100}>
           <section className="grid lg:grid-cols-[2fr_1fr] gap-10 px-6 md:px-12 py-16 max-w-[1400px] mx-auto">
             <article>
               <ImageSlot
@@ -118,10 +161,14 @@ export default async function HomePage() {
                 ♥ Today&apos;s Picks
               </h3>
               {homeDeals.map((d) => (
-                <div key={d.id} className="flex gap-3.5 py-3.5 border-b border-pink-100">
+                <Link
+                  key={d.id}
+                  href={`/deals/${d.slug}`}
+                  className="flex gap-3.5 py-3.5 border-b border-pink-100 card-hover group"
+                >
                   <ImageSlot label={d.imageLabel} imageUrl={d.imageUrl} className="w-16 h-16 shrink-0" shape="rounded" radius={12} tone="pink" />
                   <div>
-                    <div className="text-sm font-medium leading-snug">{d.name}</div>
+                    <div className="text-sm font-medium leading-snug group-hover:text-rose transition-colors">{d.name}</div>
                     <div className="text-[13px] mt-1.5">
                       <span className="text-rose font-bold">{formatPrice(d.priceCents)}</span>{" "}
                       {d.compareAtPriceCents ? (
@@ -129,7 +176,7 @@ export default async function HomePage() {
                       ) : null}
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
 
               <h3 className="font-heading text-base text-gold mt-6 mb-4 uppercase tracking-wide">
@@ -150,7 +197,7 @@ export default async function HomePage() {
         </Reveal>
 
         {/* top picks */}
-        <Reveal>
+        <Reveal delay={100}>
           <section id="top-picks" className="px-6 md:px-12 pb-20 max-w-[1400px] mx-auto">
             <div className="flex justify-between items-baseline mb-6 border-b-2 border-lilac pb-3.5">
               <h2 className="font-heading text-[26px] text-purple m-0">Top 10 Lint Removers, Ranked</h2>
@@ -159,26 +206,27 @@ export default async function HomePage() {
               </Link>
             </div>
             {topPicks.map((pick) => (
-              <div
+              <Link
                 key={pick.id}
-                className="flex items-center gap-5 px-4.5 py-4 mb-2.5 rounded-2xl bg-gradient-to-r from-pink-200 to-mauve-50"
+                href={`/deals/${pick.slug}`}
+                className="flex items-center gap-5 px-4.5 py-4 mb-2.5 rounded-2xl bg-gradient-to-r from-pink-200 to-mauve-50 card-hover group block"
               >
                 <span className="font-heading text-[28px] text-lilac font-bold w-11">
                   {pick.rank != null ? String(pick.rank).padStart(2, "0") : "–"}
                 </span>
                 <ImageSlot label={pick.imageLabel} imageUrl={pick.imageUrl} className="w-20 h-20 shrink-0" shape="rounded" radius={14} tone="pink" />
                 <div className="flex-1">
-                  <div className="font-semibold text-[15px]">{pick.name}</div>
+                  <div className="font-semibold text-[15px] group-hover:text-rose transition-colors">{pick.name}</div>
                   <div className="text-[13px] text-tan mt-1">{pick.rankNote}</div>
                 </div>
                 <div className="font-heading font-bold text-[17px] text-rose">{formatPrice(pick.priceCents)}</div>
-              </div>
+              </Link>
             ))}
           </section>
         </Reveal>
 
         {/* latest reviews */}
-        <Reveal>
+        <Reveal delay={100}>
           <section id="reviews" className="px-6 md:px-12 pb-20 max-w-[1400px] mx-auto">
             <div className="flex justify-between items-baseline mb-6 border-b-2 border-border-mauve pb-3.5">
               <h2 className="font-heading text-[26px] text-purple-deep m-0">Latest Reviews</h2>
@@ -211,40 +259,46 @@ export default async function HomePage() {
         </Reveal>
 
         {/* buying guide banner */}
-        <Reveal>
-          <section id="guides" className="bg-mauve-100 py-22 px-6 md:px-12">
-            <div className="grid md:grid-cols-2 gap-12 items-center max-w-[1400px] mx-auto">
-              <ImageSlot
-                label="Jewelry box buying guide photo"
-                className="w-full h-[340px] shadow-[0_12px_32px_rgba(46,37,54,0.12)]"
-                shape="rounded"
-                radius={20}
-                tone="purple"
-              />
-              <div>
-                <span className="inline-block bg-lilac text-white text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full mb-4.5">
-                  Buying Guide
-                </span>
-                <h2 className="font-heading text-[30px] leading-tight mb-4 text-purple-deep">
-                  How to Choose a Jewelry Box That Actually Protects What&apos;s Inside
-                </h2>
-                <p className="text-[15px] leading-relaxed text-tan-dark mb-5.5 max-w-[460px]">
-                  Anti-tarnish lining, ring rolls versus slots, and why the hinge matters more
-                  than the finish. Everything to check before you buy.
-                </p>
-                <Link
-                  href="/blog/jewelry-box-buying-guide"
-                  className="inline-block bg-purple-deep text-white px-6.5 py-3 rounded-xl font-semibold text-sm shadow-[0_4px_14px_rgba(46,37,54,0.2)]"
-                >
-                  Read the Guide
+        {homeGuidePost && (
+          <Reveal delay={100}>
+            <section id="guides" className="bg-mauve-100 py-22 px-6 md:px-12">
+              <div className="grid md:grid-cols-2 gap-12 items-center max-w-[1400px] mx-auto">
+                <Link href={`/blog/${homeGuidePost.slug}`} className="block">
+                  <ImageSlot
+                    label={homeGuidePost.imageLabel || homeGuidePost.title}
+                    imageUrl={homeGuidePost.imageUrl}
+                    className="w-full h-[340px] shadow-[0_12px_32px_rgba(46,37,54,0.12)]"
+                    shape="rounded"
+                    radius={20}
+                    tone="purple"
+                  />
                 </Link>
+                <div>
+                  <span className="inline-block bg-lilac text-white text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full mb-4.5">
+                    {homeGuidePost.topicLabel || homeGuidePost.category || "Buying Guide"}
+                  </span>
+                  <Link href={`/blog/${homeGuidePost.slug}`} className="block group">
+                    <h2 className="font-heading text-[30px] leading-tight mb-4 text-purple-deep group-hover:text-rose transition-colors">
+                      {homeGuidePost.title}
+                    </h2>
+                  </Link>
+                  <p className="text-[15px] leading-relaxed text-tan-dark mb-5.5 max-w-[460px]">
+                    {homeGuidePost.excerpt}
+                  </p>
+                  <Link
+                    href={`/blog/${homeGuidePost.slug}`}
+                    className="inline-block bg-purple-deep text-white px-6.5 py-3 rounded-xl font-semibold text-sm shadow-[0_4px_14px_rgba(46,37,54,0.2)] hover:bg-purple-deep/90 transition-colors"
+                  >
+                    Read the Guide →
+                  </Link>
+                </div>
               </div>
-            </div>
-          </section>
-        </Reveal>
+            </section>
+          </Reveal>
+        )}
 
         {/* blog */}
-        <Reveal>
+        <Reveal delay={100}>
           <section id="blog" className="px-6 md:px-12 py-20 max-w-[1400px] mx-auto">
             <div className="flex justify-between items-baseline mb-6 border-b-2 border-border-mauve pb-3.5">
               <h2 className="font-heading text-[26px] text-purple-deep m-0">From the Blog</h2>
@@ -267,7 +321,7 @@ export default async function HomePage() {
         </Reveal>
 
         {/* newsletter */}
-        <Reveal>
+        <Reveal delay={100}>
           <section id="subscribe" className="bg-pink-100 py-22 px-6 text-center">
             <h2 className="font-heading text-[30px] mb-3 text-plum">
               Get the weekly pick in your inbox

@@ -6,12 +6,49 @@ import {
   boolean,
   timestamp,
   varchar,
+  jsonb,
   uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 
 export * from "./auth-schema";
+
+export interface ArticleStorePrice {
+  id: string;
+  storeName: string;
+  price: string;
+  url: string;
+}
+
+export interface ArticleFeaturedProduct {
+  id: string;
+  name: string;
+  subtitle?: string;
+  imageUrl?: string;
+  imageLabel?: string;
+  stores: ArticleStorePrice[];
+  summary: string;
+}
+
+export interface ArticleKeywordLink {
+  keyword: string;
+  url: string;
+}
+
+export interface ArticleCustomSection {
+  id: string;
+  title: string;
+  imageUrl?: string;
+  imageLabel?: string;
+  content: string;
+}
+
+export interface ArticleStructuredContent {
+  keywordLinks?: ArticleKeywordLink[];
+  recommendedProducts?: ArticleFeaturedProduct[];
+  customSections?: ArticleCustomSection[];
+}
 
 // NOTE — kept in sync by hand with lilac-drawer-admin/db/schema.ts.
 // Both apps are separate Next.js projects pointed at the *same* Postgres
@@ -37,6 +74,7 @@ export const products = pgTable("products", {
   priceCents: integer("price_cents").notNull(),
   compareAtPriceCents: integer("compare_at_price_cents"), // the "was" price, nullable
   affiliateUrl: text("affiliate_url"),
+  stores: jsonb("stores").$type<ArticleStorePrice[]>(),
 
   rank: integer("rank"), // for the Top 10 list
   rankNote: text("rank_note"),
@@ -73,6 +111,7 @@ export const posts = pgTable("posts", {
   title: text("title").notNull(),
   excerpt: text("excerpt").notNull(),
   body: text("body"), // full article body, rendered on /blog/[slug]
+  structuredContent: jsonb("structured_content").$type<ArticleStructuredContent>(),
   category: varchar("category", { length: 80 }).notNull(),
   topicLabel: varchar("topic_label", { length: 80 }), // display label for the home "Latest Reviews" strip (e.g. "Wardrobe") — distinct from the canonical `category` used for blog filtering, so the same article doesn't need a duplicate row per display context
   imageLabel: text("image_label").notNull(),
@@ -91,9 +130,11 @@ export const posts = pgTable("posts", {
   // the admin dashboard's Articles page. Ties broken by publishedAt desc.
   sortOrder: integer("sort_order").notNull().default(0),
 
+  isHomeSpread: boolean("is_home_spread").notNull().default(false), // home editorial spread (top 2 articles)
   isNewHome: boolean("is_new_home").notNull().default(false), // home "New + Updated"
   isHomePreview: boolean("is_home_preview").notNull().default(false), // home "From the Blog"
   isHomeReview: boolean("is_home_review").notNull().default(false), // home "Latest Reviews"
+  isHomeGuide: boolean("is_home_guide").notNull().default(false), // home featured buying guide banner
   isRecentBlog: boolean("is_recent_blog").notNull().default(false), // blog page "Latest Posts"
   isSideStory: boolean("is_side_story").notNull().default(false), // blog page side column
   isDealsPreview: boolean("is_deals_preview").notNull().default(false), // deals page "Latest Blog"
@@ -101,15 +142,26 @@ export const posts = pgTable("posts", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export interface SubCategoryItem {
+  id: string;
+  label: string;
+  href?: string;
+  description?: string;
+}
+
 /** Nav/sidebar category chips (Clothing Care, Accessories, Explore's emoji tiles...). */
 export const siteCategories = pgTable("site_categories", {
   id: serial("id").primaryKey(),
   label: text("label").notNull(),
+  slug: varchar("slug", { length: 160 }),
   icon: varchar("icon", { length: 16 }),
   colorHex: varchar("color_hex", { length: 16 }),
   href: text("href"),
-  section: varchar("section", { length: 40 }).notNull(), // "sidebar" | "explore"
+  section: varchar("section", { length: 40 }).notNull().default("header"), // "header" | "sidebar" | "explore"
+  subcategories: jsonb("subcategories").$type<SubCategoryItem[]>(),
   sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 /** Community/social feed posts (used identically on /community and, on each
@@ -123,6 +175,7 @@ export const communityPosts = pgTable("community_posts", {
   body: text("body").notNull().default(""),
   imageLabel: text("image_label"),
   hasImage: boolean("has_image").notNull().default(false),
+  imageUrl: text("image_url"),
   productId: integer("product_id").references((): AnyPgColumn => products.id, { onDelete: "set null" }),
   repostOfId: integer("repost_of_id").references((): AnyPgColumn => communityPosts.id, { onDelete: "cascade" }),
   postedAt: timestamp("posted_at").notNull().defaultNow(),

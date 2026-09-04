@@ -4,6 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import ImageSlot from "@/components/ImageSlot";
 import JsonLd from "@/components/JsonLd";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
+import { slugify } from "@/lib/slugify";
 import {
   getSidebarCategories,
   getFeatureProducts,
@@ -79,52 +80,7 @@ export default async function DealsPage() {
       />
       <SiteHeader />
       <main className="bg-cream text-purple min-h-screen">
-        {/* header */}
-        <div className="flex items-center gap-6 px-6 md:px-10 py-4.5 border-b border-border">
-          <div className="font-script text-[30px] text-rose-light">Lilac Drawer</div>
-          <form role="search" className="flex-1 flex items-center bg-mauve-50 rounded-full px-4.5 py-2.5">
-            <label htmlFor="deals-search" className="sr-only">
-              Search deals
-            </label>
-            <input
-              id="deals-search"
-              type="search"
-              placeholder="Search..."
-              className="border-none bg-transparent outline-none text-sm flex-1 text-purple"
-            />
-            <span aria-hidden="true">🔍</span>
-          </form>
-          <span className="text-2xl text-lilac-deep" aria-hidden="true">
-            🎀
-          </span>
-        </div>
-
-        {/* nav */}
-        <nav aria-label="Deals categories" className="flex bg-cream-alt border-b border-border px-6 md:px-10 overflow-x-auto">
-          <Link href="/" className="bg-rose-light text-white px-5 py-3.5">
-            ◉
-          </Link>
-          <Link href="/deals" className="text-purple px-5 py-3.5 text-sm font-semibold whitespace-nowrap">
-            Categories
-          </Link>
-          <Link href="/blog" className="text-purple px-5 py-3.5 text-sm font-semibold whitespace-nowrap">
-            Care Tips
-          </Link>
-          <Link href="/deals" className="text-rose-light px-5 py-3.5 text-sm font-bold whitespace-nowrap">
-            Deals
-          </Link>
-          <Link href="/deals" className="text-purple px-5 py-3.5 text-sm font-semibold whitespace-nowrap">
-            Top Picks
-          </Link>
-          <Link href="/blog" className="text-purple px-5 py-3.5 text-sm font-semibold whitespace-nowrap">
-            Blog
-          </Link>
-          <Link href="/#subscribe" className="text-purple px-5 py-3.5 text-sm font-semibold whitespace-nowrap">
-            Contact
-          </Link>
-        </nav>
-
-        <div className="grid lg:grid-cols-[230px_1fr] gap-6 px-6 md:px-10 py-6 max-w-[1400px] mx-auto">
+        <div className="grid lg:grid-cols-[230px_1fr] gap-6 px-6 md:px-10 py-8 max-w-[1400px] mx-auto">
           {/* sidebar */}
           <aside className="hidden lg:block">
             <div className="bg-rose-light text-white px-5 py-4 font-heading text-[15px] font-bold rounded-t-[10px]">
@@ -132,7 +88,11 @@ export default async function DealsPage() {
             </div>
             <div className="border border-border border-t-0 rounded-b-[10px] overflow-hidden mb-6">
               {sidebarCategories.map((s) => (
-                <Link key={s.id} href="/deals" className="block px-5 py-3 text-[13.5px] text-purple border-b border-border last:border-b-0">
+                <Link
+                  key={s.id}
+                  href={`/category/${s.slug || slugify(s.label)}`}
+                  className="block px-5 py-3 text-[13.5px] text-purple border-b border-border last:border-b-0 hover:bg-mauve-50 hover:text-rose transition-colors"
+                >
                   {s.label}
                 </Link>
               ))}
@@ -140,21 +100,21 @@ export default async function DealsPage() {
 
             <h3 className="font-heading text-base text-purple mb-3.5">Feature Products</h3>
             {featureProducts.map((fp) => (
-              <div key={fp.id} className="flex gap-3 py-2.5 border-b border-border items-center">
+              <Link key={fp.id} href={`/deals/${fp.slug}`} className="flex gap-3 py-2.5 border-b border-border items-center card-hover group block">
                 <ImageSlot label={fp.imageLabel} imageUrl={fp.imageUrl} className="w-12 h-12 shrink-0" shape="rounded" radius={8} tone="mauve" />
                 <div>
-                  <div className="text-xs font-medium leading-snug">{fp.name}</div>
+                  <div className="text-xs font-medium leading-snug group-hover:text-rose-light transition-colors">{fp.name}</div>
                   <div className="text-xs text-rose-light font-bold mt-0.5">{formatPriceFixed(fp.priceCents)}</div>
                 </div>
-              </div>
+              </Link>
             ))}
 
             <h3 className="font-heading text-base text-purple mt-6 mb-3.5">Sale Off</h3>
             {saleOff.map((so) => (
-              <div key={so.id} className="flex gap-3 py-2.5 border-b border-border items-center">
+              <Link key={so.id} href={`/deals/${so.slug}`} className="flex gap-3 py-2.5 border-b border-border items-center card-hover group block">
                 <ImageSlot label={so.imageLabel} imageUrl={so.imageUrl} className="w-12 h-12 shrink-0" shape="rounded" radius={8} tone="pink" />
                 <div>
-                  <div className="text-xs font-medium leading-snug">{so.name}</div>
+                  <div className="text-xs font-medium leading-snug group-hover:text-rose-light transition-colors">{so.name}</div>
                   <div className="text-xs text-rose-light font-bold mt-0.5">
                     {formatPriceFixed(so.priceCents)}{" "}
                     {so.compareAtPriceCents ? (
@@ -162,7 +122,7 @@ export default async function DealsPage() {
                     ) : null}
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </aside>
 
@@ -204,21 +164,21 @@ export default async function DealsPage() {
               <h2 className="text-center font-heading text-xl text-purple mb-5">Today Deals</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4.5">
                 {todayDeals.map((t) => (
-                  <div key={t.id} className="card-hover">
+                  <Link key={t.id} href={`/deals/${t.slug}`} className="card-hover block group">
                     <div className="relative">
                       <span className="absolute top-1.5 left-1.5 bg-lilac-deep text-white text-[10px] font-bold px-2 py-0.5 rounded z-10">
                         NEW
                       </span>
                       <ImageSlot label={t.imageLabel} imageUrl={t.imageUrl} className="w-full h-[110px]" shape="rounded" radius={10} tone="mauve" />
                     </div>
-                    <div className="text-[12.5px] font-semibold mt-2.5 leading-snug">{t.name}</div>
+                    <div className="text-[12.5px] font-semibold mt-2.5 leading-snug group-hover:text-rose-light transition-colors">{t.name}</div>
                     <div className="text-[12.5px] mt-1">
                       <span className="text-rose-light font-bold">{formatPriceFixed(t.priceCents)}</span>{" "}
                       {t.compareAtPriceCents ? (
                         <span className="text-lilac/50 line-through">{formatPriceFixed(t.compareAtPriceCents)}</span>
                       ) : null}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -233,16 +193,16 @@ export default async function DealsPage() {
                 </div>
               </div>
               {newArrivals.map((a) => (
-                <div key={a.id} className="card-hover">
+                <Link key={a.id} href={`/deals/${a.slug}`} className="card-hover block group">
                   <div className="relative">
                     <span className="absolute top-1.5 left-1.5 bg-lilac-deep text-white text-[10px] font-bold px-2 py-0.5 rounded z-10">
                       NEW
                     </span>
                     <ImageSlot label={a.imageLabel} imageUrl={a.imageUrl} className="w-full h-[130px]" shape="rounded" radius={10} tone="mauve" />
                   </div>
-                  <div className="text-[12.5px] font-semibold mt-2">{a.name}</div>
+                  <div className="text-[12.5px] font-semibold mt-2 group-hover:text-rose-light transition-colors">{a.name}</div>
                   <div className="text-[12.5px] text-rose-light font-bold mt-1">{formatPriceFixed(a.priceCents)}</div>
-                </div>
+                </Link>
               ))}
               <div className="bg-gradient-to-br from-pink-200 to-lilac-deep rounded-xl flex flex-col items-center justify-center text-center p-5 text-white">
                 <div className="font-heading text-[17px] font-bold mb-2">Buy 3 Get 1 Free</div>
@@ -261,16 +221,16 @@ export default async function DealsPage() {
                 <div className="text-xs text-[#4a6a3a]">From $19.90</div>
               </div>
               {bestSellers.map((b) => (
-                <div key={b.id} className="card-hover">
+                <Link key={b.id} href={`/deals/${b.slug}`} className="card-hover block group">
                   <div className="relative">
                     <span className="absolute top-1.5 left-1.5 bg-lilac-deep text-white text-[10px] font-bold px-2 py-0.5 rounded z-10">
                       NEW
                     </span>
                     <ImageSlot label={b.imageLabel} imageUrl={b.imageUrl} className="w-full h-[130px]" shape="rounded" radius={10} tone="mauve" />
                   </div>
-                  <div className="text-[12.5px] font-semibold mt-2">{b.name}</div>
+                  <div className="text-[12.5px] font-semibold mt-2 group-hover:text-rose-light transition-colors">{b.name}</div>
                   <div className="text-[12.5px] text-rose-light font-bold mt-1">{formatPriceFixed(b.priceCents)}</div>
-                </div>
+                </Link>
               ))}
             </div>
 

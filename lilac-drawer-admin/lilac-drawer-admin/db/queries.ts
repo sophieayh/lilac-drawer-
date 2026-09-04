@@ -1,7 +1,7 @@
 import "server-only";
 import { sql, desc, eq, asc, gte } from "drizzle-orm";
 import { db } from "./index";
-import { user, posts, products, communityPosts, pageViews } from "./schema";
+import { user, posts, products, communityPosts, pageViews, siteCategories } from "./schema";
 
 // ---------- formatting helpers ----------
 export function formatPrice(cents: number): string {
@@ -107,5 +107,25 @@ export async function getAllPosts() {
 
 export async function getPostById(id: number) {
   const rows = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+// ---------- site categories & subcategories ----------
+export async function getAllCategories(section?: string) {
+  if (section && section !== "all") {
+    return db
+      .select()
+      .from(siteCategories)
+      .where(eq(siteCategories.section, section))
+      .orderBy(asc(siteCategories.sortOrder), asc(siteCategories.id));
+  }
+  return db
+    .select()
+    .from(siteCategories)
+    .orderBy(asc(siteCategories.sortOrder), asc(siteCategories.id));
+}
+
+export async function getCategoryById(id: number) {
+  const rows = await db.select().from(siteCategories).where(eq(siteCategories.id, id)).limit(1);
   return rows[0] ?? null;
 }

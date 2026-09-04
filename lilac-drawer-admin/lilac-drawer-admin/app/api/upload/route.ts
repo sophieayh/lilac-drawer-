@@ -40,14 +40,27 @@ export async function POST(request: Request) {
   }
 
   const kind = formData.get("kind") === "products" ? "products" : "articles";
+
+  if (process.env.BLOB_READ_WRITE_TOKEN && process.env.BLOB_READ_WRITE_TOKEN !== "vercel_blob_rw_...") {
+    try {
+      const blob = await put(`${kind}/${file.name}`, file, {
+        access: "public",
+        addRandomSuffix: true,
+      });
+      return NextResponse.json({ url: blob.url });
+    } catch (err) {
+      console.warn("Vercel Blob upload failed, using local Data URL fallback:", err);
+    }
+  }
+
+  // Local development fallback: convert to base64 Data URL so local dev works without Vercel Blob store
   try {
-    const blob = await put(`${kind}/${file.name}`, file, {
-      access: "public",
-      addRandomSuffix: true,
-    });
-    return NextResponse.json({ url: blob.url });
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const dataUrl = `data:${file.type};base64,${buffer.toString("base64")}`;
+    return NextResponse.json({ url: dataUrl });
   } catch (err) {
-    console.error("Blob upload failed:", err);
-    return NextResponse.json({ error: "Upload failed — check BLOB_READ_WRITE_TOKEN is set correctly." }, { status: 502 });
+    console.error("Local upload fallback failed:", err);
+    return NextResponse.json({ error: "Upload failed." }, { status: 500 });
   }
 }

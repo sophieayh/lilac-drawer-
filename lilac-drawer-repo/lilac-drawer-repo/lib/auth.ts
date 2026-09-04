@@ -13,6 +13,14 @@ import * as schema from "@/db/schema";
 const RESERVED_HANDLES = new Set(["post", "api"]);
 
 export const auth = betterAuth({
+  trustedOrigins: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://*.trycloudflare.com",
+    "https://*.localtunnel.me",
+    "https://*.ngrok-free.app",
+    "https://*.pinggy.link",
+  ],
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

@@ -20,18 +20,23 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "20mb",
+    },
+  },
   // Removes the `X-Powered-By: Next.js` response header — no reason to hand
   // an attacker the framework/version for free.
   poweredByHeader: false,
   images: {
-    // Real product/article photos are uploaded from the admin dashboard to
-    // Vercel Blob (see lilac-drawer-admin's /api/upload) and referenced by
-    // `imageUrl` — next/image needs the storage domain allow-listed to
-    // optimize them. Every store's public hostname matches this pattern.
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
       },
     ],
   },

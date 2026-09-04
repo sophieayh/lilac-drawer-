@@ -1,7 +1,9 @@
 import "server-only";
 import { desc, eq, asc, and, or, isNull, ne, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "./index";
 import { products, posts, siteCategories, communityPosts, trends, user, comments, likes } from "./schema";
+import { slugify } from "@/lib/slugify";
 
 // ---------- formatting helpers ----------
 export function formatPrice(cents: number): string {
@@ -77,6 +79,24 @@ export async function getSuggestedProducts() {
   return db.select().from(products).where(eq(products.isSuggested, true)).limit(2);
 }
 
+export async function getProductBySlug(slug: string) {
+  const rows = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getAllProductSlugs() {
+  return db.select({ slug: products.slug, updatedAt: products.updatedAt }).from(products);
+}
+
+export async function getRelatedProducts(category: string, excludeSlug?: string, limit = 4) {
+  const rows = await db
+    .select()
+    .from(products)
+    .where(eq(products.category, category))
+    .limit(excludeSlug ? limit + 1 : limit);
+  return excludeSlug ? rows.filter((p) => p.slug !== excludeSlug).slice(0, limit) : rows;
+}
+
 // ---------- posts ----------
 // Every public listing/detail query below is scoped to isPublished = true so
 // a draft created in the admin dashboard never appears on the live site
@@ -85,6 +105,33 @@ export async function getSuggestedProducts() {
 // tiebreaker for posts that share the same order value (e.g. the default 0).
 const published = eq(posts.isPublished, true);
 const postOrder = [asc(posts.sortOrder), desc(posts.publishedAt)] as const;
+
+export async function getHomeSpreadPosts(limit = 2) {
+  const marked = await db
+    .select()
+    .from(posts)
+    .where(and(eq(posts.isHomeSpread, true), published))
+    .orderBy(...postOrder)
+    .limit(limit);
+
+  if (marked.length >= limit) return marked;
+
+  const excludeIds = new Set(marked.map((p) => p.id));
+  const fallback = await db
+    .select()
+    .from(posts)
+    .where(published)
+    .orderBy(...postOrder)
+    .limit(limit * 2);
+
+  const combined = [...marked];
+  for (const p of fallback) {
+    if (!excludeIds.has(p.id) && combined.length < limit) {
+      combined.push(p);
+    }
+  }
+  return combined;
+}
 
 export async function getNewHomePosts() {
   return db.select().from(posts).where(and(eq(posts.isNewHome, true), published)).orderBy(...postOrder).limit(4);
@@ -104,6 +151,23 @@ export async function getRecentBlogPosts() {
 
 export async function getSideStories() {
   return db.select().from(posts).where(and(eq(posts.isSideStory, true), published)).orderBy(...postOrder).limit(2);
+}
+
+export async function getHomeGuidePost() {
+  const rows = await db
+    .select()
+    .from(posts)
+    .where(and(eq(posts.isHomeGuide, true), published))
+    .orderBy(...postOrder)
+    .limit(1);
+  if (rows[0]) return rows[0];
+  const fallback = await db
+    .select()
+    .from(posts)
+    .where(published)
+    .orderBy(...postOrder)
+    .limit(1);
+  return fallback[0] ?? null;
 }
 
 export async function getDealsBlogPreview() {
@@ -157,6 +221,14 @@ export async function getFeaturedPost() {
 }
 
 // ---------- site categories ----------
+export async function getHeaderCategories() {
+  return db
+    .select()
+    .from(siteCategories)
+    .where(and(eq(siteCategories.section, "header"), eq(siteCategories.isActive, true)))
+    .orderBy(asc(siteCategories.sortOrder), asc(siteCategories.id));
+}
+
 export async function getSidebarCategories() {
   return db.select().from(siteCategories).where(eq(siteCategories.section, "sidebar")).orderBy(asc(siteCategories.sortOrder));
 }
@@ -165,12 +237,172 @@ export async function getExploreCategories() {
   return db.select().from(siteCategories).where(eq(siteCategories.section, "explore")).orderBy(asc(siteCategories.sortOrder));
 }
 
+export async function getCategoryBySlug(slug: string) {
+  const all = await db.select().from(siteCategories);
+  const found = all.find(
+    (c) =>
+      (c.slug && c.slug.toLowerCase() === slug.toLowerCase()) ||
+      slugify(c.label) === slug.toLowerCase()
+  );
+  return found ?? null;
+}
+
+export async function getAllCategorySlugs() {
+  const rows = await db.select({ slug: siteCategories.slug, label: siteCategories.label }).from(siteCategories);
+  return rows.map((r) => r.slug || slugify(r.label)).filter(Boolean);
+}
+
+export async function getCategoryArticles(categoryTerms: string[]) {
+  const allPosts = await db.select().from(posts).where(published).orderBy(...postOrder);
+  if (categoryTerms.length === 0) return allPosts.slice(0, 8);
+
+  const lowerTerms = categoryTerms.map((t) => t.toLowerCase().trim()).filter(Boolean);
+  const wordTokens = lowerTerms.flatMap((t) => t.split(/[^a-z0-9]+/i).filter((w) => w.length > 3));
+
+  const matched = allPosts.filter((p) => {
+    const pCat = (p.category || "").toLowerCase();
+    const pTopic = (p.topicLabel || "").toLowerCase();
+    const pTitle = (p.title || "").toLowerCase();
+    const pExcerpt = (p.excerpt || "").toLowerCase();
+
+    // 1. Check direct phrase match
+    const phraseMatch = lowerTerms.some(
+      (term) =>
+        (pCat && (pCat.includes(term) || term.includes(pCat))) ||
+        (pTopic && (pTopic.includes(term) || term.includes(pTopic))) ||
+        pTitle.includes(term) ||
+        pExcerpt.includes(term)
+    );
+    if (phraseMatch) return true;
+
+    // 2. Check individual word tokens
+    const tokenMatch = wordTokens.some(
+      (token) =>
+        pCat.includes(token) ||
+        token.includes(pCat) ||
+        pTopic.includes(token) ||
+        pTitle.includes(token)
+    );
+    if (tokenMatch) return true;
+
+    // 3. Check recommended products associated with this article
+    const recProds = p.structuredContent?.recommendedProducts || [];
+    const productMatch = recProds.some((rp) => {
+      const rpName = (rp.name || "").toLowerCase();
+      const rpSubtitle = (rp.subtitle || "").toLowerCase();
+      return (
+        lowerTerms.some((term) => rpName.includes(term) || rpSubtitle.includes(term)) ||
+        wordTokens.some((tok) => rpName.includes(tok))
+      );
+    });
+    if (productMatch) return true;
+
+    return false;
+  });
+
+  return matched;
+}
+
+export async function getCategoryProducts(categoryTerms: string[]) {
+  const allProducts = await db.select().from(products).orderBy(asc(products.id));
+  if (categoryTerms.length === 0) return allProducts;
+
+  const lowerTerms = categoryTerms.map((t) => t.toLowerCase().trim()).filter(Boolean);
+  const wordTokens = lowerTerms.flatMap((t) => t.split(/[^a-z0-9]+/i).filter((w) => w.length > 3));
+
+  const matched = allProducts.filter((p) => {
+    const pCat = (p.category || "").toLowerCase();
+    const pName = (p.name || "").toLowerCase();
+    const pSubtitle = (p.subtitle || "").toLowerCase();
+
+    const phraseMatch = lowerTerms.some(
+      (term) =>
+        (pCat && (pCat.includes(term) || term.includes(pCat))) ||
+        pName.includes(term) ||
+        term.includes(pName) ||
+        pSubtitle.includes(term)
+    );
+    if (phraseMatch) return true;
+
+    return wordTokens.some((token) => (pCat && pCat.includes(token)) || pName.includes(token));
+  });
+
+  return matched;
+}
+
+export async function getProductToArticleMap(): Promise<Record<string, { slug: string; title: string }>> {
+  const allPosts = await db.select().from(posts).where(published);
+  const map: Record<string, { slug: string; title: string }> = {};
+
+  for (const post of allPosts) {
+    const sc = post.structuredContent;
+    if (sc && Array.isArray(sc.recommendedProducts)) {
+      for (const rec of sc.recommendedProducts) {
+        if (rec.name) {
+          map[rec.name.toLowerCase().trim()] = {
+            slug: post.slug,
+            title: post.title,
+          };
+        }
+      }
+    }
+    if (sc && Array.isArray(sc.keywordLinks)) {
+      for (const kw of sc.keywordLinks) {
+        if (kw.keyword) {
+          map[kw.keyword.toLowerCase().trim()] = {
+            slug: post.slug,
+            title: post.title,
+          };
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
+export function findRelatedArticleForProduct(
+  productName: string,
+  map: Record<string, { slug: string; title: string }>
+): { slug: string; title: string } | null {
+  if (!productName || !map) return null;
+  const clean = productName.toLowerCase().trim();
+
+  // 1. Direct key match
+  if (map[clean]) return map[clean];
+
+  // 2. Substring matching
+  for (const [key, articleInfo] of Object.entries(map)) {
+    if (key.length >= 4 && (clean.includes(key) || key.includes(clean))) {
+      return articleInfo;
+    }
+  }
+
+  // 3. Multi-word overlap matching
+  const words = clean.split(/[^a-z0-9]+/i).filter((w) => w.length > 3);
+  if (words.length > 0) {
+    for (const [key, articleInfo] of Object.entries(map)) {
+      const keyWords = key.split(/[^a-z0-9]+/i).filter((w) => w.length > 3);
+      const matchCount = words.filter((w) => keyWords.includes(w)).length;
+      if (matchCount >= 2 || (words.length === 1 && matchCount === 1)) {
+        return articleInfo;
+      }
+    }
+  }
+
+  return null;
+}
+
 // ---------- community ----------
+const originalPosts = alias(communityPosts, "original_posts");
+const originalUser = alias(user, "original_user");
+
 const postWithAuthor = {
   id: communityPosts.id,
   body: communityPosts.body,
   imageLabel: communityPosts.imageLabel,
   hasImage: communityPosts.hasImage,
+  imageUrl: communityPosts.imageUrl,
   productId: communityPosts.productId,
   repostOfId: communityPosts.repostOfId,
   postedAt: communityPosts.postedAt,
@@ -180,6 +412,14 @@ const postWithAuthor = {
   authorName: user.name,
   authorHandle: user.handle,
   authorImage: user.image,
+  originalAuthorName: originalUser.name,
+  originalAuthorHandle: originalUser.handle,
+  originalAuthorImage: originalUser.image,
+  originalBody: originalPosts.body,
+  originalImageLabel: originalPosts.imageLabel,
+  originalHasImage: originalPosts.hasImage,
+  originalImageUrl: originalPosts.imageUrl,
+  originalPostedAt: originalPosts.postedAt,
 };
 
 export async function getCommunityFeed(limit = 10) {
@@ -187,6 +427,8 @@ export async function getCommunityFeed(limit = 10) {
     .select(postWithAuthor)
     .from(communityPosts)
     .innerJoin(user, eq(communityPosts.userId, user.id))
+    .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
+    .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
 }
@@ -196,6 +438,8 @@ export async function getPostsByHandle(handle: string, limit = 10) {
     .select(postWithAuthor)
     .from(communityPosts)
     .innerJoin(user, eq(communityPosts.userId, user.id))
+    .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
+    .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .where(eq(user.handle, handle))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
@@ -206,6 +450,8 @@ export async function getPostById(id: number) {
     .select(postWithAuthor)
     .from(communityPosts)
     .innerJoin(user, eq(communityPosts.userId, user.id))
+    .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
+    .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .where(eq(communityPosts.id, id))
     .limit(1);
   return rows[0] ?? null;
@@ -274,6 +520,8 @@ export async function getMediaPostsByHandle(handle: string, limit = 20) {
     .select(postWithAuthor)
     .from(communityPosts)
     .innerJoin(user, eq(communityPosts.userId, user.id))
+    .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
+    .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .where(and(eq(user.handle, handle), eq(communityPosts.hasImage, true)))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
@@ -286,6 +534,8 @@ export async function getLikedPostsByUserId(userId: string, limit = 20) {
     .from(likes)
     .innerJoin(communityPosts, eq(likes.postId, communityPosts.id))
     .innerJoin(user, eq(communityPosts.userId, user.id))
+    .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
+    .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .where(eq(likes.userId, userId))
     .orderBy(desc(likes.createdAt))
     .limit(limit);

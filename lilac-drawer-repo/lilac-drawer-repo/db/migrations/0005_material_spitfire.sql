@@ -1,0 +1,1 @@
+ALTER TABLE "posts" ADD COLUMN "is_home_spread" boolean DEFAULT false NOT NULL;

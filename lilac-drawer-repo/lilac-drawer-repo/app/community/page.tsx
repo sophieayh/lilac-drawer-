@@ -3,6 +3,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import SiteHeader from "@/components/SiteHeader";
 import ImageSlot from "@/components/ImageSlot";
+import PostCard from "@/components/community/PostCard";
 import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
 import PostComposer from "@/components/community/PostComposer";
@@ -102,36 +103,13 @@ export default async function CommunityPage() {
         <PostComposer isLoggedIn={!!userId} />
 
         {communityPosts.map((p) => (
-          <article key={p.id} className="flex gap-3.5 px-6 py-4.5 border-b border-border card-hover">
-            <Link href={`/community/${p.authorHandle}`}>
-              <ImageSlot label={`${p.authorName} avatar`} className="w-11 h-11 shrink-0" shape="circle" tone="mauve" />
-            </Link>
-            <div className="flex-1 min-w-0">
-              <div className="text-[14.5px]">
-                <Link href={`/community/${p.authorHandle}`} className="font-semibold text-purple-deep">
-                  {p.authorName}
-                </Link>{" "}
-                <Link href={`/community/post/${p.id}`} className="text-tan">
-                  @{p.authorHandle} · {relativeTime(p.postedAt)}
-                </Link>
-              </div>
-              <Link href={`/community/post/${p.id}`} className="block">
-                {p.body.trim() ? (
-                  <p className="my-1.5 mb-3 text-[15px] leading-relaxed">{p.body}</p>
-                ) : (
-                  <p className="my-1.5 mb-3 text-[15px] leading-relaxed text-tan italic">↻ Reposted a post</p>
-                )}
-                {p.hasImage && p.imageLabel ? (
-                  <ImageSlot label={p.imageLabel} className="w-full h-[260px] mb-3" shape="rounded" radius={16} tone="mauve" />
-                ) : null}
-              </Link>
-              <div className="flex gap-10 text-tan text-[13px] max-w-[340px]">
-                <Link href={`/community/post/${p.id}`}>💬 {p.commentCount}</Link>
-                <RepostButton postId={p.id} initialReposted={repostedIds.has(p.id)} initialCount={p.repostCount} isLoggedIn={!!userId} />
-                <LikeButton postId={p.id} initialLiked={likedIds.has(p.id)} initialCount={p.likeCount} isLoggedIn={!!userId} />
-              </div>
-            </div>
-          </article>
+          <PostCard
+            key={p.id}
+            post={p}
+            isLiked={likedIds.has(p.id)}
+            isReposted={repostedIds.has(p.id)}
+            isLoggedIn={!!userId}
+          />
         ))}
       </main>
 

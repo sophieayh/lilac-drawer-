@@ -6,7 +6,7 @@ import { eq, asc } from "drizzle-orm";
 import { requireAdmin } from "@/lib/admin";
 import { slugify } from "@/lib/slugify";
 import { db } from "@/db";
-import { products, posts, user } from "@/db/schema";
+import { products, posts, user, siteCategories } from "@/db/schema";
 
 // ---------------------------------------------------------------------------
 // Products / affiliate links
@@ -23,9 +23,25 @@ function productValuesFromForm(formData: FormData) {
   const priceDollars = Number(formData.get("price") ?? 0);
   const compareAtDollars = formData.get("compareAtPrice");
   const rawSlug = String(formData.get("slug") ?? "").trim();
+  const slug = slugify(rawSlug || name) || `product-${Date.now().toString(36)}`;
+
+  let stores = null;
+  const rawStores = formData.get("stores");
+  if (rawStores && typeof rawStores === "string" && rawStores.trim() !== "") {
+    try {
+      stores = JSON.parse(rawStores);
+    } catch (e) {
+      console.error("Failed to parse product stores", e);
+    }
+  }
+
+  let affiliateUrl = String(formData.get("affiliateUrl") ?? "").trim() || null;
+  if (!affiliateUrl && Array.isArray(stores) && stores.length > 0 && stores[0].url) {
+    affiliateUrl = stores[0].url;
+  }
 
   return {
-    slug: slugify(rawSlug || name),
+    slug,
     name,
     subtitle: String(formData.get("subtitle") ?? "").trim() || null,
     category: String(formData.get("category") ?? "").trim() || "Uncategorized",
@@ -34,7 +50,8 @@ function productValuesFromForm(formData: FormData) {
     priceCents: Math.round(priceDollars * 100),
     compareAtPriceCents:
       compareAtDollars && String(compareAtDollars).trim() !== "" ? Math.round(Number(compareAtDollars) * 100) : null,
-    affiliateUrl: String(formData.get("affiliateUrl") ?? "").trim() || null,
+    affiliateUrl,
+    stores,
     rank: toIntOrNull(formData.get("rank")),
     rankNote: String(formData.get("rankNote") ?? "").trim() || null,
     badge: String(formData.get("badge") ?? "").trim() || null,
@@ -86,27 +103,42 @@ export async function deleteProduct(id: number) {
 // Articles (posts)
 // ---------------------------------------------------------------------------
 
-const POST_CATEGORIES = ["REVIEWS", "CARE", "GUIDES", "STORIES"] as const;
-
 function postValuesFromForm(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const rawSlug = String(formData.get("slug") ?? "").trim();
-  const category = String(formData.get("category") ?? "REVIEWS").trim().toUpperCase();
+  const rawCategory = String(formData.get("category") ?? "").trim();
+  const category = rawCategory || "REVIEWS";
+  const slug = slugify(rawSlug || title) || `article-${Date.now().toString(36)}`;
+
+  let structuredContent = null;
+  const rawStructured = formData.get("structuredContent");
+  if (rawStructured && typeof rawStructured === "string" && rawStructured.trim() !== "") {
+    try {
+      structuredContent = JSON.parse(rawStructured);
+    } catch (e) {
+      console.error("Failed to parse structuredContent", e);
+    }
+  }
+
+  const topicLabel = String(formData.get("topicLabel") ?? "").trim() || category;
 
   return {
-    slug: slugify(rawSlug || title),
+    slug,
     title,
     excerpt: String(formData.get("excerpt") ?? "").trim(),
     body: String(formData.get("body") ?? "").trim() || null,
-    category: (POST_CATEGORIES as readonly string[]).includes(category) ? category : "REVIEWS",
-    topicLabel: String(formData.get("topicLabel") ?? "").trim() || null,
+    structuredContent,
+    category,
+    topicLabel: topicLabel || null,
     imageLabel: String(formData.get("imageLabel") ?? "").trim() || title,
     imageUrl: String(formData.get("imageUrl") ?? "").trim() || null,
     author: String(formData.get("author") ?? "").trim() || "the Lilac Drawer editors",
     isPublished: formData.get("isPublished") === "on",
+    isHomeSpread: formData.get("isHomeSpread") === "on",
     isNewHome: formData.get("isNewHome") === "on",
     isHomePreview: formData.get("isHomePreview") === "on",
     isHomeReview: formData.get("isHomeReview") === "on",
+    isHomeGuide: formData.get("isHomeGuide") === "on",
     isRecentBlog: formData.get("isRecentBlog") === "on",
     isSideStory: formData.get("isSideStory") === "on",
     isDealsPreview: formData.get("isDealsPreview") === "on",
@@ -163,11 +195,54 @@ export async function moveArticle(id: number, direction: "up" | "down") {
 
   const a = ordered[index];
   const b = ordered[swapWith];
-  await db.transaction(async (tx) => {
-    await tx.update(posts).set({ sortOrder: b.sortOrder }).where(eq(posts.id, a.id));
-    await tx.update(posts).set({ sortOrder: a.sortOrder }).where(eq(posts.id, b.id));
-  });
+  await db.update(posts).set({ sortOrder: b.sortOrder }).where(eq(posts.id, a.id));
+  await db.update(posts).set({ sortOrder: a.sortOrder }).where(eq(posts.id, b.id));
   revalidatePath("/articles");
+}
+
+const VALID_PLACEMENT_KEYS = new Set([
+  "isHomeSpread",
+  "isNewHome",
+  "isHomePreview",
+  "isHomeReview",
+  "isHomeGuide",
+  "isRecentBlog",
+  "isSideStory",
+  "isDealsPreview",
+]);
+
+export async function updatePostPlacement(id: number, key: string, value: boolean) {
+  await requireAdmin();
+  if (!VALID_PLACEMENT_KEYS.has(key)) {
+    throw new Error(`Invalid placement key: ${key}`);
+  }
+  await db.update(posts).set({ [key]: value }).where(eq(posts.id, id));
+  revalidatePath("/placements");
+  revalidatePath("/articles");
+}
+
+const VALID_PRODUCT_PLACEMENT_KEYS = new Set([
+  "isFeaturedHome",
+  "isTopPick",
+  "isFeaturedDeals",
+  "isSaleOff",
+  "isTodayDeal",
+  "isNewArrival",
+  "isBestSeller",
+  "isExploreDeal",
+  "isRecommended",
+  "isSaved",
+  "isSuggested",
+]);
+
+export async function updateProductPlacement(id: number, key: string, value: boolean) {
+  await requireAdmin();
+  if (!VALID_PRODUCT_PLACEMENT_KEYS.has(key)) {
+    throw new Error(`Invalid product placement key: ${key}`);
+  }
+  await db.update(products).set({ [key]: value }).where(eq(products.id, id));
+  revalidatePath("/placements");
+  revalidatePath("/products");
 }
 
 // ---------------------------------------------------------------------------
@@ -182,3 +257,106 @@ export async function setUserRole(id: string, role: "admin" | "user") {
   await db.update(user).set({ role }).where(eq(user.id, id));
   revalidatePath("/users");
 }
+
+// ---------------------------------------------------------------------------
+// Site Categories & Subcategories (Menus)
+// ---------------------------------------------------------------------------
+
+function categoryValuesFromForm(formData: FormData) {
+  const label = String(formData.get("label") ?? "").trim();
+  const rawSlug = String(formData.get("slug") ?? "").trim();
+  const slug = slugify(rawSlug || label) || `cat-${Date.now().toString(36)}`;
+  const icon = String(formData.get("icon") ?? "").trim() || null;
+  const colorHex = String(formData.get("colorHex") ?? "").trim() || null;
+  const href = `/category/${slug}`;
+  const section = String(formData.get("section") ?? "header").trim() || "header";
+  const sortOrder = Number(formData.get("sortOrder") ?? 0);
+  const isActive = formData.get("isActive") === "on";
+
+  let subcategories = null;
+  const rawSubcategories = formData.get("subcategories");
+  if (rawSubcategories && typeof rawSubcategories === "string" && rawSubcategories.trim() !== "") {
+    try {
+      const parsed = JSON.parse(rawSubcategories);
+      if (Array.isArray(parsed)) {
+        subcategories = parsed.map((item: any) => ({
+          id: item.id || `sub-${slugify(item.label || "item")}`,
+          label: item.label,
+          href: `/category/${slug}?sub=${slugify(item.label || "")}`,
+          description: item.description || "",
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to parse subcategories", e);
+    }
+  }
+
+  return {
+    label,
+    slug,
+    icon,
+    colorHex,
+    href,
+    section,
+    subcategories,
+    sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+    isActive,
+  };
+}
+
+export async function createCategory(formData: FormData) {
+  await requireAdmin();
+  const values = categoryValuesFromForm(formData);
+  if (!values.label) throw new Error("Category label is required.");
+
+  await db.insert(siteCategories).values(values);
+  revalidatePath("/categories");
+  redirect("/categories");
+}
+
+export async function updateCategory(id: number, formData: FormData) {
+  await requireAdmin();
+  const values = categoryValuesFromForm(formData);
+  if (!values.label) throw new Error("Category label is required.");
+
+  await db.update(siteCategories).set(values).where(eq(siteCategories.id, id));
+  revalidatePath("/categories");
+  redirect("/categories");
+}
+
+export async function deleteCategory(id: number) {
+  await requireAdmin();
+  await db.delete(siteCategories).where(eq(siteCategories.id, id));
+  revalidatePath("/categories");
+}
+
+export async function toggleCategoryActive(id: number, nextValue: boolean) {
+  await requireAdmin();
+  await db.update(siteCategories).set({ isActive: nextValue }).where(eq(siteCategories.id, id));
+  revalidatePath("/categories");
+}
+
+export async function moveCategory(id: number, direction: "up" | "down") {
+  await requireAdmin();
+  const target = await db.select().from(siteCategories).where(eq(siteCategories.id, id)).limit(1);
+  if (!target[0]) return;
+
+  const section = target[0].section;
+  const ordered = await db
+    .select({ id: siteCategories.id, sortOrder: siteCategories.sortOrder })
+    .from(siteCategories)
+    .where(eq(siteCategories.section, section))
+    .orderBy(asc(siteCategories.sortOrder), asc(siteCategories.id));
+
+  const index = ordered.findIndex((c) => c.id === id);
+  if (index === -1) return;
+  const swapWith = direction === "up" ? index - 1 : index + 1;
+  if (swapWith < 0 || swapWith >= ordered.length) return;
+
+  const a = ordered[index];
+  const b = ordered[swapWith];
+  await db.update(siteCategories).set({ sortOrder: b.sortOrder }).where(eq(siteCategories.id, a.id));
+  await db.update(siteCategories).set({ sortOrder: a.sortOrder }).where(eq(siteCategories.id, b.id));
+  revalidatePath("/categories");
+}
+

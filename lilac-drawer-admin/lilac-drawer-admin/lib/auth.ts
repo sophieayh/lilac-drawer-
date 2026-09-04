@@ -7,6 +7,13 @@ import * as schema from "@/db/schema";
 // as the public Lilac Drawer site — an account created via /signup on the
 // main site can sign in here too, as soon as its `role` is set to "admin".
 export const auth = betterAuth({
+  trustedOrigins: [
+    "http://localhost:3001",
+    "https://*.trycloudflare.com",
+    "https://*.localtunnel.me",
+    "https://*.ngrok-free.app",
+    "https://*.pinggy.link",
+  ],
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

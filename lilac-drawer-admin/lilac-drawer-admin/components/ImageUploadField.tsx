@@ -13,14 +13,31 @@ import { useRef, useState } from "react";
 export default function ImageUploadField({
   name,
   defaultValue,
+  value: controlledValue,
+  onChange: controlledOnChange,
   kind,
 }: {
-  name: string;
+  name?: string;
   defaultValue?: string | null;
+  value?: string;
+  onChange?: (val: string) => void;
   kind: "articles" | "products";
 }) {
-  const [url, setUrl] = useState(defaultValue ?? "");
-  const [preview, setPreview] = useState(defaultValue ?? "");
+  const [internalUrl, setInternalUrl] = useState(defaultValue ?? "");
+  const [internalPreview, setInternalPreview] = useState(defaultValue ?? "");
+
+  const url = controlledValue !== undefined ? controlledValue : internalUrl;
+  const preview = controlledValue !== undefined ? controlledValue : internalPreview;
+
+  const setUrlAndPreview = (newUrl: string) => {
+    if (controlledOnChange) {
+      controlledOnChange(newUrl);
+    } else {
+      setInternalUrl(newUrl);
+      setInternalPreview(newUrl);
+    }
+  };
+
   const [status, setStatus] = useState<"idle" | "uploading" | "error">("idle");
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,8 +59,7 @@ export default function ImageUploadField({
       const res = await fetch("/api/upload", { method: "POST", body });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Upload failed.");
-      setUrl(data.url);
-      setPreview(data.url);
+      setUrlAndPreview(data.url);
       setStatus("idle");
     } catch (err) {
       setStatus("error");
@@ -55,7 +71,7 @@ export default function ImageUploadField({
 
   return (
     <div className="flex flex-col gap-2">
-      <input type="hidden" name={name} value={url} />
+      {name && <input type="hidden" name={name} value={url} />}
 
       {preview && (
         // eslint-disable-next-line @next/next/no-img-element -- lightweight admin-only preview, not the public site
@@ -78,8 +94,7 @@ export default function ImageUploadField({
           <button
             type="button"
             onClick={() => {
-              setUrl("");
-              setPreview("");
+              setUrlAndPreview("");
             }}
             className="text-xs text-tan-dark hover:text-purple-deep"
           >
@@ -96,8 +111,7 @@ export default function ImageUploadField({
           type="url"
           value={url}
           onChange={(e) => {
-            setUrl(e.target.value);
-            setPreview(e.target.value);
+            setUrlAndPreview(e.target.value);
           }}
           placeholder="https://…"
           className={`${field} mt-2`}

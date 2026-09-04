@@ -136,18 +136,45 @@ export default async function CommunityPostPage({
 
             {originalPost && (
               <div className="border border-border rounded-xl p-3.5 mb-3 bg-mauve-50">
-                <div className="text-xs text-tan mb-1.5">
-                  Repost of <Link href={`/community/${originalPost.authorHandle}`} className="font-semibold text-purple-deep">{originalPost.authorName}</Link>
+                <div className="text-xs text-tan mb-1.5 flex items-center gap-1.5">
+                  <span>Repost of</span>{" "}
+                  <Link href={`/community/${originalPost.authorHandle}`} className="font-semibold text-purple-deep hover:underline">
+                    {originalPost.authorName}
+                  </Link>
+                  <span className="text-tan text-xs">@{originalPost.authorHandle}</span>
                 </div>
-                <p className="text-sm text-tan-dark">{originalPost.body}</p>
+                <Link href={`/community/post/${originalPost.id}`} className="block">
+                  <p className="text-sm text-tan-dark leading-relaxed">{originalPost.body}</p>
+                  {originalPost.hasImage && (
+                    originalPost.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={originalPost.imageUrl}
+                        alt={originalPost.imageLabel || "Reposted image"}
+                        className="w-full max-h-[300px] object-cover rounded-xl border border-border bg-mauve-50 mt-2"
+                      />
+                    ) : originalPost.imageLabel ? (
+                      <ImageSlot label={originalPost.imageLabel} className="w-full h-[220px] mt-2" shape="rounded" radius={12} tone="mauve" />
+                    ) : null
+                  )}
+                </Link>
               </div>
             )}
 
             <p className="text-[17px] leading-relaxed mb-4">{post.body}</p>
-            {post.hasImage && post.imageLabel ? (
-              <ImageSlot label={post.imageLabel} className="w-full h-[320px] mb-4" shape="rounded" radius={16} tone="mauve" />
-            ) : null}
-            <div className="text-xs text-tan mb-4">{relativeTime(post.postedAt)} ago</div>
+            {post.hasImage && (
+              post.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={post.imageUrl}
+                  alt={post.imageLabel || "Post image"}
+                  className="w-full max-h-[500px] object-cover rounded-2xl border border-border bg-mauve-50 mb-4"
+                />
+              ) : post.imageLabel ? (
+                <ImageSlot label={post.imageLabel} className="w-full h-[320px] mb-4" shape="rounded" radius={16} tone="mauve" />
+              ) : null
+            )}
+            <div className="text-xs text-tan mb-4" suppressHydrationWarning>{relativeTime(post.postedAt)} ago</div>
             <div className="flex gap-8 text-tan text-sm border-t border-border pt-3.5">
               <span>💬 {post.commentCount}</span>
               <RepostButton postId={post.id} initialReposted={reposted} initialCount={post.repostCount} isLoggedIn={!!userId} />
@@ -169,7 +196,7 @@ export default async function CommunityPostPage({
                     <Link href={`/community/${c.authorHandle}`} className="font-semibold text-purple-deep">
                       {c.authorName}
                     </Link>{" "}
-                    <span className="text-tan text-xs">{relativeTime(c.createdAt)} ago</span>
+                    <span className="text-tan text-xs" suppressHydrationWarning>{relativeTime(c.createdAt)} ago</span>
                   </div>
                   <p className="text-[14.5px] mt-1">{c.body}</p>
                 </div>

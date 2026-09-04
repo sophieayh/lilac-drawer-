@@ -13,6 +13,7 @@ import {
   getSuggestedProducts,
   formatPrice,
 } from "@/db/queries";
+import { slugify } from "@/lib/slugify";
 
 // This page reflects the viewer's own session, so it's rendered per-request
 // rather than cached with ISR.
@@ -125,7 +126,11 @@ export default async function ExplorePage() {
         {/* categories */}
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3.5 mb-6">
           {exploreCategories.map((c) => (
-            <Link key={c.id} href="/deals" className="flex flex-col items-center gap-2.5 bg-cream-alt border border-border rounded-2xl py-4.5 px-2">
+            <Link
+              key={c.id}
+              href={`/category/${c.slug || slugify(c.label)}`}
+              className="flex flex-col items-center gap-2.5 bg-cream-alt border border-border rounded-2xl py-4.5 px-2 hover:bg-mauve-50 hover:border-lilac/50 transition-all"
+            >
               <span className="w-11 h-11 rounded-full flex items-center justify-center text-xl" style={{ background: c.colorHex ?? undefined }} aria-hidden="true">
                 {c.icon}
               </span>
@@ -160,22 +165,22 @@ export default async function ExplorePage() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4.5 mb-8">
           {exploreDeals.map((d) => (
-            <div key={d.id} className="bg-cream-alt border border-border rounded-2xl p-3.5 card-hover">
+            <Link key={d.id} href={`/deals/${d.slug}`} className="bg-cream-alt border border-border rounded-2xl p-3.5 card-hover block group">
               <div className="relative mb-3">
                 <span className="absolute top-2 left-2 bg-rose text-white text-[11px] font-bold px-2 py-0.5 rounded-full z-10">
                   -{d.discountPercent}%
                 </span>
                 <ImageSlot label={d.imageLabel} imageUrl={d.imageUrl} className="w-full h-[140px]" shape="rounded" radius={12} tone="mauve" />
               </div>
-              <div className="text-sm font-semibold text-purple-deep">{d.name}</div>
-              <div className="text-xs text-tan mb-2">{d.subtitle}</div>
+              <div className="text-sm font-semibold text-purple-deep group-hover:text-rose transition-colors line-clamp-1">{d.name}</div>
+              <div className="text-xs text-tan mb-2 truncate">{d.subtitle}</div>
               <div className="flex items-baseline gap-2">
                 <span className="font-heading font-bold text-base text-rose">{formatPrice(d.priceCents)}</span>
                 {d.compareAtPriceCents ? (
                   <span className="text-xs text-lilac/60 line-through">{formatPrice(d.compareAtPriceCents)}</span>
                 ) : null}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -186,12 +191,12 @@ export default async function ExplorePage() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4.5">
           {exploreRecommended.map((r) => (
-            <div key={r.id} className="bg-cream-alt border border-border rounded-2xl p-3.5 card-hover">
+            <Link key={r.id} href={`/deals/${r.slug}`} className="bg-cream-alt border border-border rounded-2xl p-3.5 card-hover block group">
               <ImageSlot label={r.imageLabel} imageUrl={r.imageUrl} className="w-full h-[140px] mb-3" shape="rounded" radius={12} tone="pink" />
-              <div className="text-sm font-semibold text-purple-deep">{r.name}</div>
-              <div className="text-xs text-tan mb-2">{r.subtitle}</div>
+              <div className="text-sm font-semibold text-purple-deep group-hover:text-rose transition-colors line-clamp-1">{r.name}</div>
+              <div className="text-xs text-tan mb-2 truncate">{r.subtitle}</div>
               <div className="font-heading font-bold text-base text-rose">{formatPrice(r.priceCents)}</div>
-            </div>
+            </Link>
           ))}
         </div>
       </main>
@@ -203,24 +208,24 @@ export default async function ExplorePage() {
           <span className="text-tan text-base" aria-hidden="true">×</span>
         </div>
         {exploreSaved.map((s) => (
-          <div key={s.id} className="flex gap-3 py-3 border-b border-border">
+          <Link key={s.id} href={`/deals/${s.slug}`} className="flex gap-3 py-3 border-b border-border card-hover group block">
             <ImageSlot label={s.imageLabel} imageUrl={s.imageUrl} className="w-13 h-13 shrink-0" shape="rounded" radius={10} tone="mauve" />
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold text-purple-deep leading-snug">{s.name}</div>
-              <div className="text-[11.5px] text-tan mt-0.5">{s.subtitle}</div>
+              <div className="text-[13px] font-semibold text-purple-deep leading-snug group-hover:text-rose transition-colors line-clamp-1">{s.name}</div>
+              <div className="text-[11.5px] text-tan mt-0.5 truncate">{s.subtitle}</div>
               <div className="font-heading font-bold text-[13.5px] text-rose mt-1">{formatPrice(s.priceCents)}</div>
             </div>
-          </div>
+          </Link>
         ))}
 
         <div className="mt-5 pt-4">
           <h4 className="font-heading text-sm text-purple-deep mb-3">You Might Also Like</h4>
           {exploreSuggestions.map((sg) => (
-            <div key={sg.id} className="flex gap-3 items-center py-2">
+            <Link key={sg.id} href={`/deals/${sg.slug}`} className="flex gap-3 items-center py-2 card-hover group block">
               <ImageSlot label={sg.imageLabel} imageUrl={sg.imageUrl} className="w-10 h-10 shrink-0" shape="rounded" radius={8} tone="pink" />
-              <div className="flex-1 text-[12.5px] font-medium text-purple-deep">{sg.name}</div>
+              <div className="flex-1 text-[12.5px] font-medium text-purple-deep group-hover:text-rose transition-colors line-clamp-1">{sg.name}</div>
               <span className="font-heading font-bold text-[12.5px] text-rose">{formatPrice(sg.priceCents)}</span>
-            </div>
+            </Link>
           ))}
         </div>
 

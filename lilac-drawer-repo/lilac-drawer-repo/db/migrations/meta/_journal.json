@@ -29,6 +29,41 @@
       "when": 1786889875341,
       "tag": "0003_green_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788291011594,
+      "tag": "0004_lying_sister_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788374754361,
+      "tag": "0005_material_spitfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788528631800,
+      "tag": "0006_confused_thunderbolts",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788529384006,
+      "tag": "0007_superb_raza",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788532865179,
+      "tag": "0008_dizzy_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

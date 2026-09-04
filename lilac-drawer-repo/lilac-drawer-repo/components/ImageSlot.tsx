@@ -44,12 +44,25 @@ export default function ImageSlot({
         : "8px";
 
   if (imageUrl) {
+    const isDataOrBlob = imageUrl.startsWith("data:") || imageUrl.startsWith("blob:");
     return (
       <div
         className={`relative overflow-hidden select-none ${className}`}
         style={{ borderRadius: radiusStyle, ...style }}
       >
-        <Image src={imageUrl} alt={label} fill sizes="(max-width: 768px) 100vw, 480px" className="object-cover" />
+        {isDataOrBlob ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
+        ) : (
+          <Image
+            src={imageUrl}
+            alt={label}
+            fill
+            sizes="(max-width: 768px) 100vw, 480px"
+            className="object-cover"
+            unoptimized={imageUrl.startsWith("http")}
+          />
+        )}
       </div>
     );
   }
