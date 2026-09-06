@@ -16,10 +16,10 @@ interface ImageSlotProps {
 }
 
 const tones: Record<NonNullable<ImageSlotProps["tone"]>, string> = {
-  mauve: "linear-gradient(150deg, #efe3f2, #f6eff8)",
-  pink: "linear-gradient(150deg, #f9d6e4, #f3c6d6)",
-  cream: "linear-gradient(150deg, #f5ecd8, #fbf6f0)",
-  purple: "linear-gradient(150deg, #e6d9f0, #d4a5d8)",
+  mauve: "#f6eff8",
+  pink: "#f3c6d6",
+  cream: "#f5ecd8",
+  purple: "#efe3f2",
 };
 
 /**

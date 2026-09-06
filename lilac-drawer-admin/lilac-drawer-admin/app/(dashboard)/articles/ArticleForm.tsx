@@ -419,7 +419,7 @@ export default function ArticleForm({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
           <div>
             <h2 className="text-base font-semibold text-purple-deep flex items-center gap-2">
-              <span>🔗</span> 2. Keyword Auto-Links (Key-Value)
+              2. Keyword Auto-Links (Key-Value)
             </h2>
             <p className="text-xs text-tan-dark mt-0.5">
               Whenever these keywords appear in product reviews or custom text, they automatically become clickable links.
@@ -436,7 +436,7 @@ export default function ArticleForm({
 
         {keywordLinks.length === 0 ? (
           <p className="text-xs text-tan-dark italic py-2">
-            No keyword links added yet. (e.g. &quot;TP-Link Archer BE230&quot; ➔ https://amazon.com/...)
+            No keyword links added yet. (e.g. &quot;TP-Link Archer BE230&quot; &rarr; https://amazon.com/...)
           </p>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -474,10 +474,10 @@ export default function ArticleForm({
                 <button
                   type="button"
                   onClick={() => removeKeywordLink(idx)}
-                  className="text-tan-dark hover:text-red-500 text-xs px-2 py-1 rounded mt-3 cursor-pointer"
+                  className="text-tan-dark hover:text-red-500 p-1 rounded mt-3 cursor-pointer"
                   title="Remove keyword link"
                 >
-                  ✕
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             ))}
@@ -490,7 +490,7 @@ export default function ArticleForm({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border pb-4">
           <div>
             <h2 className="text-base font-semibold text-purple-deep flex items-center gap-2">
-              <span>⭐</span> 3. Featured Products &quot;Everything We Recommend&quot;
+              3. Featured Products &quot;Everything We Recommend&quot;
             </h2>
             <p className="text-xs text-tan-dark mt-0.5">
               Select products from your catalog or add new products with multi-store pricing (Amazon, Walmart, Best Buy, etc.).
@@ -506,7 +506,7 @@ export default function ArticleForm({
                   onChange={(e) => setSelectedCatalogId(e.target.value)}
                   className="text-xs bg-white border border-border rounded-lg px-2.5 py-1.5 text-purple-deep outline-none focus:border-lilac max-w-[200px] truncate"
                 >
-                  <option value="">📦 Pick from Catalog ({availableProducts.length})...</option>
+                  <option value="">Pick from Catalog ({availableProducts.length})...</option>
                   {availableProducts.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} (${(p.priceCents / 100).toFixed(2)})
@@ -536,7 +536,6 @@ export default function ArticleForm({
 
         {productsList.length === 0 ? (
           <div className="text-center py-8 bg-mauve-50/40 rounded-xl border border-dashed border-border flex flex-col items-center gap-2">
-            <span className="text-2xl">📦</span>
             <p className="text-sm font-medium text-purple-deep">No products added to this article yet.</p>
             <p className="text-xs text-tan-dark max-w-sm">
               Select a product from your catalog dropdown above or add a blank product with multi-store pricing.
@@ -682,7 +681,7 @@ export default function ArticleForm({
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-xs font-bold text-purple-deep block">
-                        🛒 Multi-Store Pricing & Affiliate Links
+                        Multi-Store Pricing & Affiliate Links
                       </span>
                       <span className="text-[11px] text-tan-dark">
                         Add prices & links for Amazon, Walmart, Best Buy, etc.
@@ -755,10 +754,10 @@ export default function ArticleForm({
                           <button
                             type="button"
                             onClick={() => removeStorePrice(pIdx, sIdx)}
-                            className="text-tan-dark hover:text-red-500 text-xs px-2 py-1 cursor-pointer"
+                            className="text-tan-dark hover:text-red-500 p-1 cursor-pointer"
                             title="Remove store"
                           >
-                            ✕
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                           </button>
                         </div>
                       ))}
@@ -793,7 +792,7 @@ export default function ArticleForm({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
           <div>
             <h2 className="text-base font-semibold text-purple-deep flex items-center gap-2">
-              <span>📝</span> 4. Custom Article Sections
+              4. Custom Article Sections
             </h2>
             <p className="text-xs text-tan-dark mt-0.5">
               Add unlimited custom blocks below the product reviews (e.g. How We Tested, Buying Advice, FAQs).
@@ -830,7 +829,7 @@ export default function ArticleForm({
                       disabled={secIdx === 0}
                       className="text-xs px-2 py-1 rounded border border-border bg-white disabled:opacity-30 hover:bg-neutral-100 cursor-pointer"
                     >
-                      ↑
+                      &uarr;
                     </button>
                     <button
                       type="button"
@@ -838,7 +837,7 @@ export default function ArticleForm({
                       disabled={secIdx === customSections.length - 1}
                       className="text-xs px-2 py-1 rounded border border-border bg-white disabled:opacity-30 hover:bg-neutral-100 cursor-pointer"
                     >
-                      ↓
+                      &darr;
                     </button>
                     <button
                       type="button"
@@ -903,7 +902,7 @@ export default function ArticleForm({
       <div className="bg-white border border-border rounded-xl p-5 md:p-6">
         <details className="text-sm">
           <summary className="font-semibold text-purple-deep cursor-pointer select-none">
-            📄 Standard Markdown Body (Fallback / Legacy)
+            Standard Markdown Body (Fallback / Legacy)
           </summary>
           <div className="mt-4 flex flex-col gap-2">
             <p className="text-xs text-tan-dark">
@@ -948,7 +947,7 @@ export default function ArticleForm({
               Where it appears on the site
             </p>
             <a href="/placements" className="text-xs font-semibold text-rose hover:underline">
-              📌 Visual Placements Manager →
+              Visual Placements Manager &rarr;
             </a>
           </div>
           <div className="grid sm:grid-cols-2 gap-2.5">

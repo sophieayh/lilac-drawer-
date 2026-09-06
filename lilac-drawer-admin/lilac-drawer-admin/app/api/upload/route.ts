@@ -39,7 +39,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "File is too large (max 4.5MB)." }, { status: 400 });
   }
 
-  const kind = formData.get("kind") === "products" ? "products" : "articles";
+  const rawKind = formData.get("kind");
+  const kind =
+    rawKind === "products"
+      ? "products"
+      : rawKind === "banners"
+        ? "banners"
+        : rawKind === "yearly_wrap"
+          ? "yearly_wrap"
+          : "articles";
 
   if (process.env.BLOB_READ_WRITE_TOKEN && process.env.BLOB_READ_WRITE_TOKEN !== "vercel_blob_rw_...") {
     try {

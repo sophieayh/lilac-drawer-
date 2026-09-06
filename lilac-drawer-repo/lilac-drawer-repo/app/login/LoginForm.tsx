@@ -19,7 +19,7 @@ export default function LoginForm() {
     const { error: signInError } = await authClient.signIn.email({ email, password });
     setLoading(false);
     if (signInError) {
-      setError("Incorrect email or password.");
+      setError("Incorrect email or password. Please try again.");
       return;
     }
     router.push("/profile");
@@ -27,20 +27,22 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-[360px] mx-auto">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-[400px] mx-auto bg-white/70 backdrop-blur-xs p-6 md:p-8 rounded-2xl border border-border shadow-[0_8px_24px_rgba(90,47,69,0.06)]">
       <div>
         <label htmlFor="email" className="block text-xs font-semibold text-purple-deep mb-1.5">
-          Email
+          Email Address
         </label>
         <input
           id="email"
           type="email"
           required
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-border rounded-lg px-3.5 py-2.5 text-sm outline-none"
+          className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm bg-cream-alt text-purple-deep outline-none focus:border-lilac focus:ring-2 focus:ring-lilac/20 transition-all"
         />
       </div>
+
       <div>
         <label htmlFor="password" className="block text-xs font-semibold text-purple-deep mb-1.5">
           Password
@@ -49,22 +51,30 @@ export default function LoginForm() {
           id="password"
           type="password"
           required
+          placeholder="Your password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-border rounded-lg px-3.5 py-2.5 text-sm outline-none"
+          className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm bg-cream-alt text-purple-deep outline-none focus:border-lilac focus:ring-2 focus:ring-lilac/20 transition-all"
         />
       </div>
-      {error && <p className="text-xs text-rose">{error}</p>}
+
+      {error && (
+        <div className="p-3 bg-rose/10 border border-rose/30 rounded-xl text-xs text-rose font-medium leading-snug">
+          {error}
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={loading}
-        className="bg-lilac text-white rounded-full py-3 font-semibold text-sm disabled:opacity-50"
+        className="w-full bg-lilac hover:bg-purple-deep text-white rounded-full py-3 font-semibold text-sm shadow-[0_4px_14px_rgba(201,163,198,0.4)] transition-all btn-press disabled:opacity-50 disabled:cursor-not-allowed mt-1"
       >
         {loading ? "Signing in…" : "Log In"}
       </button>
-      <p className="text-xs text-tan text-center">
-        New here?{" "}
-        <Link href="/signup" className="text-rose font-semibold">
+
+      <p className="text-xs text-tan text-center mt-1">
+        Don&apos;t have an account yet?{" "}
+        <Link href="/signup" className="text-rose font-semibold hover:underline">
           Create an account
         </Link>
       </p>

@@ -189,7 +189,7 @@ export default async function ProductDetailPage({
                           : "bg-red-100 text-red-600"
                       }`}
                     >
-                      {product.inStock ? "✓ In Stock" : "Out of Stock"}
+                      {product.inStock ? "In Stock" : "Out of Stock"}
                     </span>
                   </div>
                 </div>
@@ -197,16 +197,16 @@ export default async function ProductDetailPage({
                 {/* Rank note / Editor verdict if available */}
                 {product.rankNote && (
                   <div className="mb-6 p-4 rounded-xl border border-lilac/30 bg-mauve-100/40 text-xs text-purple-deep">
-                    <span className="font-bold block mb-1">✦ Editor&apos;s Testing Note:</span>
+                    <span className="font-bold block mb-1">Editor&apos;s Testing Note:</span>
                     <p className="text-tan-dark leading-relaxed">{product.rankNote}</p>
                   </div>
                 )}
 
                 {/* Multi-Store Pricing Banner if available */}
                 {product.stores && Array.isArray(product.stores) && product.stores.length > 0 && (
-                  <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-pink-50/70 via-cream to-mauve-50/70 border border-border">
+                  <div className="mb-6 p-4 rounded-2xl bg-mauve-50 border border-border">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-purple-deep block mb-2.5">
-                      🛒 Available at Retailers
+                      Available at Retailers
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {product.stores.map((st, idx) => (

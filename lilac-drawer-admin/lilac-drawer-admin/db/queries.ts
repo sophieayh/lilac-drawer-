@@ -1,7 +1,7 @@
 import "server-only";
 import { sql, desc, eq, asc, gte } from "drizzle-orm";
 import { db } from "./index";
-import { user, posts, products, communityPosts, pageViews, siteCategories } from "./schema";
+import { user, posts, products, communityPosts, pageViews, siteCategories, banners } from "./schema";
 
 // ---------- formatting helpers ----------
 export function formatPrice(cents: number): string {
@@ -129,3 +129,24 @@ export async function getCategoryById(id: number) {
   const rows = await db.select().from(siteCategories).where(eq(siteCategories.id, id)).limit(1);
   return rows[0] ?? null;
 }
+
+// ---------- advertising banners ----------
+export async function getAllBanners(placement?: string) {
+  if (placement && placement !== "all") {
+    return db
+      .select()
+      .from(banners)
+      .where(eq(banners.placement, placement))
+      .orderBy(asc(banners.sortOrder), asc(banners.id));
+  }
+  return db
+    .select()
+    .from(banners)
+    .orderBy(asc(banners.sortOrder), asc(banners.id));
+}
+
+export async function getBannerById(id: number) {
+  const rows = await db.select().from(banners).where(eq(banners.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+

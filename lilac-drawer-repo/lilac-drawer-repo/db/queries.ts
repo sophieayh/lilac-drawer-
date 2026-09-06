@@ -1,8 +1,8 @@
 import "server-only";
-import { desc, eq, asc, and, or, isNull, ne, sql } from "drizzle-orm";
+import { desc, eq, asc, and, or, isNull, isNotNull, gt, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "./index";
-import { products, posts, siteCategories, communityPosts, trends, user, comments, likes } from "./schema";
+import { products, posts, siteCategories, communityPosts, trends, user, comments, likes, banners, yearlyWrap } from "./schema";
 import { slugify } from "@/lib/slugify";
 
 // ---------- formatting helpers ----------
@@ -12,6 +12,11 @@ export function formatPrice(cents: number): string {
 
 export function formatPriceFixed(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
+}
+
+export function calculateDiscountPercent(priceCents: number, compareAtPriceCents: number | null | undefined): number | null {
+  if (!compareAtPriceCents || compareAtPriceCents <= priceCents) return null;
+  return Math.round(((compareAtPriceCents - priceCents) / compareAtPriceCents) * 100);
 }
 
 export function relativeTime(date: Date): string {
@@ -35,6 +40,12 @@ export function formatDate(date: Date): string {
 }
 
 // ---------- products ----------
+// Deals sections require products to have a genuine active discount (compareAtPriceCents > priceCents)
+const hasDiscount = and(
+  isNotNull(products.compareAtPriceCents),
+  gt(products.compareAtPriceCents, products.priceCents)
+);
+
 export async function getHomeFeaturedDeals() {
   return db.select().from(products).where(eq(products.isFeaturedHome, true)).limit(3);
 }
@@ -44,23 +55,23 @@ export async function getTopPicks() {
 }
 
 export async function getFeatureProducts() {
-  return db.select().from(products).where(eq(products.isFeaturedDeals, true)).limit(6);
+  return db.select().from(products).where(and(eq(products.isFeaturedDeals, true), hasDiscount)).limit(6);
 }
 
 export async function getSaleOffProducts() {
-  return db.select().from(products).where(eq(products.isSaleOff, true)).limit(3);
+  return db.select().from(products).where(and(eq(products.isSaleOff, true), hasDiscount)).limit(3);
 }
 
 export async function getTodayDeals() {
-  return db.select().from(products).where(eq(products.isTodayDeal, true)).limit(4);
+  return db.select().from(products).where(and(eq(products.isTodayDeal, true), hasDiscount)).limit(4);
 }
 
 export async function getNewArrivals() {
-  return db.select().from(products).where(eq(products.isNewArrival, true)).limit(3);
+  return db.select().from(products).where(and(eq(products.isNewArrival, true), hasDiscount)).limit(3);
 }
 
 export async function getBestSellers() {
-  return db.select().from(products).where(eq(products.isBestSeller, true)).limit(3);
+  return db.select().from(products).where(and(eq(products.isBestSeller, true), hasDiscount)).limit(3);
 }
 
 export async function getExploreDeals() {
@@ -170,6 +181,24 @@ export async function getHomeGuidePost() {
   return fallback[0] ?? null;
 }
 
+export async function getDealsHeroPost() {
+  const rows = await db
+    .select()
+    .from(posts)
+    .where(and(eq(posts.isDealsPreview, true), published))
+    .orderBy(...postOrder)
+    .limit(1);
+  if (rows[0]) return rows[0];
+
+  const fallback = await db
+    .select()
+    .from(posts)
+    .where(published)
+    .orderBy(...postOrder)
+    .limit(1);
+  return fallback[0] ?? null;
+}
+
 export async function getDealsBlogPreview() {
   return db.select().from(posts).where(and(eq(posts.isDealsPreview, true), published)).orderBy(...postOrder).limit(3);
 }
@@ -210,14 +239,20 @@ export async function getLatestPosts(limit = 4) {
   return db.select().from(posts).where(published).orderBy(...postOrder).limit(limit);
 }
 
+export async function getAllPublishedPosts(limit = 50) {
+  return db.select().from(posts).where(published).orderBy(...postOrder).limit(limit);
+}
+
 export async function getFeaturedPost() {
   const rows = await db
     .select()
     .from(posts)
-    .where(and(eq(posts.category, "CARE"), published))
+    .where(and(or(eq(posts.category, "CARE"), eq(posts.isHomeSpread, true)), published))
     .orderBy(...postOrder)
     .limit(1);
-  return rows[0] ?? null;
+  if (rows[0]) return rows[0];
+  const fallback = await db.select().from(posts).where(published).orderBy(...postOrder).limit(1);
+  return fallback[0] ?? null;
 }
 
 // ---------- site categories ----------
@@ -587,3 +622,19 @@ export async function getTrends() {
 export function formatTrendCount(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 }
+
+// ---------- advertising banners ----------
+export async function getActiveBanners(placement = "community_banner") {
+  return db
+    .select()
+    .from(banners)
+    .where(and(eq(banners.isActive, true), eq(banners.placement, placement)))
+    .orderBy(asc(banners.sortOrder), asc(banners.id));
+}
+
+// ---------- yearly wrap settings ----------
+export async function getYearlyWrapSettings() {
+  const rows = await db.select().from(yearlyWrap).limit(1);
+  return rows[0] ?? null;
+}
+

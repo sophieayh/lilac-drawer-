@@ -152,7 +152,8 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
           </div>
           {isPending && (
             <div className="flex items-center gap-2 text-xs font-semibold text-rose bg-pink-100/50 px-3 py-1.5 rounded-full self-start">
-              <span className="inline-block animate-spin">✦</span> Saving changes…
+              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+              Saving changes…
             </div>
           )}
         </div>
@@ -160,7 +161,8 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
 
       {hideHeader && isPending && (
         <div className="flex items-center gap-2 text-xs font-semibold text-rose bg-pink-100/50 px-3 py-1.5 rounded-full self-start">
-          <span className="inline-block animate-spin">✦</span> Saving changes…
+          <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          Saving changes…
         </div>
       )}
 
@@ -359,9 +361,9 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
                           type="button"
                           onClick={() => handleTogglePlacement(article.id, zone.key, false)}
                           title={`Remove from ${zone.badge}`}
-                          className="w-6 h-6 rounded-full text-tan hover:text-red-600 hover:bg-red-50 flex items-center justify-center text-xs font-bold transition-colors shrink-0"
+                          className="w-6 h-6 rounded-full text-tan hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                         >
-                          ✕
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                       </div>
                     ))}
@@ -377,10 +379,10 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
                   }`}
                 >
                   {isOver ? (
-                    <span>Release to drop article here 🎯</span>
+                    <span>Release to drop article here</span>
                   ) : (
                     <div className="flex items-center justify-center gap-1.5">
-                      <span>⬇ Drop article card here</span>
+                      <span>Drop article card here</span>
                     </div>
                   )}
                 </div>

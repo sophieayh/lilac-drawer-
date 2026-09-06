@@ -184,8 +184,11 @@ export default function PostCard({
           )}
 
           <div className="flex gap-10 text-tan text-[13px] max-w-[340px] mt-3">
-            <Link href={`/community/post/${p.id}`} className="hover:text-purple-deep flex items-center gap-1.5">
-              <span>💬</span> {p.commentCount}
+            <Link href={`/community/post/${p.id}`} className="hover:text-purple-deep flex items-center gap-1.5 transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.636 1.066.526 1.674l-.32 1.776a.75.75 0 00.942.86l2.146-.667c.535-.166 1.11-.082 1.58.223A9.458 9.458 0 0012 20.25z" />
+              </svg>
+              <span>{p.commentCount}</span>
             </Link>
             <RepostButton
               postId={p.id}

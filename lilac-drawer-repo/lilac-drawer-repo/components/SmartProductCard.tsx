@@ -61,7 +61,7 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
             )}
             {hasArticle && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lilac text-white shadow-sm flex items-center gap-1">
-                <span>✦ Review Available</span>
+                <span>Review Available</span>
               </span>
             )}
           </div>

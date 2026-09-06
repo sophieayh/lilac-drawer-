@@ -287,7 +287,7 @@ export default async function BlogPostPage({
       <SiteHeader />
 
       {/* Article sub-header */}
-      <div className="border-b border-border-mauve bg-gradient-to-r from-pink-200/70 via-lilac/55 to-mauve-100/70">
+      <div className="border-b border-border bg-mauve-50">
         <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-2.5 flex items-center gap-5">
           <span className="text-[11px] font-semibold tracking-wide uppercase text-purple-deep shrink-0">
             {post.category}
@@ -356,7 +356,7 @@ export default async function BlogPostPage({
               )}
 
               {wasUpdated && (
-                <div className="border border-border border-l-[3px] border-l-pink-200 bg-gradient-to-r from-pink-100/40 to-cream px-4.5 py-3.5 flex flex-col gap-1 rounded-r-lg">
+                <div className="border border-border border-l-[3px] border-l-rose bg-white px-4.5 py-3.5 flex flex-col gap-1 rounded-r-lg">
                   <span className="text-[11px] font-semibold tracking-wide uppercase text-rose">
                     Updated {formatDate(post.updatedAt)}
                   </span>
@@ -373,10 +373,12 @@ export default async function BlogPostPage({
                   {productsList.length > 0 && (
                     <section
                       id="everything-we-recommend"
-                      className="scroll-mt-24 rounded-2xl border border-border-mauve bg-gradient-to-br from-pink-100/60 via-mauve-50/40 to-cream p-5 sm:p-7 shadow-xs"
+                      className="scroll-mt-24 rounded-2xl border border-border bg-white p-5 sm:p-7 shadow-xs"
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl">⭐</span>
+                        <svg className="w-6 h-6 text-rose shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                        </svg>
                         <h2 className="font-heading text-2xl font-bold text-ink">
                           Everything We Recommend
                         </h2>
@@ -500,7 +502,7 @@ export default async function BlogPostPage({
 
                       {/* Multi-Store Pricing Banner */}
                       {prod.stores && prod.stores.length > 0 && (
-                        <div className="my-2 p-4 rounded-xl bg-gradient-to-r from-pink-50/80 via-cream to-mauve-50/80 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="my-2 p-4 rounded-xl bg-mauve-50 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex flex-col">
                             <span className="text-[11px] font-semibold uppercase tracking-wider text-tan-dark">
                               Where to Buy & Current Prices
@@ -634,7 +636,7 @@ export default async function BlogPostPage({
             <aside className="flex flex-col gap-6 lg:sticky lg:top-20 lg:self-start">
               {tocEntries.length > 0 && <TableOfContents entries={tocEntries} />}
 
-              <div className="bg-gradient-to-br from-pink-100 via-lilac/40 to-mauve-100 p-4.5 flex flex-col gap-2 rounded-lg">
+              <div className="bg-white border border-border shadow-xs p-5 flex flex-col gap-2.5 rounded-2xl">
                 <span className="font-heading text-lg text-ink font-semibold">
                   Get our best picks
                 </span>

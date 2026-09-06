@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
@@ -367,9 +367,9 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
                           type="button"
                           onClick={() => handleTogglePlacement(product.id, zone.key, false)}
                           title={`Remove from ${zone.badge}`}
-                          className="w-6 h-6 rounded-full text-tan hover:text-red-600 hover:bg-red-50 flex items-center justify-center text-xs font-bold transition-colors shrink-0"
+                          className="w-6 h-6 rounded-full text-tan hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                         >
-                          ✕
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                       </div>
                     ))}
@@ -385,10 +385,10 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
                   }`}
                 >
                   {isOver ? (
-                    <span>Release to drop product here 🎯</span>
+                    <span>Release to drop product here</span>
                   ) : (
                     <div className="flex items-center justify-center gap-1.5">
-                      <span>⬇ Drop product card here</span>
+                      <span>Drop product card here</span>
                     </div>
                   )}
                 </div>

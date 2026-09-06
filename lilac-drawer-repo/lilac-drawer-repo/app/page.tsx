@@ -59,7 +59,7 @@ export default async function HomePage() {
         {/* monochrome editorial spread */}
         {spreadPosts.length > 0 && (
           <Reveal delay={0}>
-            <section className="px-6 md:px-12 py-8 max-w-[1200px] mx-auto bg-gradient-to-br from-mauve-50 to-pink-200">
+            <section className="px-6 md:px-12 py-8 max-w-[1200px] mx-auto bg-mauve-50 rounded-2xl border border-border-mauve">
               <div className="border-t-[3px] border-b-[3px] border-double border-lilac h-1.5 mb-6" />
 
               {topSpread && (
@@ -119,9 +119,9 @@ export default async function HomePage() {
               )}
 
               <div className="mt-6 border-2 border-lilac p-1 rounded-2xl">
-                <div className="border border-lilac rounded-[11px] flex justify-between items-center px-6 py-3 bg-gradient-to-r from-rose to-lilac text-white font-heading text-sm font-bold tracking-wide uppercase">
+                <div className="border border-lilac rounded-[11px] flex justify-between items-center px-6 py-3 bg-rose text-white font-heading text-sm font-bold tracking-wide uppercase">
                   <span>Cool Vibes</span>
-                  <span>✦ Lilac Drawer ✦</span>
+                  <span>Lilac Drawer</span>
                   <span>Aesthetic</span>
                 </div>
               </div>
@@ -156,9 +156,9 @@ export default async function HomePage() {
               </p>
             </article>
 
-            <aside className="bg-gradient-to-br from-pink-200 to-mauve-50 rounded-2xl p-5.5">
+            <aside className="bg-white border border-border shadow-xs rounded-2xl p-5.5">
               <h3 className="font-heading text-base text-rose mb-4 uppercase tracking-wide">
-                ♥ Today&apos;s Picks
+                Today&apos;s Picks
               </h3>
               {homeDeals.map((d) => (
                 <Link
@@ -209,7 +209,7 @@ export default async function HomePage() {
               <Link
                 key={pick.id}
                 href={`/deals/${pick.slug}`}
-                className="flex items-center gap-5 px-4.5 py-4 mb-2.5 rounded-2xl bg-gradient-to-r from-pink-200 to-mauve-50 card-hover group block"
+                className="flex items-center gap-5 px-4.5 py-4 mb-2.5 rounded-2xl bg-white border border-border/80 card-hover group block shadow-2xs"
               >
                 <span className="font-heading text-[28px] text-lilac font-bold w-11">
                   {pick.rank != null ? String(pick.rank).padStart(2, "0") : "–"}

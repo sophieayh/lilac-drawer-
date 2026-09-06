@@ -86,6 +86,36 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    href: "/banners",
+    label: "Banners & Ads",
+    icon: (active) => (
+      <svg
+        className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={active ? 2.2 : 1.8}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.01 5.395m-1.01 8.355c.34-1.74.52-3.53.52-5.355 0-.025 0-.05 0-.075" />
+      </svg>
+    ),
+  },
+  {
+    href: "/yearly-wrap",
+    label: "Yearly Wrap",
+    icon: (active) => (
+      <svg
+        className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={active ? 2.2 : 1.8}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+      </svg>
+    ),
+  },
+  {
     href: "/users",
     label: "Users & Roles",
     icon: (active) => (
@@ -116,7 +146,7 @@ export default function AdminSidebar({ orientation = "vertical" }: { orientation
             href={item.href}
             className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold whitespace-nowrap transition-all ${
               isActive
-                ? "bg-gradient-to-r from-purple-deep to-plum text-white shadow-[0_4px_14px_rgba(90,47,69,0.25)] ring-1 ring-white/10"
+                ? "bg-purple-deep text-white shadow-sm ring-1 ring-white/10"
                 : "text-ink/80 hover:text-purple-deep hover:bg-mauve-100/70"
             }`}
           >

@@ -32,39 +32,7 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const result = event.target?.result as string;
-      if (!result) return;
-
-      // Optimize image size using an in-memory canvas
-      const img = new Image();
-      img.onload = () => {
-        const MAX_WIDTH = 1000;
-        const MAX_HEIGHT = 1000;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-          if (width > height) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
-          } else {
-            width = Math.round((width * MAX_HEIGHT) / height);
-            height = MAX_HEIGHT;
-          }
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          setImagePreview(canvas.toDataURL("image/jpeg", 0.8));
-        } else {
-          setImagePreview(result);
-        }
-      };
-      img.src = result;
+      setImagePreview(event.target?.result as string);
     };
     reader.readAsDataURL(file);
   }
@@ -77,20 +45,69 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
     }
   }
 
+  if (!isLoggedIn) {
+    return (
+      <div className="flex items-center justify-between gap-4 px-6 py-5 bg-mauve-50/50 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep text-sm font-bold">
+            <svg className="w-5 h-5 text-purple-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-purple-deep">Join the Conversation</p>
+            <p className="text-xs text-tan-dark">Sign in to share your thoughts, photos, and recommendations.</p>
+          </div>
+        </div>
+        <a
+          href="/login?redirect=/community"
+          className="shrink-0 bg-purple-deep text-white px-5 py-2 rounded-full text-xs font-semibold hover:bg-lilac transition-all"
+        >
+          Sign In
+        </a>
+      </div>
+    );
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isLoggedIn) {
-      router.push("/login");
-      return;
-    }
-    if ((!body.trim() && !imagePreview) || isPending) return;
+    if (!body.trim() && !imagePreview) return;
+
     setError(null);
 
     startTransition(async () => {
       try {
-        await createPost(body, undefined, imagePreview, imageName);
+        let uploadedUrl: string | undefined;
+
+        if (imagePreview) {
+          const res = await fetch("/api/community/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              dataUrl: imagePreview,
+              filename: imageName || "upload.jpg",
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.url) {
+            throw new Error(data.error || "Failed to upload image");
+          }
+          uploadedUrl = data.url;
+        }
+
+        await createPost(
+          body.trim(),
+          undefined,
+          uploadedUrl,
+          imageName
+        );
+
         setBody("");
-        handleRemoveImage();
+        setImagePreview(null);
+        setImageName(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -101,7 +118,9 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <form id="composer" onSubmit={handleSubmit} className="flex gap-3.5 px-6 py-5 border-b border-border">
       <div className="w-11 h-11 shrink-0 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold" aria-hidden="true">
-        ✦
+        <svg className="w-5 h-5 text-purple-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
       </div>
       <div className="flex-1 min-w-0">
         <label htmlFor="composer-input" className="sr-only">
@@ -132,9 +151,9 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
               type="button"
               onClick={handleRemoveImage}
               title="Remove image"
-              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-ink/75 hover:bg-ink text-white flex items-center justify-center text-xs font-bold shadow-md transition-colors"
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-ink/75 hover:bg-ink text-white flex items-center justify-center shadow-md transition-colors cursor-pointer"
             >
-              ✕
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         )}

@@ -109,40 +109,9 @@ export default async function CommunityProfilePage({
         }}
       />
       <SiteHeader />
-      <div className="bg-cream text-ink min-h-screen grid lg:grid-cols-[250px_1fr_320px] max-w-[1400px] mx-auto">
-        <aside className="hidden lg:flex sticky top-0 h-screen p-7 flex-col justify-between border-r border-border">
-          <div>
-            <div className="font-heading text-[22px] text-gold px-3 mb-6">Lilac Drawer</div>
-            <nav className="flex flex-col gap-1.5">
-              {communityNavItems.map((item) => {
-                const isProfileLink = item.label === "Profile";
-                const isActive = isProfileLink && isOwnProfile;
-                return (
-                  <Link
-                    key={item.label}
-                    href={isProfileLink && session?.user ? `/community/${session.user.handle}` : item.href}
-                    className={`flex items-center gap-4 px-3 py-3 rounded-full text-[17px] font-medium ${
-                      isActive ? "text-purple-deep" : "text-tan-dark hover:bg-mauve-50"
-                    }`}
-                  >
-                    <span className="w-6 h-6 flex items-center justify-center" aria-hidden="true">
-                      {item.icon}
-                    </span>
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          <Link
-            href="/community"
-            className="block text-center bg-lilac text-white rounded-full py-3.5 font-semibold shadow-[0_2px_10px_rgba(201,163,198,0.4)]"
-          >
-            Post
-          </Link>
-        </aside>
-
-        <main className="border-r border-border min-h-screen">
+      <div className="bg-cream text-ink min-h-screen">
+        <div className="grid lg:grid-cols-[1fr_340px] gap-8 px-6 md:px-12 py-6 max-w-[1400px] mx-auto">
+          <main className="min-w-0 border-r-0 lg:border-r border-border lg:pr-8 min-h-screen">
           <div className="sticky top-0 bg-cream/90 backdrop-blur px-6 py-3.5 border-b border-border z-10 flex items-center gap-5">
             <Link href="/community" aria-label="Back to community feed" className="text-lg text-ink">
               ←
@@ -271,6 +240,7 @@ export default async function CommunityProfilePage({
             </div>
           )}
         </aside>
+        </div>
       </div>
     </>
   );

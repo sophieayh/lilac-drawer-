@@ -5,11 +5,11 @@ import Link from "next/link";
 import ImageSlot from "@/components/ImageSlot";
 
 const categories = [
-  { id: "clothing", icon: "👗", label: "Clothing" },
-  { id: "accessories", icon: "💍", label: "Accessories" },
-  { id: "shoes", icon: "👠", label: "Shoes" },
-  { id: "bags", icon: "👜", label: "Bags" },
-  { id: "beauty", icon: "💄", label: "Beauty" },
+  { id: "clothing", label: "Clothing" },
+  { id: "accessories", label: "Accessories" },
+  { id: "shoes", label: "Shoes" },
+  { id: "bags", label: "Bags" },
+  { id: "beauty", label: "Beauty" },
 ];
 
 const boardItems = [
@@ -41,12 +41,12 @@ export default function FashionCollageBoard() {
             key={cat.id}
             type="button"
             onClick={() => setActiveCategory(cat.id)}
-            className="w-16 px-1 py-3 rounded-2xl flex flex-col items-center gap-1.5"
-            style={{ background: activeCategory === cat.id ? "#f6eff8" : "transparent" }}
+            className={`w-16 px-1 py-2.5 rounded-xl flex flex-col items-center justify-center transition-colors ${
+              activeCategory === cat.id ? "bg-mauve-100 text-purple-deep font-bold" : "hover:bg-mauve-50 text-tan-dark"
+            }`}
             aria-pressed={activeCategory === cat.id}
           >
-            <span className="text-xl" aria-hidden="true">{cat.icon}</span>
-            <span className="text-[10px] font-medium text-tan-dark text-center leading-tight">{cat.label}</span>
+            <span className="text-[11px] font-semibold text-center leading-tight">{cat.label}</span>
           </button>
         ))}
       </aside>
@@ -85,7 +85,7 @@ export default function FashionCollageBoard() {
         </div>
 
         {/* canvas */}
-        <div className="flex-1 min-h-0 flex items-center justify-center px-6 md:px-8 py-5 bg-gradient-to-br from-cream to-pink-200 relative">
+        <div className="flex-1 min-h-0 flex items-center justify-center px-6 md:px-8 py-5 bg-mauve-50 relative">
           <div className="relative w-full max-w-[920px] h-full max-h-[760px] bg-white rounded-[20px] shadow-[0_20px_50px_rgba(80,60,70,0.1)] overflow-hidden">
             {boardItems.map((item) => (
               <ImageSlot
@@ -100,10 +100,14 @@ export default function FashionCollageBoard() {
             ))}
 
             <div className="absolute bottom-3.5 right-3.5 flex gap-2 bg-white rounded-full p-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.08)]">
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-[15px]">−</span>
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-[15px]">+</span>
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm">↻</span>
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm">☰</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center text-[15px] cursor-pointer hover:bg-mauve-50">−</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center text-[15px] cursor-pointer hover:bg-mauve-50">+</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer hover:bg-mauve-50">↻</span>
+              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer hover:bg-mauve-50">
+                <svg className="w-4 h-4 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              </span>
             </div>
             <div className="absolute top-3.5 left-3.5 bg-white rounded-full px-3.5 py-1.5 text-[11px] font-semibold text-tan shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
               Drag pieces to arrange

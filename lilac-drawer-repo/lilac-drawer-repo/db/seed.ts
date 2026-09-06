@@ -347,12 +347,12 @@ The tradeoff: a load that took ninety seconds in the machine now took roughly fi
     { label: "Storage Bins", section: "sidebar", sortOrder: 7 },
     { label: "Cleaning Tools", section: "sidebar", sortOrder: 8 },
 
-    { label: "Fashion", icon: "👗", colorHex: "#f6eff8", section: "explore", sortOrder: 1 },
-    { label: "Beauty", icon: "🧴", colorHex: "#f3c6d6", section: "explore", sortOrder: 2 },
-    { label: "Electronics", icon: "🎧", colorHex: "#efe3f2", section: "explore", sortOrder: 3 },
-    { label: "Home", icon: "🛋", colorHex: "#e8f0e4", section: "explore", sortOrder: 4 },
-    { label: "Sports", icon: "👟", colorHex: "#f6eff8", section: "explore", sortOrder: 5 },
-    { label: "More", icon: "☰", colorHex: "#f3e6d0", section: "explore", sortOrder: 6 },
+    { label: "Fashion", colorHex: "#f6eff8", section: "explore", sortOrder: 1 },
+    { label: "Beauty", colorHex: "#f3c6d6", section: "explore", sortOrder: 2 },
+    { label: "Electronics", colorHex: "#efe3f2", section: "explore", sortOrder: 3 },
+    { label: "Home", colorHex: "#e8f0e4", section: "explore", sortOrder: 4 },
+    { label: "Sports", colorHex: "#f6eff8", section: "explore", sortOrder: 5 },
+    { label: "More", colorHex: "#f3e6d0", section: "explore", sortOrder: 6 },
   ]);
 
   // ---------------- demo user accounts ----------------

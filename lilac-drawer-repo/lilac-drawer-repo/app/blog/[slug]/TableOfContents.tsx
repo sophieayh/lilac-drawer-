@@ -156,10 +156,10 @@ export default function TableOfContents({ entries }: { entries: TocEntry[] }) {
           </div>
 
           {/* Train Carriage Bar */}
-          <div className="w-[5px] flex-1 bg-gradient-to-b from-rose via-purple to-purple-deep rounded-full shadow-[0_2px_8px_rgba(90,47,69,0.3)] my-0.5" />
+          <div className="w-[5px] flex-1 bg-rose rounded-full shadow-[0_2px_8px_rgba(212,112,143,0.3)] my-0.5" />
 
           {/* Train Caboose */}
-          <div className="w-2.5 h-2.5 -mb-0.5 rounded-full bg-purple-deep ring-2 ring-white shadow-xs shrink-0" />
+          <div className="w-2.5 h-2.5 -mb-0.5 rounded-full bg-rose ring-2 ring-white shadow-xs shrink-0" />
         </div>
 
         {/* Navigation Section Links */}

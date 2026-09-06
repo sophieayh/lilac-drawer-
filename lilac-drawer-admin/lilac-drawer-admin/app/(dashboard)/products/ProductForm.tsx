@@ -172,7 +172,7 @@ export default function ProductForm({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-purple-deep flex items-center gap-2">
-              <span>🛒</span> 2. Multi-Store Pricing & Affiliate Links (Key - Value)
+              2. Multi-Store Pricing & Affiliate Links (Key - Value)
             </h2>
             <p className="text-xs text-tan-dark mt-0.5">
               Add multiple retailer links and prices (Amazon, Walmart, Best Buy, etc.) so visitors can compare stores.
@@ -259,7 +259,7 @@ export default function ProductForm({
                   className="text-tan-dark hover:text-red-500 text-sm flex items-center justify-center p-1 rounded hover:bg-red-50 cursor-pointer"
                   title="Remove store"
                 >
-                  ✕
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             ))}
@@ -428,7 +428,7 @@ export default function ProductForm({
             5. Site Placements
           </h2>
           <a href="/placements?tab=products" className="text-xs font-semibold text-rose hover:underline">
-            📌 Visual Placements Manager →
+            Visual Placements Manager &rarr;
           </a>
         </div>
 

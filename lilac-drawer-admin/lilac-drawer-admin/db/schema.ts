@@ -228,3 +228,64 @@ export const pageViews = pgTable("page_views", {
   path: text("path").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+/**
+ * Advertising banners & sponsored placements managed from the Admin Dashboard.
+ * Powers the community infinite horizontal auto-scrolling ad banner and potential site-wide placements.
+ */
+export const banners = pgTable("banners", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  imageUrl: text("image_url").notNull(),
+  imageLabel: text("image_label").notNull().default("Advertisement"),
+  linkUrl: text("link_url").notNull(),
+  placement: varchar("placement", { length: 60 }).notNull().default("community_banner"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  badgeText: varchar("badge_text", { length: 40 }).default("Sponsored"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Editorial "The Yearly Wrap" configuration on the blog page, fully editable from the Admin Dashboard.
+ */
+export const yearlyWrap = pgTable("yearly_wrap", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull().default("The Yearly Wrap"),
+  subtitle: text("subtitle").notNull().default("2026 Shopping Wrapped"),
+  isActive: boolean("is_active").notNull().default(true),
+
+  // 1. Reviewer Age
+  reviewerAge: varchar("reviewer_age", { length: 20 }).notNull().default("3"),
+  reviewerAgeLabel: text("reviewer_age_label").notNull().default("MY REVIEWER AGE"),
+  reviewerAgeText: text("reviewer_age_text").notNull().default("Three years testing products so readers don't have to guess."),
+
+  // 2. Most Reviewed Product
+  mostReviewedTitle: text("most_reviewed_title").notNull().default("Most Reviewed Product"),
+  mostReviewedImageUrl: text("most_reviewed_image_url"),
+  mostReviewedImageLabel: text("most_reviewed_image_label").default("Most reviewed product photo"),
+  mostReviewedText: text("most_reviewed_text").notNull().default("The garment steamer topped reader clicks all year, reviewed and updated four times."),
+  mostReviewedLinkUrl: text("most_reviewed_link_url"),
+
+  // 3. Listening Report
+  listeningReportLabel: text("listening_report_label").notNull().default("LISTENING REPORT"),
+  listeningReportText: text("listening_report_text").notNull().default("Readers spent the most time this year on care guides, followed by top-10 lists and jewelry storage."),
+  listeningReportDate: text("listening_report_date").notNull().default("Aug 2, 2026"),
+
+  // 4. Top Pick
+  topPickLabel: text("top_pick_label").notNull().default("TOP PICK 2026"),
+  topPickTitle: text("top_pick_title").notNull().default("Steamfast SF-717"),
+  topPickClicks: text("top_pick_clicks").notNull().default("4,120 clicks"),
+  topPickImageUrl: text("top_pick_image_url"),
+  topPickLinkUrl: text("top_pick_link_url"),
+
+  // 5. Top Categories
+  topCategoriesLabel: text("top_categories_label").notNull().default("TOP CATEGORIES THIS YEAR"),
+  topCategories: text("top_categories").notNull().default("CLOTHING CARE\nACCESSORIES\nWARDROBE STORAGE\nJEWELRY & WATCHES\nBAGS"),
+
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+

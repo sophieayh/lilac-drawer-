@@ -13,13 +13,15 @@ import {
   getNewArrivals,
   getBestSellers,
   getDealsBlogPreview,
+  getDealsHeroPost,
   formatPriceFixed,
+  calculateDiscountPercent,
   formatDate,
 } from "@/db/queries";
 
-const title = "Today's Deals — Tested Clothing Care & Accessories";
+const title = "Today's Deals — Tested Beauty & Lifestyle Essentials";
 const description =
-  "Live deals on garment steamers, cedar wood blocks, jewelry boxes, and reader-favorite accessories — all tested and ranked by Lilac Drawer.";
+  "Live verified deals on tested beauty, skincare, and lifestyle essentials — all tested and ranked with authentic savings by Lilac Drawer.";
 
 // ISR: revalidate DB-backed content every 60s instead of only at build/deploy time.
 export const revalidate = 60;
@@ -35,6 +37,7 @@ export default async function DealsPage() {
     newArrivals,
     bestSellers,
     latestBlogDeals,
+    heroPost,
   ] = await Promise.all([
     getSidebarCategories(),
     getFeatureProducts(),
@@ -43,6 +46,7 @@ export default async function DealsPage() {
     getNewArrivals(),
     getBestSellers(),
     getDealsBlogPreview(),
+    getDealsHeroPost(),
   ]);
 
   return (
@@ -99,63 +103,146 @@ export default async function DealsPage() {
             </div>
 
             <h3 className="font-heading text-base text-purple mb-3.5">Feature Products</h3>
-            {featureProducts.map((fp) => (
-              <Link key={fp.id} href={`/deals/${fp.slug}`} className="flex gap-3 py-2.5 border-b border-border items-center card-hover group block">
-                <ImageSlot label={fp.imageLabel} imageUrl={fp.imageUrl} className="w-12 h-12 shrink-0" shape="rounded" radius={8} tone="mauve" />
-                <div>
-                  <div className="text-xs font-medium leading-snug group-hover:text-rose-light transition-colors">{fp.name}</div>
-                  <div className="text-xs text-rose-light font-bold mt-0.5">{formatPriceFixed(fp.priceCents)}</div>
-                </div>
-              </Link>
-            ))}
+            {featureProducts.map((fp) => {
+              const discount = fp.discountPercent ?? calculateDiscountPercent(fp.priceCents, fp.compareAtPriceCents);
+              const savedCents = fp.compareAtPriceCents && fp.compareAtPriceCents > fp.priceCents ? fp.compareAtPriceCents - fp.priceCents : 0;
+              return (
+                <Link key={fp.id} href={`/deals/${fp.slug}`} className="flex gap-3 py-2.5 border-b border-border items-center card-hover group block">
+                  <ImageSlot label={fp.imageLabel} imageUrl={fp.imageUrl} className="w-12 h-12 shrink-0" shape="rounded" radius={8} tone="mauve" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium leading-snug truncate group-hover:text-rose-light transition-colors">{fp.name}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-rose-light font-bold">{formatPriceFixed(fp.priceCents)}</span>
+                      {fp.compareAtPriceCents ? (
+                        <span className="line-through text-lilac/50 text-[11px]">{formatPriceFixed(fp.compareAtPriceCents)}</span>
+                      ) : null}
+                      {discount ? (
+                        <span className="text-[10px] font-bold text-rose-light bg-rose-light/10 px-1.5 py-0.5 rounded">-{discount}%</span>
+                      ) : null}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
 
             <h3 className="font-heading text-base text-purple mt-6 mb-3.5">Sale Off</h3>
-            {saleOff.map((so) => (
-              <Link key={so.id} href={`/deals/${so.slug}`} className="flex gap-3 py-2.5 border-b border-border items-center card-hover group block">
-                <ImageSlot label={so.imageLabel} imageUrl={so.imageUrl} className="w-12 h-12 shrink-0" shape="rounded" radius={8} tone="pink" />
-                <div>
-                  <div className="text-xs font-medium leading-snug group-hover:text-rose-light transition-colors">{so.name}</div>
-                  <div className="text-xs text-rose-light font-bold mt-0.5">
-                    {formatPriceFixed(so.priceCents)}{" "}
-                    {so.compareAtPriceCents ? (
-                      <span className="line-through text-lilac/50">{formatPriceFixed(so.compareAtPriceCents)}</span>
-                    ) : null}
+            {saleOff.map((so) => {
+              const discount = so.discountPercent ?? calculateDiscountPercent(so.priceCents, so.compareAtPriceCents);
+              return (
+                <Link key={so.id} href={`/deals/${so.slug}`} className="flex gap-3 py-2.5 border-b border-border items-center card-hover group block">
+                  <ImageSlot label={so.imageLabel} imageUrl={so.imageUrl} className="w-12 h-12 shrink-0" shape="rounded" radius={8} tone="pink" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium leading-snug truncate group-hover:text-rose-light transition-colors">{so.name}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-rose-light font-bold">{formatPriceFixed(so.priceCents)}</span>
+                      {so.compareAtPriceCents ? (
+                        <span className="line-through text-lilac/50 text-[11px]">{formatPriceFixed(so.compareAtPriceCents)}</span>
+                      ) : null}
+                      {discount ? (
+                        <span className="text-[10px] font-bold text-rose-light bg-rose-light/10 px-1.5 py-0.5 rounded">-{discount}%</span>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </aside>
 
           <div>
-            {/* hero banner */}
-            <div className="flex items-center bg-mauve-50 rounded-2xl px-6 md:px-10 py-8 mb-6 gap-6 flex-wrap">
-              <div className="flex-1 min-w-[240px]">
-                <h1 className="font-script text-[44px] text-rose-light mb-2.5">Steamer Season</h1>
-                <p className="text-sm text-tan-dark max-w-[320px] mb-4.5">
-                  Everything you need to keep clothes fresh, tested and ranked this month.
-                </p>
-                <Link href="#today-deals" className="bg-purple text-white px-6 py-2.5 rounded-full text-[13.5px] font-semibold">
-                  Shop Now →
-                </Link>
-              </div>
-              <ImageSlot label="Steamer season hero photo" className="w-[280px] h-[200px]" shape="rounded" radius={16} tone="pink" />
-            </div>
-
-            {/* feature strip */}
-            <div className="grid sm:grid-cols-3 gap-4 mb-7">
-              {[
-                { label: "Care Basics", tone: "mauve" as const },
-                { label: "Storage", tone: "pink" as const },
-                { label: "Accessories", tone: "purple" as const },
-              ].map((f) => (
-                <div key={f.label} className="relative rounded-xl overflow-hidden">
-                  <ImageSlot label={`${f.label} category photo`} className="w-full h-[130px]" tone={f.tone} />
-                  <div className="absolute inset-0 bg-purple-deep/35 flex items-center justify-center">
-                    <span className="text-white font-heading text-[15px] font-bold tracking-wide uppercase">
-                      {f.label}
-                    </span>
+            {/* hero banner: dynamic featured deal article */}
+            {heroPost ? (
+              <div className="bg-mauve-50 rounded-2xl p-6 md:p-8 mb-6 border border-border flex flex-col md:flex-row items-center gap-6 justify-between">
+                <div className="flex-1 min-w-[240px]">
+                  <div className="inline-flex items-center gap-1.5 bg-rose-light/15 text-rose-light text-[11px] font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+                    <span>Featured Deal Guide</span>
+                  </div>
+                  <Link href={`/blog/${heroPost.slug}`} className="group block">
+                    <h1 className="font-heading text-2xl md:text-3xl text-purple-deep font-bold mb-2.5 leading-snug group-hover:text-rose-light transition-colors">
+                      {heroPost.title}
+                    </h1>
+                  </Link>
+                  <p className="text-xs md:text-sm text-tan-dark max-w-[460px] mb-4.5 leading-relaxed line-clamp-3">
+                    {heroPost.excerpt}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Link
+                      href={`/blog/${heroPost.slug}`}
+                      className="bg-purple hover:bg-purple-deep text-white px-5 py-2.5 rounded-full text-[13px] font-semibold transition-colors inline-flex items-center gap-1.5 shadow-xs"
+                    >
+                      <span>Read Guide & Shop Deals</span>
+                      <span>→</span>
+                    </Link>
                   </div>
                 </div>
+                <Link href={`/blog/${heroPost.slug}`} className="shrink-0 w-full md:w-[280px] lg:w-[320px] block group overflow-hidden rounded-xl border border-border">
+                  <ImageSlot
+                    label={heroPost.imageLabel || heroPost.title}
+                    imageUrl={heroPost.imageUrl}
+                    className="w-full h-[180px] md:h-[190px] group-hover:scale-105 transition-transform duration-300"
+                    shape="rounded"
+                    radius={12}
+                    tone="pink"
+                  />
+                </Link>
+              </div>
+            ) : null}
+
+            {/* feature category strip: categories with real active discounts */}
+            <div className="grid sm:grid-cols-3 gap-4 mb-7">
+              {[
+                {
+                  label: "Makeup & Complexion",
+                  sublabel: "Foundations, Powders & Concealers",
+                  discount: "Up to 21% OFF",
+                  href: "/category/beauty-makeup",
+                  imageLabel: "Makeup and cosmetics flatlay",
+                  imageUrl: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=80",
+                  tone: "mauve" as const,
+                },
+                {
+                  label: "Eye & Lip Care",
+                  sublabel: "Volumizing Mascaras & Balms",
+                  discount: "Up to 17% OFF",
+                  href: "/category/beauty-makeup",
+                  imageLabel: "Lip balms and eye makeup beauty products",
+                  imageUrl: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=800&auto=format&fit=crop&q=80",
+                  tone: "pink" as const,
+                },
+                {
+                  label: "Brushes & Tools",
+                  sublabel: "Blending Sponges & 5-Piece Sets",
+                  discount: "Up to 20% OFF",
+                  href: "/category/beauty-makeup",
+                  imageLabel: "Professional makeup brushes and beauty sponges",
+                  imageUrl: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=800&auto=format&fit=crop&q=80",
+                  tone: "purple" as const,
+                },
+              ].map((cat) => (
+                <Link
+                  key={cat.label}
+                  href={cat.href}
+                  className="relative rounded-xl overflow-hidden group block border border-border shadow-xs hover:border-rose-light transition-colors"
+                >
+                  <div className="relative h-[130px] w-full overflow-hidden">
+                    <ImageSlot
+                      label={cat.imageLabel}
+                      imageUrl={cat.imageUrl}
+                      className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+                      tone={cat.tone}
+                    />
+                    <div className="absolute inset-0 bg-purple-deep/45 group-hover:bg-purple-deep/35 transition-colors flex flex-col justify-end p-3.5">
+                      <span className="inline-block bg-rose-light text-white text-[10px] font-bold px-2 py-0.5 rounded w-fit mb-1 shadow-xs">
+                        {cat.discount}
+                      </span>
+                      <span className="text-white font-heading text-[14px] font-bold tracking-wide">
+                        {cat.label}
+                      </span>
+                      <span className="text-white/80 text-[11px] truncate">
+                        {cat.sublabel}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
 
@@ -163,52 +250,79 @@ export default async function DealsPage() {
             <div id="today-deals" className="border-[1.5px] border-rose-light rounded-2xl p-6 mb-7 scroll-mt-6">
               <h2 className="text-center font-heading text-xl text-purple mb-5">Today Deals</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4.5">
-                {todayDeals.map((t) => (
-                  <Link key={t.id} href={`/deals/${t.slug}`} className="card-hover block group">
-                    <div className="relative">
-                      <span className="absolute top-1.5 left-1.5 bg-lilac-deep text-white text-[10px] font-bold px-2 py-0.5 rounded z-10">
-                        NEW
-                      </span>
-                      <ImageSlot label={t.imageLabel} imageUrl={t.imageUrl} className="w-full h-[110px]" shape="rounded" radius={10} tone="mauve" />
-                    </div>
-                    <div className="text-[12.5px] font-semibold mt-2.5 leading-snug group-hover:text-rose-light transition-colors">{t.name}</div>
-                    <div className="text-[12.5px] mt-1">
-                      <span className="text-rose-light font-bold">{formatPriceFixed(t.priceCents)}</span>{" "}
-                      {t.compareAtPriceCents ? (
-                        <span className="text-lilac/50 line-through">{formatPriceFixed(t.compareAtPriceCents)}</span>
+                {todayDeals.map((t) => {
+                  const discount = t.discountPercent ?? calculateDiscountPercent(t.priceCents, t.compareAtPriceCents);
+                  const savedCents = t.compareAtPriceCents && t.compareAtPriceCents > t.priceCents ? t.compareAtPriceCents - t.priceCents : 0;
+                  return (
+                    <Link key={t.id} href={`/deals/${t.slug}`} className="card-hover block group">
+                      <div className="relative">
+                        {discount ? (
+                          <span className="absolute top-2 left-2 bg-rose-light text-white text-[11px] font-bold px-2.5 py-0.5 rounded-md z-10 shadow-xs">
+                            -{discount}% OFF
+                          </span>
+                        ) : null}
+                        <ImageSlot label={t.imageLabel} imageUrl={t.imageUrl} className="w-full h-[120px]" shape="rounded" radius={10} tone="mauve" />
+                      </div>
+                      <div className="text-[12.5px] font-semibold mt-2.5 leading-snug line-clamp-2 group-hover:text-rose-light transition-colors">{t.name}</div>
+                      <div className="text-[12.5px] mt-1.5 flex items-baseline gap-1.5">
+                        <span className="text-rose-light font-bold">{formatPriceFixed(t.priceCents)}</span>
+                        {t.compareAtPriceCents ? (
+                          <span className="text-lilac/50 line-through text-xs">{formatPriceFixed(t.compareAtPriceCents)}</span>
+                        ) : null}
+                      </div>
+                      {savedCents > 0 ? (
+                        <div className="text-[11px] text-sage font-medium mt-0.5">
+                          Save {formatPriceFixed(savedCents)}
+                        </div>
                       ) : null}
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
             {/* new arrivals */}
             <h2 className="font-heading text-xl text-purple mb-4">New Arrivals</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-7 items-stretch">
-              <div className="relative rounded-xl overflow-hidden">
-                <ImageSlot label="New arrivals promo photo" className="w-full h-full min-h-[160px]" tone="pink" />
-                <div className="absolute top-2.5 left-2.5 bg-white text-rose-light font-script text-[22px] px-3 py-1.5 rounded-lg">
-                  Only $29
+              <div className="relative rounded-xl overflow-hidden bg-[#fae8ee] border border-pink-200 flex flex-col justify-center items-center p-5 text-center">
+                <div className="text-rose-light font-script text-[26px] leading-tight mb-1">
+                  Save up to 21%
                 </div>
+                <div className="text-xs text-tan-dark font-medium">Authentic Deals</div>
               </div>
-              {newArrivals.map((a) => (
-                <Link key={a.id} href={`/deals/${a.slug}`} className="card-hover block group">
-                  <div className="relative">
-                    <span className="absolute top-1.5 left-1.5 bg-lilac-deep text-white text-[10px] font-bold px-2 py-0.5 rounded z-10">
-                      NEW
-                    </span>
-                    <ImageSlot label={a.imageLabel} imageUrl={a.imageUrl} className="w-full h-[130px]" shape="rounded" radius={10} tone="mauve" />
-                  </div>
-                  <div className="text-[12.5px] font-semibold mt-2 group-hover:text-rose-light transition-colors">{a.name}</div>
-                  <div className="text-[12.5px] text-rose-light font-bold mt-1">{formatPriceFixed(a.priceCents)}</div>
-                </Link>
-              ))}
-              <div className="bg-gradient-to-br from-pink-200 to-lilac-deep rounded-xl flex flex-col items-center justify-center text-center p-5 text-white">
-                <div className="font-heading text-[17px] font-bold mb-2">Buy 3 Get 1 Free</div>
-                <div className="text-xs mb-3.5">Buy 3 of the same product</div>
-                <Link href="#today-deals" className="bg-white text-purple px-4.5 py-2 rounded-full text-[12.5px] font-bold">
-                  Shop Now
+              {newArrivals.map((a) => {
+                const discount = a.discountPercent ?? calculateDiscountPercent(a.priceCents, a.compareAtPriceCents);
+                const savedCents = a.compareAtPriceCents && a.compareAtPriceCents > a.priceCents ? a.compareAtPriceCents - a.priceCents : 0;
+                return (
+                  <Link key={a.id} href={`/deals/${a.slug}`} className="card-hover block group">
+                    <div className="relative">
+                      {discount ? (
+                        <span className="absolute top-2 left-2 bg-rose-light text-white text-[11px] font-bold px-2.5 py-0.5 rounded-md z-10 shadow-xs">
+                          -{discount}% OFF
+                        </span>
+                      ) : null}
+                      <ImageSlot label={a.imageLabel} imageUrl={a.imageUrl} className="w-full h-[130px]" shape="rounded" radius={10} tone="mauve" />
+                    </div>
+                    <div className="text-[12.5px] font-semibold mt-2 line-clamp-2 group-hover:text-rose-light transition-colors">{a.name}</div>
+                    <div className="text-[12.5px] mt-1.5 flex items-baseline gap-1.5">
+                      <span className="text-rose-light font-bold">{formatPriceFixed(a.priceCents)}</span>
+                      {a.compareAtPriceCents ? (
+                        <span className="text-lilac/50 line-through text-xs">{formatPriceFixed(a.compareAtPriceCents)}</span>
+                      ) : null}
+                    </div>
+                    {savedCents > 0 ? (
+                      <div className="text-[11px] text-sage font-medium mt-0.5">
+                        Save {formatPriceFixed(savedCents)}
+                      </div>
+                    ) : null}
+                  </Link>
+                );
+              })}
+              <div className="bg-purple-deep rounded-xl flex flex-col items-center justify-center text-center p-5 text-white">
+                <div className="font-heading text-[16px] font-bold mb-1">Editor Curated</div>
+                <div className="text-xs text-white/80 mb-3.5">Tested and ranked by our beauty team</div>
+                <Link href="#today-deals" className="bg-white text-purple hover:bg-cream px-4.5 py-2 rounded-full text-[12.5px] font-bold transition-colors">
+                  Shop Deals
                 </Link>
               </div>
             </div>
@@ -216,22 +330,38 @@ export default async function DealsPage() {
             {/* best sellers */}
             <h2 className="font-heading text-xl text-purple mb-4">Best Sellers</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-[#e8f0e4] to-[#c9dbb8] rounded-xl flex flex-col items-center justify-center text-center p-5">
-                <div className="font-script text-[28px] text-sage mb-1.5">Save 15%</div>
-                <div className="text-xs text-[#4a6a3a]">From $19.90</div>
+              <div className="bg-[#eef4ea] border border-[#c9dbb8] rounded-xl flex flex-col items-center justify-center text-center p-5">
+                <div className="font-script text-[26px] text-sage mb-1">Top Rated Deals</div>
+                <div className="text-xs text-[#4a6a3a] font-medium">Save up to 21% • From $8.00</div>
               </div>
-              {bestSellers.map((b) => (
-                <Link key={b.id} href={`/deals/${b.slug}`} className="card-hover block group">
-                  <div className="relative">
-                    <span className="absolute top-1.5 left-1.5 bg-lilac-deep text-white text-[10px] font-bold px-2 py-0.5 rounded z-10">
-                      NEW
-                    </span>
-                    <ImageSlot label={b.imageLabel} imageUrl={b.imageUrl} className="w-full h-[130px]" shape="rounded" radius={10} tone="mauve" />
-                  </div>
-                  <div className="text-[12.5px] font-semibold mt-2 group-hover:text-rose-light transition-colors">{b.name}</div>
-                  <div className="text-[12.5px] text-rose-light font-bold mt-1">{formatPriceFixed(b.priceCents)}</div>
-                </Link>
-              ))}
+              {bestSellers.map((b) => {
+                const discount = b.discountPercent ?? calculateDiscountPercent(b.priceCents, b.compareAtPriceCents);
+                const savedCents = b.compareAtPriceCents && b.compareAtPriceCents > b.priceCents ? b.compareAtPriceCents - b.priceCents : 0;
+                return (
+                  <Link key={b.id} href={`/deals/${b.slug}`} className="card-hover block group">
+                    <div className="relative">
+                      {discount ? (
+                        <span className="absolute top-2 left-2 bg-rose-light text-white text-[11px] font-bold px-2.5 py-0.5 rounded-md z-10 shadow-xs">
+                          -{discount}% OFF
+                        </span>
+                      ) : null}
+                      <ImageSlot label={b.imageLabel} imageUrl={b.imageUrl} className="w-full h-[130px]" shape="rounded" radius={10} tone="mauve" />
+                    </div>
+                    <div className="text-[12.5px] font-semibold mt-2 line-clamp-2 group-hover:text-rose-light transition-colors">{b.name}</div>
+                    <div className="text-[12.5px] mt-1.5 flex items-baseline gap-1.5">
+                      <span className="text-rose-light font-bold">{formatPriceFixed(b.priceCents)}</span>
+                      {b.compareAtPriceCents ? (
+                        <span className="text-lilac/50 line-through text-xs">{formatPriceFixed(b.compareAtPriceCents)}</span>
+                      ) : null}
+                    </div>
+                    {savedCents > 0 ? (
+                      <div className="text-[11px] text-sage font-medium mt-0.5">
+                        Save {formatPriceFixed(savedCents)}
+                      </div>
+                    ) : null}
+                  </Link>
+                );
+              })}
             </div>
 
             {/* latest blog */}
@@ -241,7 +371,7 @@ export default async function DealsPage() {
                 <Link key={lb.id} href={`/blog/${lb.slug}`} className="card-hover">
                   <ImageSlot label={lb.imageLabel} imageUrl={lb.imageUrl} className="w-full h-[140px]" shape="rounded" radius={10} tone="mauve" />
                   <div className="text-[13.5px] font-semibold mt-2.5 leading-snug">{lb.title}</div>
-                  <div className="text-[11px] text-gold mt-1.5">📅 {formatDate(lb.publishedAt)}</div>
+                  <div className="text-[11px] text-gold mt-1.5">{formatDate(lb.publishedAt)}</div>
                 </Link>
               ))}
             </div>
@@ -299,8 +429,10 @@ export default async function DealsPage() {
                   placeholder="Enter your email"
                   className="flex-1 border-none rounded-md px-3 py-2.5 text-[12.5px]"
                 />
-                <button type="submit" className="bg-rose-light text-white border-none rounded-md px-3.5 py-2.5 font-bold">
-                  ✉
+                <button type="submit" aria-label="Subscribe" className="bg-rose-light hover:bg-rose text-white border-none rounded-md px-3.5 py-2.5 font-bold transition-colors cursor-pointer flex items-center justify-center">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                  </svg>
                 </button>
               </form>
             </div>
