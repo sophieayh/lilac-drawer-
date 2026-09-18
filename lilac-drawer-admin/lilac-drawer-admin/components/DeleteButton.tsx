@@ -5,7 +5,7 @@ import { useTransition } from "react";
 export default function DeleteButton({
   action,
   confirmMessage,
-  label = "Delete",
+  label = "حذف",
 }: {
   action: () => Promise<void>;
   confirmMessage: string;
@@ -25,7 +25,7 @@ export default function DeleteButton({
       }}
       className="text-xs font-semibold text-rose hover:underline disabled:opacity-50"
     >
-      {isPending ? "Deleting…" : label}
+      {isPending ? "جاري الحذف…" : label}
     </button>
   );
 }

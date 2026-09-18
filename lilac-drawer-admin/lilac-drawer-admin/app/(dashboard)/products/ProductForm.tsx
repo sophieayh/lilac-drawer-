@@ -12,17 +12,17 @@ type SiteCategory = typeof siteCategories.$inferSelect;
 const STORE_SUGGESTIONS = ["Amazon", "Walmart", "Best Buy", "Target", "eBay", "B&H Photo", "Home Depot"];
 
 const PLACEMENT_FLAGS: { key: keyof Product; label: string }[] = [
-  { key: "isFeaturedHome", label: "Home — Featured" },
-  { key: "isTopPick", label: "Home — Top 10 Picks" },
-  { key: "isFeaturedDeals", label: "Deals — Featured" },
-  { key: "isSaleOff", label: "Deals — Sale" },
-  { key: "isTodayDeal", label: "Deals — Today's Deal" },
-  { key: "isNewArrival", label: "New Arrival" },
-  { key: "isBestSeller", label: "Best Seller" },
-  { key: "isExploreDeal", label: "Explore — Deal" },
-  { key: "isRecommended", label: "Explore — Recommended" },
-  { key: "isSaved", label: "Saved Picks" },
-  { key: "isSuggested", label: "Suggested" },
+  { key: "isFeaturedHome", label: "الرئيسية — مميز" },
+  { key: "isTopPick", label: "الرئيسية — أفضل 10 منتجات" },
+  { key: "isFeaturedDeals", label: "العروض — عروض مميزة" },
+  { key: "isSaleOff", label: "العروض — تخفيضات" },
+  { key: "isTodayDeal", label: "العروض — عرض اليوم" },
+  { key: "isNewArrival", label: "وصل حديثاً" },
+  { key: "isBestSeller", label: "الأكثر مبيعاً" },
+  { key: "isExploreDeal", label: "استكشف — شبكة العروض" },
+  { key: "isRecommended", label: "استكشف — موصى به" },
+  { key: "isSaved", label: "المختارات المحفوظة" },
+  { key: "isSuggested", label: "مقترحات المحرر" },
 ];
 
 function generateId(): string {
@@ -110,13 +110,13 @@ export default function ProductForm({
       {/* Basic Info */}
       <div className="bg-white border border-border rounded-xl p-5 flex flex-col gap-4">
         <h2 className="text-sm font-bold uppercase tracking-wider text-purple-deep border-b border-border pb-2.5">
-          1. Product Details
+          1. تفاصيل وبيانات المنتج
         </h2>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className={labelCls} htmlFor="name">
-              Product Name *
+              اسم المنتج *
             </label>
             <input
               id="name"
@@ -124,13 +124,13 @@ export default function ProductForm({
               required
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="e.g. TP-Link Archer BE230 Wi-Fi 7 Router"
+              placeholder="مثال: راوتر TP-Link Archer BE230 Wi-Fi 7"
               className={field}
             />
           </div>
           <div>
             <label className={labelCls} htmlFor="slug">
-              Slug *
+              المعرف في الرابط (Slug) *
             </label>
             <input
               id="slug"
@@ -148,19 +148,19 @@ export default function ProductForm({
             <CategorySelectField
               availableCategories={availableCategories}
               initialValue={product?.category}
-              label="Category *"
+              label="القسم *"
             />
           </div>
           <div className="sm:col-span-2">
             <label className={labelCls} htmlFor="subtitle">
-              Subtitle / Recommendation Tag{" "}
-              <span className="text-tan-dark font-normal">(e.g. &quot;Best Overall&quot;, &quot;Editor&apos;s Choice&quot;)</span>
+              العنوان الفرعي / وسم الترشيح{" "}
+              <span className="text-tan-dark font-normal">(مثل: &quot;الأفضل عموماً&quot;، &quot;اختيار المحرر&quot;)</span>
             </label>
             <input
               id="subtitle"
               name="subtitle"
               defaultValue={product?.subtitle ?? ""}
-              placeholder="e.g. Best Wi-Fi 7 Router for Most People"
+              placeholder="مثال: أفضل راوتر Wi-Fi 7 لمعظم المستخدمين"
               className={field}
             />
           </div>
@@ -172,15 +172,15 @@ export default function ProductForm({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-purple-deep flex items-center gap-2">
-              2. Multi-Store Pricing & Affiliate Links (Key - Value)
+              2. الأسعار والمتاجر المتعددة وروابط الأفلييت
             </h2>
             <p className="text-xs text-tan-dark mt-0.5">
-              Add multiple retailer links and prices (Amazon, Walmart, Best Buy, etc.) so visitors can compare stores.
+              أضف روابط وأسعار المتاجر المتعددة (أمازون، وول مارت، بيست باي، إلخ) لتمكين الزوار من مقارنة الأسعار.
             </p>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] text-tan-dark">Quick add:</span>
+            <span className="text-[11px] text-tan-dark">إضافة سريعة:</span>
             {STORE_SUGGESTIONS.slice(0, 3).map((st) => (
               <button
                 key={st}
@@ -196,28 +196,28 @@ export default function ProductForm({
               onClick={() => addStore("Store")}
               className="text-[11px] font-semibold text-rose border border-rose/30 px-2.5 py-1 rounded hover:bg-rose/10 cursor-pointer"
             >
-              + Other
+              + متجر آخر
             </button>
           </div>
         </div>
 
         {stores.length === 0 ? (
           <div className="text-center py-4 bg-mauve-50/40 rounded-lg border border-dashed border-border">
-            <p className="text-xs text-tan-dark mb-2">No store links added yet.</p>
+            <p className="text-xs text-tan-dark mb-2">لا توجد روابط متاجر مضافة بعد.</p>
             <button
               type="button"
               onClick={() => addStore("Amazon")}
               className="text-xs font-semibold bg-purple-deep text-white px-3 py-1.5 rounded-lg cursor-pointer"
             >
-              + Add First Store Link
+              + إضافة أول رابط متجر
             </button>
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
             <div className="grid grid-cols-[120px_100px_1fr_32px] gap-2 px-1 text-[10px] font-bold uppercase tracking-wider text-tan-dark">
-              <span>Store Name</span>
-              <span>Price ($)</span>
-              <span>Affiliate / Buy URL</span>
+              <span>اسم المتجر</span>
+              <span>السعر ($)</span>
+              <span>رابط الأفلييت / الشراء</span>
               <span></span>
             </div>
 
@@ -231,7 +231,7 @@ export default function ProductForm({
                     type="text"
                     value={st.storeName}
                     onChange={(e) => updateStore(idx, "storeName", e.target.value)}
-                    placeholder="e.g. Amazon"
+                    placeholder="مثال: Amazon"
                     className={fieldSm}
                   />
                 </div>
@@ -257,7 +257,7 @@ export default function ProductForm({
                   type="button"
                   onClick={() => removeStore(idx)}
                   className="text-tan-dark hover:text-red-500 text-sm flex items-center justify-center p-1 rounded hover:bg-red-50 cursor-pointer"
-                  title="Remove store"
+                  title="إزالة المتجر"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -269,7 +269,7 @@ export default function ProductForm({
         {/* Primary single affiliate url fallback */}
         <div className="pt-2 border-t border-border/60">
           <label className={labelCls} htmlFor="affiliateUrl">
-            Primary Affiliate Link <span className="text-tan-dark font-normal">(auto-uses first store if left blank)</span>
+            رابط الأفلييت الرئيسي <span className="text-tan-dark font-normal">(يتم استخدام أول متجر تلقائياً إذا تُرك فارغاً)</span>
           </label>
           <input
             id="affiliateUrl"
@@ -285,13 +285,13 @@ export default function ProductForm({
       {/* Pricing & Stock Details */}
       <div className="bg-white border border-border rounded-xl p-5 flex flex-col gap-4">
         <h2 className="text-sm font-bold uppercase tracking-wider text-purple-deep border-b border-border pb-2.5">
-          3. Base Pricing & Ranking
+          3. السعر الأساسي والترتيب
         </h2>
 
         <div className="grid sm:grid-cols-3 gap-4">
           <div>
             <label className={labelCls} htmlFor="price">
-              Display Price (USD) *
+              سعر العرض (USD) *
             </label>
             <input
               id="price"
@@ -308,7 +308,7 @@ export default function ProductForm({
           </div>
           <div>
             <label className={labelCls} htmlFor="compareAtPrice">
-              Compare-at price (Was)
+              السعر قبل الخصم (السابق)
             </label>
             <input
               id="compareAtPrice"
@@ -327,7 +327,7 @@ export default function ProductForm({
           </div>
           <div>
             <label className={labelCls} htmlFor="discountPercent">
-              Discount %
+              نسبة الخصم %
             </label>
             <input
               id="discountPercent"
@@ -342,7 +342,7 @@ export default function ProductForm({
           </div>
           <div>
             <label className={labelCls} htmlFor="rank">
-              Top 10 Rank #
+              الترتيب في أفضل 10 (#)
             </label>
             <input
               id="rank"
@@ -356,12 +356,12 @@ export default function ProductForm({
           </div>
           <div>
             <label className={labelCls} htmlFor="badge">
-              Badge
+              الشارة
             </label>
             <input
               id="badge"
               name="badge"
-              placeholder="NEW, HOT, BEST VALUE…"
+              placeholder="جديد، رائج، أفضل قيمة…"
               defaultValue={product?.badge ?? ""}
               className={field}
             />
@@ -375,20 +375,20 @@ export default function ProductForm({
               className="size-4 rounded text-lilac cursor-pointer"
             />
             <label htmlFor="inStock" className="text-sm font-semibold text-purple-deep cursor-pointer">
-              In stock
+              متوفر في المخزون
             </label>
           </div>
           <div className="sm:col-span-3">
             <label className={labelCls} htmlFor="rankNote">
-              Editor Testing Verdict / Rank Note{" "}
-              <span className="text-tan-dark font-normal">(optional)</span>
+              تقييم وملاحظات المحرر{" "}
+              <span className="text-tan-dark font-normal">(اختياري)</span>
             </label>
             <textarea
               id="rankNote"
               name="rankNote"
               rows={2}
               defaultValue={product?.rankNote ?? ""}
-              placeholder="Our testing notes: fast speeds, great range, easy setup..."
+              placeholder="ملاحظات تجربة واختبار المنتج: سرعة عالية، تغطية ممتازة، إعداد سهل..."
               className={field}
             />
           </div>
@@ -398,24 +398,24 @@ export default function ProductForm({
       {/* Photo & Alt text */}
       <div className="bg-white border border-border rounded-xl p-5 flex flex-col gap-4">
         <h2 className="text-sm font-bold uppercase tracking-wider text-purple-deep border-b border-border pb-2.5">
-          4. Product Photo
+          4. صورة المنتج
         </h2>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls} htmlFor="imageLabel">
-              Image Alt Text / Label
+              النص البديل للصورة
             </label>
             <input
               id="imageLabel"
               name="imageLabel"
               defaultValue={product?.imageLabel ?? ""}
-              placeholder="e.g. TP-Link Archer BE230 on desk"
+              placeholder="مثال: راوتر TP-Link Archer BE230 على المكتب"
               className={field}
             />
           </div>
           <div>
-            <label className={labelCls}>Photo</label>
+            <label className={labelCls}>الصورة</label>
             <ImageUploadField name="imageUrl" defaultValue={product?.imageUrl} kind="products" />
           </div>
         </div>
@@ -425,10 +425,10 @@ export default function ProductForm({
       <div className="bg-white border border-border rounded-xl p-5 flex flex-col gap-4">
         <div className="flex items-center justify-between border-b border-border pb-2.5">
           <h2 className="text-sm font-bold uppercase tracking-wider text-purple-deep">
-            5. Site Placements
+            5. أماكن العرض وتنسيق الموقع
           </h2>
           <a href="/placements?tab=products" className="text-xs font-semibold text-rose hover:underline">
-            Visual Placements Manager &rarr;
+            مدير أماكن العرض المرئي &larr;
           </a>
         </div>
 
@@ -455,13 +455,13 @@ export default function ProductForm({
           type="submit"
           className="bg-lilac hover:bg-lilac/90 text-white rounded-full py-3 px-8 font-semibold text-sm transition-colors shadow-sm cursor-pointer"
         >
-          {product ? "Save changes" : "Add product"}
+          {product ? "حفظ التغييرات" : "إضافة المنتج"}
         </button>
         <a
           href="/products"
           className="text-sm font-semibold text-tan-dark hover:text-purple-deep"
         >
-          Cancel
+          إلغاء
         </a>
       </div>
     </form>

@@ -248,7 +248,16 @@ export default async function DealsPage() {
 
             {/* today's deals */}
             <div id="today-deals" className="border-[1.5px] border-rose-light rounded-2xl p-6 mb-7 scroll-mt-6">
-              <h2 className="text-center font-heading text-xl text-purple mb-5">Today Deals</h2>
+              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                <h2 className="font-heading text-xl text-purple">Today Deals</h2>
+                <Link
+                  href="/deals/today-deals"
+                  className="text-xs sm:text-sm font-bold text-rose hover:text-rose-light transition-colors inline-flex items-center gap-1 group"
+                >
+                  <span>View All Today Deals</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </Link>
+              </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4.5">
                 {todayDeals.map((t) => {
                   const discount = t.discountPercent ?? calculateDiscountPercent(t.priceCents, t.compareAtPriceCents);
@@ -282,7 +291,16 @@ export default async function DealsPage() {
             </div>
 
             {/* new arrivals */}
-            <h2 className="font-heading text-xl text-purple mb-4">New Arrivals</h2>
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <h2 className="font-heading text-xl text-purple">New Arrivals</h2>
+              <Link
+                href="/deals/new-arrivals"
+                className="text-xs sm:text-sm font-bold text-rose hover:text-rose-light transition-colors inline-flex items-center gap-1 group"
+              >
+                <span>View All New Arrivals</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-7 items-stretch">
               <div className="relative rounded-xl overflow-hidden bg-[#fae8ee] border border-pink-200 flex flex-col justify-center items-center p-5 text-center">
                 <div className="text-rose-light font-script text-[26px] leading-tight mb-1">
@@ -321,14 +339,23 @@ export default async function DealsPage() {
               <div className="bg-purple-deep rounded-xl flex flex-col items-center justify-center text-center p-5 text-white">
                 <div className="font-heading text-[16px] font-bold mb-1">Editor Curated</div>
                 <div className="text-xs text-white/80 mb-3.5">Tested and ranked by our beauty team</div>
-                <Link href="#today-deals" className="bg-white text-purple hover:bg-cream px-4.5 py-2 rounded-full text-[12.5px] font-bold transition-colors">
+                <Link href="/deals/new-arrivals" className="bg-white text-purple hover:bg-cream px-4.5 py-2 rounded-full text-[12.5px] font-bold transition-colors">
                   Shop Deals
                 </Link>
               </div>
             </div>
 
             {/* best sellers */}
-            <h2 className="font-heading text-xl text-purple mb-4">Best Sellers</h2>
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <h2 className="font-heading text-xl text-purple">Best Sellers</h2>
+              <Link
+                href="/deals/best-sellers"
+                className="text-xs sm:text-sm font-bold text-rose hover:text-rose-light transition-colors inline-flex items-center gap-1 group"
+              >
+                <span>View All Best Sellers</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-[#eef4ea] border border-[#c9dbb8] rounded-xl flex flex-col items-center justify-center text-center p-5">
                 <div className="font-script text-[26px] text-sage mb-1">Top Rated Deals</div>
@@ -365,7 +392,16 @@ export default async function DealsPage() {
             </div>
 
             {/* latest blog */}
-            <h2 className="font-heading text-xl text-purple mt-7 mb-4">Latest Blog</h2>
+            <div className="flex items-center justify-between mt-7 mb-4 flex-wrap gap-2">
+              <h2 className="font-heading text-xl text-purple">Latest Blog</h2>
+              <Link
+                href="/deals/blog"
+                className="text-xs sm:text-sm font-bold text-rose hover:text-rose-light transition-colors inline-flex items-center gap-1 group"
+              >
+                <span>View All Articles</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4.5">
               {latestBlogDeals.map((lb) => (
                 <Link key={lb.id} href={`/blog/${lb.slug}`} className="card-hover">
@@ -375,6 +411,7 @@ export default async function DealsPage() {
                 </Link>
               ))}
             </div>
+
           </div>
         </div>
 

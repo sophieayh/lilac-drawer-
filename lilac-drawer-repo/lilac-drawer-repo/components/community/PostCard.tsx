@@ -2,6 +2,7 @@ import Link from "next/link";
 import ImageSlot from "@/components/ImageSlot";
 import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
+import ArticleEmbedCard from "@/components/community/ArticleEmbedCard";
 import { relativeTime } from "@/db/queries";
 
 export interface CommunityPostItem {
@@ -12,6 +13,7 @@ export interface CommunityPostItem {
   imageUrl?: string | null;
   productId: number | null;
   repostOfId: number | null;
+  articleId?: number | null;
   postedAt: Date;
   commentCount: number;
   repostCount: number;
@@ -27,6 +29,23 @@ export interface CommunityPostItem {
   originalHasImage?: boolean | null;
   originalImageUrl?: string | null;
   originalPostedAt?: Date | null;
+  // Attached Article Details (for direct posts)
+  articleTitle?: string | null;
+  articleSlug?: string | null;
+  articleExcerpt?: string | null;
+  articleImageUrl?: string | null;
+  articleImageLabel?: string | null;
+  articleCategory?: string | null;
+  articleAuthor?: string | null;
+  // Attached Article Details (for reposted posts)
+  originalArticleId?: number | null;
+  originalArticleTitle?: string | null;
+  originalArticleSlug?: string | null;
+  originalArticleExcerpt?: string | null;
+  originalArticleImageUrl?: string | null;
+  originalArticleImageLabel?: string | null;
+  originalArticleCategory?: string | null;
+  originalArticleAuthor?: string | null;
 }
 
 interface PostCardProps {
@@ -48,10 +67,23 @@ export default function PostCard({
     <article className="px-6 py-4.5 border-b border-border card-hover">
       {/* If it's a bare repost, show a badge header indicating who reposted */}
       {isBareRepost && (
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-tan mb-2 pl-9">
-          <span className="text-sm">↻</span>
-          <Link href={`/community/${p.authorHandle}`} className="hover:underline text-tan-dark">
-            {p.authorName} reposted
+        <div className="flex items-center gap-2 text-xs font-bold text-tan-dark mb-2.5 pl-12">
+          <svg
+            className="w-4 h-4 text-emerald-600 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 12v-2a4 4 0 0 1 4-4h12" />
+            <path d="M16 2l4 4-4 4" />
+            <path d="M20 12v2a4 4 0 0 1-4 4H4" />
+            <path d="M8 22l-4-4 4-4" />
+          </svg>
+          <Link href={`/community/${p.authorHandle}`} className="hover:underline text-purple-deep">
+            {p.authorName} <span className="font-medium text-tan">reposted</span>
           </Link>
         </div>
       )}
@@ -63,15 +95,12 @@ export default function PostCard({
             <img
               src={p.authorImage}
               alt={`${p.authorName} avatar`}
-              className="w-11 h-11 rounded-full object-cover shrink-0"
+              className="w-11 h-11 rounded-full object-cover shrink-0 border border-lilac/30 shadow-2xs"
             />
           ) : (
-            <ImageSlot
-              label={`${p.authorName} avatar`}
-              className="w-11 h-11 shrink-0"
-              shape="circle"
-              tone="mauve"
-            />
+            <div className="w-11 h-11 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold text-base shrink-0 border border-lilac/40 shadow-2xs">
+              {p.authorName?.charAt(0)?.toUpperCase() || "U"}
+            </div>
           )}
         </Link>
 
@@ -114,6 +143,21 @@ export default function PostCard({
             </Link>
           )}
 
+          {/* Attached Shared Article with User Opinion */}
+          {p.articleId && p.articleSlug && p.articleTitle && (
+            <ArticleEmbedCard
+              article={{
+                title: p.articleTitle,
+                slug: p.articleSlug,
+                excerpt: p.articleExcerpt,
+                imageUrl: p.articleImageUrl,
+                imageLabel: p.articleImageLabel,
+                category: p.articleCategory,
+                author: p.articleAuthor,
+              }}
+            />
+          )}
+
           {/* Embedded Original Reposted Post */}
           {p.repostOfId && (
             <div className="border border-border/90 rounded-2xl p-3.5 my-2.5 bg-mauve-50/70 hover:bg-mauve-50 transition-colors">
@@ -129,12 +173,9 @@ export default function PostCard({
                           className="w-6 h-6 rounded-full object-cover"
                         />
                       ) : (
-                        <ImageSlot
-                          label={`${p.originalAuthorName} avatar`}
-                          className="w-6 h-6"
-                          shape="circle"
-                          tone="pink"
-                        />
+                        <div className="w-6 h-6 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-bold text-[10px]">
+                          {p.originalAuthorName?.charAt(0)?.toUpperCase() || "U"}
+                        </div>
                       )}
                     </Link>
                     <Link
@@ -176,6 +217,21 @@ export default function PostCard({
                       ) : null
                     )}
                   </Link>
+
+                  {/* Attached Original Article inside Repost */}
+                  {p.originalArticleTitle && p.originalArticleSlug && (
+                    <ArticleEmbedCard
+                      article={{
+                        title: p.originalArticleTitle,
+                        slug: p.originalArticleSlug,
+                        excerpt: p.originalArticleExcerpt,
+                        imageUrl: p.originalArticleImageUrl,
+                        imageLabel: p.originalArticleImageLabel,
+                        category: p.originalArticleCategory,
+                        author: p.originalArticleAuthor,
+                      }}
+                    />
+                  )}
                 </>
               ) : (
                 <p className="text-xs text-tan italic">Original post is unavailable</p>
@@ -183,12 +239,25 @@ export default function PostCard({
             </div>
           )}
 
-          <div className="flex gap-10 text-tan text-[13px] max-w-[340px] mt-3">
-            <Link href={`/community/post/${p.id}`} className="hover:text-purple-deep flex items-center gap-1.5 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.636 1.066.526 1.674l-.32 1.776a.75.75 0 00.942.86l2.146-.667c.535-.166 1.11-.082 1.58.223A9.458 9.458 0 0012 20.25z" />
+          <div className="flex items-center gap-5 sm:gap-8 text-tan-dark text-sm max-w-[420px] mt-3">
+            <Link
+              href={`/community/post/${p.id}`}
+              className="group inline-flex items-center gap-1.5 py-1 transition-colors duration-200 cursor-pointer select-none text-tan-dark hover:text-purple-deep font-semibold text-sm"
+              title="Comments & Replies"
+            >
+              <svg
+                className="w-4.5 h-4.5 transition-transform duration-200 group-hover:scale-125 group-hover:-rotate-6 stroke-current"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.9}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.636 1.066.526 1.674l-.32 1.776a.75.75 0 00.942.86l2.146-.667c.535-.166 1.11-.082 1.58.223A9.458 9.458 0 0012 20.25z"
+                />
               </svg>
-              <span>{p.commentCount}</span>
+              <span className="text-[13.5px] tabular-nums tracking-tight transition-colors duration-200">{p.commentCount}</span>
             </Link>
             <RepostButton
               postId={p.id}

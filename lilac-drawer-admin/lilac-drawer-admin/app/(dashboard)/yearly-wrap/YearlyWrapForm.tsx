@@ -209,15 +209,15 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
       {/* Top Header & Actions */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-purple-deep">The Yearly Wrap Settings</h1>
+          <h1 className="font-heading text-2xl font-bold text-purple-deep">إعدادات حصاد العام</h1>
           <p className="text-sm text-tan-dark mt-1">
-            Configure the annual editorial wrap feature displayed prominently on the blog page (/blog).
+            تخصيص وإدارة بطاقة الحصاد السنوي التحريرية المعروضة بشكل بارز في صفحة المدونة (/blog).
           </p>
         </div>
         <div className="flex items-center gap-3">
           {savedSuccess && (
             <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full animate-fade-in">
-              Saved successfully!
+              تم الحفظ بنجاح!
             </span>
           )}
           <button
@@ -225,7 +225,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
             disabled={isPending}
             className="bg-rose text-white rounded-full px-6 py-2 text-sm font-semibold shadow-md hover:bg-rose-dark transition-all cursor-pointer disabled:opacity-50"
           >
-            {isPending ? "Saving..." : "Save Changes"}
+            {isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
           </button>
         </div>
       </div>
@@ -234,8 +234,8 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
       <div className="bg-white border border-border rounded-2xl p-6 shadow-xs flex flex-col gap-5">
         <div className="flex items-center justify-between gap-4 pb-4 border-b border-border flex-wrap">
           <div>
-            <span className="font-heading font-bold text-purple-deep text-base">Section Visibility &amp; Title</span>
-            <p className="text-xs text-tan-dark mt-0.5">Toggle section display and header labels.</p>
+            <span className="font-heading font-bold text-purple-deep text-base">ظهور القسم والعناوين الرئيسية</span>
+            <p className="text-xs text-tan-dark mt-0.5">التحكم في تفعيل ظهور هذا القسم ونصوص العناوين.</p>
           </div>
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
             <input
@@ -246,7 +246,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
               className="w-4 h-4 rounded text-rose focus:ring-rose accent-rose cursor-pointer"
             />
             <span className="text-sm font-semibold text-purple-deep">
-              {isActive ? "Active on Blog" : "Hidden on Blog"}
+              {isActive ? "نشط في المدونة" : "مخفي من المدونة"}
             </span>
           </label>
         </div>
@@ -254,27 +254,27 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Section Title
+              عنوان القسم
             </label>
             <input
               name="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className={field}
-              placeholder="The Yearly Wrap"
+              placeholder="حصاد العام"
               required
             />
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Section Subtitle / Tagline
+              العنوان الفرعي / الشعار
             </label>
             <input
               name="subtitle"
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               className={field}
-              placeholder="2026 Shopping Wrapped"
+              placeholder="حصاد تسوق عام 2026"
               required
             />
           </div>
@@ -286,27 +286,27 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
         {/* 1. Reviewer Age & Experience */}
         <div className="bg-white border border-border rounded-2xl p-6 shadow-xs flex flex-col gap-4">
           <div className="border-b border-border pb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose">Section 1</span>
-            <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">Reviewer Experience</h2>
+            <span className="text-xs font-bold uppercase tracking-wider text-rose">القسم 1</span>
+            <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">خبرة المراجع وسنوات التجربة</h2>
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Badge Label
+              نص الشارة
             </label>
             <input
               name="reviewerAgeLabel"
               value={reviewerAgeLabel}
               onChange={(e) => setReviewerAgeLabel(e.target.value)}
               className={field}
-              placeholder="MY REVIEWER AGE"
+              placeholder="سنوات خبرتي في المراجعة"
               required
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Years of Experience (Number / Stat)
+              سنوات الخبرة (رقم / إحصائية)
             </label>
             <input
               name="reviewerAge"
@@ -320,7 +320,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Experience Description
+              وصف الخبرة
             </label>
             <textarea
               name="reviewerAgeText"
@@ -328,7 +328,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
               onChange={(e) => setReviewerAgeText(e.target.value)}
               rows={3}
               className={field}
-              placeholder="Three years testing products so readers don't have to guess."
+              placeholder="ثلاث سنوات في تجربة المنتجات بدقة حتى لا يضطر القراء للتخمين."
               required
             />
           </div>
@@ -337,41 +337,41 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
         {/* 3. Listening Report */}
         <div className="bg-white border border-border rounded-2xl p-6 shadow-xs flex flex-col gap-4">
           <div className="border-b border-border pb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose">Section 3</span>
-            <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">Listening / Reader Report</h2>
+            <span className="text-xs font-bold uppercase tracking-wider text-rose">القسم 3</span>
+            <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">تقرير اهتمامات القراء</h2>
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Report Label
+              تسمية التقرير
             </label>
             <input
               name="listeningReportLabel"
               value={listeningReportLabel}
               onChange={(e) => setListeningReportLabel(e.target.value)}
               className={field}
-              placeholder="LISTENING REPORT"
+              placeholder="تقرير القراءة والاستماع"
               required
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Report Date / Tag
+              تاريخ التقرير / الوسم
             </label>
             <input
               name="listeningReportDate"
               value={listeningReportDate}
               onChange={(e) => setListeningReportDate(e.target.value)}
               className={field}
-              placeholder="Aug 2, 2026"
+              placeholder="2 أغسطس 2026"
               required
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Report Summary Content
+              ملخص التقرير والمحتوى
             </label>
             <textarea
               name="listeningReportText"
@@ -379,7 +379,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
               onChange={(e) => setListeningReportText(e.target.value)}
               rows={3}
               className={field}
-              placeholder="Readers spent the most time this year on care guides, followed by top-10 lists and jewelry storage."
+              placeholder="قضى القراء معظم الوقت هذا العام في أدلة العناية، تليها قوائم أفضل 10 وتنظيم المجوهرات."
               required
             />
           </div>
@@ -389,18 +389,18 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
         <div className="bg-white border border-border rounded-2xl p-6 shadow-xs flex flex-col gap-4 md:col-span-2">
           <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-rose">Section 2</span>
-              <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">Most Reviewed Product</h2>
+              <span className="text-xs font-bold uppercase tracking-wider text-rose">القسم 2</span>
+              <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">المنتج الأكثر مراجعة</h2>
             </div>
             {productsList.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-tan-dark font-medium">Quick-fill from catalog:</span>
+                <span className="text-xs text-tan-dark font-medium">تعبئة سريعة من الكتالوج:</span>
                 <select
                   className="text-xs border border-border rounded-lg px-2.5 py-1.5 bg-mauve-50 text-purple-deep font-medium outline-none focus:border-rose cursor-pointer"
                   onChange={(e) => handleFillMostReviewed(e.target.value)}
                   defaultValue=""
                 >
-                  <option value="" disabled>Select product...</option>
+                  <option value="" disabled>اختر منتجاً...</option>
                   {productsList.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -414,34 +414,34 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-                Card Headline
+                عنوان البطاقة
               </label>
               <input
                 name="mostReviewedTitle"
                 value={mostReviewedTitle}
                 onChange={(e) => setMostReviewedTitle(e.target.value)}
                 className={field}
-                placeholder="Most Reviewed Product"
+                placeholder="المنتج الأكثر مراجعة"
                 required
               />
             </div>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-                Destination Link URL (Optional)
+                رابط الوجهة (اختياري)
               </label>
               <input
                 name="mostReviewedLinkUrl"
                 value={mostReviewedLinkUrl}
                 onChange={(e) => setMostReviewedLinkUrl(e.target.value)}
                 className={field}
-                placeholder="/products/garment-steamer or https://..."
+                placeholder="/deals/garment-steamer أو https://..."
               />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Product Photo
+              صورة المنتج
             </label>
             <ImageUploadField
               name="mostReviewedImageUrl"
@@ -454,19 +454,19 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-                Photo Alt / Label
+                النص البديل / تسمية الصورة
               </label>
               <input
                 name="mostReviewedImageLabel"
                 value={mostReviewedImageLabel}
                 onChange={(e) => setMostReviewedImageLabel(e.target.value)}
                 className={field}
-                placeholder="Garment steamer — most reviewed product"
+                placeholder="صورة المنتج الأكثر مراجعة"
               />
             </div>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-                Summary Description Text
+                النص التلخيصي والوصف
               </label>
               <textarea
                 name="mostReviewedText"
@@ -474,7 +474,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
                 onChange={(e) => setMostReviewedText(e.target.value)}
                 rows={2}
                 className={field}
-                placeholder="The garment steamer topped reader clicks all year, reviewed and updated four times."
+                placeholder="تصدر هذا المنتج نقرات القراء طوال العام مع تحديث مراجعته عدة مرات."
                 required
               />
             </div>
@@ -485,18 +485,18 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
         <div className="bg-white border border-border rounded-2xl p-6 shadow-xs flex flex-col gap-4">
           <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-rose">Section 4</span>
-              <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">Top Pick Product</h2>
+              <span className="text-xs font-bold uppercase tracking-wider text-rose">القسم 4</span>
+              <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">المنتج الأعلى تقييماً (Top Pick)</h2>
             </div>
             {productsList.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-tan-dark font-medium">Quick-fill:</span>
+                <span className="text-xs text-tan-dark font-medium">تعبئة سريعة:</span>
                 <select
                   className="text-xs border border-border rounded-lg px-2 py-1 bg-mauve-50 text-purple-deep font-medium outline-none focus:border-rose cursor-pointer"
                   onChange={(e) => handleFillTopPick(e.target.value)}
                   defaultValue=""
                 >
-                  <option value="" disabled>Select product...</option>
+                  <option value="" disabled>اختر منتجاً...</option>
                   {productsList.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -509,14 +509,14 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Badge Label
+              نص الشارة
             </label>
             <input
               name="topPickLabel"
               value={topPickLabel}
               onChange={(e) => setTopPickLabel(e.target.value)}
               className={field}
-              placeholder="TOP PICK 2026"
+              placeholder="أفضل اختيار 2026"
               required
             />
           </div>
@@ -524,7 +524,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-                Product Name
+                اسم المنتج
               </label>
               <input
                 name="topPickTitle"
@@ -537,14 +537,14 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
             </div>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-                Clicks / Metric Stat
+                النقرات / الإحصائية
               </label>
               <input
                 name="topPickClicks"
                 value={topPickClicks}
                 onChange={(e) => setTopPickClicks(e.target.value)}
                 className={field}
-                placeholder="4,120 clicks"
+                placeholder="4,120 نقرة"
                 required
               />
             </div>
@@ -552,7 +552,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Round Thumbnail Image
+              الصورة المصغرة الدائرية
             </label>
             <ImageUploadField
               name="topPickImageUrl"
@@ -564,14 +564,14 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Product Link URL (Optional)
+              رابط المنتج (اختياري)
             </label>
             <input
               name="topPickLinkUrl"
               value={topPickLinkUrl}
               onChange={(e) => setTopPickLinkUrl(e.target.value)}
               className={field}
-              placeholder="/products/steamfast or https://..."
+              placeholder="/deals/steamfast أو https://..."
             />
           </div>
         </div>
@@ -580,8 +580,8 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
         <div className="bg-white border border-border rounded-2xl p-6 shadow-xs flex flex-col gap-4">
           <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-rose">Section 5</span>
-              <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">Top Categories List</h2>
+              <span className="text-xs font-bold uppercase tracking-wider text-rose">القسم 5</span>
+              <h2 className="font-heading font-bold text-purple-deep text-lg mt-0.5">قائمة الأقسام الأكثر شعبية</h2>
             </div>
             {categoriesList && categoriesList.length > 0 && (
               <button
@@ -589,22 +589,21 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
                 onClick={handleAutoFillAllCategories}
                 className="text-xs font-semibold bg-mauve-100 hover:bg-mauve-200 text-purple-deep px-3 py-1.5 rounded-lg border border-border transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
-                <span>⚡</span>
-                <span>Auto-fill All Categories</span>
+                <span>تعبئة تلقائية لجميع الأقسام</span>
               </button>
             )}
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Category Header Label
+              عنوان قائمة الأقسام
             </label>
             <input
               name="topCategoriesLabel"
               value={topCategoriesLabel}
               onChange={(e) => setTopCategoriesLabel(e.target.value)}
               className={field}
-              placeholder="TOP CATEGORIES THIS YEAR"
+              placeholder="الأقسام الأكثر زيارة هذا العام"
               required
             />
           </div>
@@ -612,11 +611,11 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark">
-                Category Names (One per line)
+                أسماء الأقسام (قسم في كل سطر)
               </label>
               {categoriesList && categoriesList.length > 0 && (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-tan-dark font-medium">Quick-add:</span>
+                  <span className="text-xs text-tan-dark font-medium">إضافة سريعة:</span>
                   <select
                     className="text-xs border border-border rounded-lg px-2 py-1 bg-mauve-50 text-purple-deep font-medium outline-none focus:border-rose cursor-pointer"
                     onChange={(e) => {
@@ -625,7 +624,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
                     }}
                     defaultValue=""
                   >
-                    <option value="" disabled>Select category to add...</option>
+                    <option value="" disabled>اختر قسماً للإضافة...</option>
                     {categoriesList.map((c) => (
                       <option key={c.id} value={c.label}>
                         + {c.label}
@@ -642,11 +641,11 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
               onChange={(e) => setTopCategories(e.target.value)}
               rows={5}
               className={`${field} font-mono text-xs leading-relaxed`}
-              placeholder="CLOTHING CARE&#10;ACCESSORIES&#10;WARDROBE STORAGE&#10;JEWELRY & WATCHES&#10;BAGS"
+              placeholder="العناية بالملابس&#10;الإكسسوارات&#10;تنظيم الخزانة&#10;المجوهرات والساعات&#10;الحقائب"
               required
             />
             <p className="text-[11px] text-tan mt-1.5">
-              Each line will be displayed in bold uppercase in the top categories section.
+              سيتم عرض كل سطر بخط عريض وواضح في قسم الأقسام الأكثر شعبية.
             </p>
           </div>
 
@@ -654,7 +653,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
           {categoriesList && categoriesList.length > 0 && (
             <div className="flex flex-col gap-2 pt-2 border-t border-border/70">
               <span className="text-[11px] font-bold uppercase tracking-wider text-tan-dark">
-                Available Site Categories (click to toggle):
+                أقسام الموقع المتاحة (انقر للتبديل):
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {categoriesList.map((cat) => {
@@ -673,7 +672,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
                       }`}
                     >
                       <span className="text-[11px]">{isSelected ? "✓" : "+"}</span>
-                      <span>{cat.label.toUpperCase()}</span>
+                      <span>{cat.label}</span>
                     </button>
                   );
                 })}
@@ -688,63 +687,63 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
         <div className="flex items-center justify-between mb-5">
           <div className="text-xs font-bold uppercase tracking-wider text-purple-deep flex items-center gap-1.5">
             <svg className="w-4 h-4 text-purple-deep" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-            Live Preview on /blog
+            المعاينة المباشرة في صفحة المدونة (/blog)
           </div>
-          <span className="text-[11px] text-tan-dark font-medium">Exact styling as rendered to users</span>
+          <span className="text-[11px] text-tan-dark font-medium">التصميم الفعلي كما يظهر للزوار</span>
         </div>
 
         <div className="border-2 border-purple-deep p-6 md:p-10 bg-[#fffdfb] max-w-[800px] mx-auto">
           <h2 className="font-heading text-3xl md:text-5xl font-black text-center text-purple-deep tracking-tight">
-            {title || "The Yearly Wrap"}
+            {title || "حصاد العام"}
           </h2>
           <div className="text-center text-[12px] tracking-[0.2em] uppercase text-rose font-bold my-1.5 mb-5">
-            {subtitle || "2026 Shopping Wrapped"}
+            {subtitle || "حصاد تسوق عام 2026"}
           </div>
           <div className="border-t-2 border-b border-purple-deep h-[3px] mb-5" />
 
           {/* Top 3 Columns */}
           <div className="grid grid-cols-1 md:grid-cols-[1fr_1.3fr_1fr] border-t border-b border-purple-deep">
             {/* 1. Reviewer Age */}
-            <div className="p-5 md:border-r border-purple-deep text-center">
+            <div className="p-5 md:border-l border-purple-deep text-center">
               <div className="text-[10px] tracking-wider uppercase font-bold underline mb-2">
-                {reviewerAgeLabel || "MY REVIEWER AGE"}
+                {reviewerAgeLabel || "سنوات خبرتي في المراجعة"}
               </div>
               <div className="font-heading text-5xl font-black text-purple-deep leading-none">
                 {reviewerAge || "3"}
               </div>
               <p className="text-[11px] leading-relaxed text-tan-dark mt-2">
-                {reviewerAgeText || "Three years testing products so readers don't have to guess."}
+                {reviewerAgeText || "ثلاث سنوات في تجربة المنتجات بدقة حتى لا يضطر القراء للتخمين."}
               </p>
             </div>
 
             {/* 2. Most Reviewed */}
-            <div className="p-5 md:border-r border-purple-deep text-center">
+            <div className="p-5 md:border-l border-purple-deep text-center">
               <div className="text-xs font-semibold text-purple-deep mb-2.5">
-                {mostReviewedTitle || "Most Reviewed Product"}
+                {mostReviewedTitle || "المنتج الأكثر مراجعة"}
               </div>
               <div className="w-full h-[160px] rounded-lg bg-mauve-100 overflow-hidden border border-border flex items-center justify-center">
                 {mostReviewedImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={mostReviewedImageUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-xs text-tan font-medium">Product Photo</span>
+                  <span className="text-xs text-tan font-medium">صورة المنتج</span>
                 )}
               </div>
               <p className="text-[11px] leading-relaxed text-tan-dark mt-2">
-                {mostReviewedText || "The garment steamer topped reader clicks all year, reviewed and updated four times."}
+                {mostReviewedText || "تصدر هذا المنتج نقرات القراء طوال العام مع تحديث مراجعته عدة مرات."}
               </p>
             </div>
 
             {/* 3. Listening Report */}
             <div className="p-5 text-center">
               <div className="text-[10px] tracking-wider uppercase font-bold underline mb-2">
-                {listeningReportLabel || "LISTENING REPORT"}
+                {listeningReportLabel || "تقرير القراءة والاستماع"}
               </div>
               <p className="text-[11px] leading-relaxed text-tan-dark mb-2.5">
-                {listeningReportText || "Readers spent the most time this year on care guides, followed by top-10 lists and jewelry storage."}
+                {listeningReportText || "قضى القراء معظم الوقت هذا العام في أدلة العناية، تليها قوائم أفضل 10 وتنظيم المجوهرات."}
               </p>
               <div className="font-heading text-xs font-bold text-purple-deep">
-                {listeningReportDate || "Aug 2, 2026"}
+                {listeningReportDate || "2 أغسطس 2026"}
               </div>
             </div>
           </div>
@@ -752,30 +751,30 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
           {/* Bottom 2 Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 border-b border-purple-deep">
             {/* 4. Top Pick */}
-            <div className="p-5 md:border-r border-purple-deep flex gap-4 items-center">
+            <div className="p-5 md:border-l border-purple-deep flex gap-4 items-center">
               <div className="w-14 h-14 rounded-full bg-purple-deep shrink-0 overflow-hidden flex items-center justify-center text-white font-bold">
                 {topPickImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={topPickImageUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-[10px] uppercase font-bold">Top</span>
+                  <span className="text-[10px] uppercase font-bold">مفضل</span>
                 )}
               </div>
               <div>
                 <div className="text-[10px] tracking-wider uppercase font-bold mb-0.5">
-                  {topPickLabel || "TOP PICK 2026"}
+                  {topPickLabel || "أفضل اختيار 2026"}
                 </div>
                 <div className="font-heading text-sm font-bold text-purple-deep">
                   {topPickTitle || "Steamfast SF-717"}
                 </div>
-                <div className="text-[11px] text-tan">{topPickClicks || "4,120 clicks"}</div>
+                <div className="text-[11px] text-tan">{topPickClicks || "4,120 نقرة"}</div>
               </div>
             </div>
 
             {/* 5. Top Categories */}
             <div className="p-5">
               <div className="text-[10px] tracking-wider uppercase font-bold underline mb-2">
-                {topCategoriesLabel || "TOP CATEGORIES THIS YEAR"}
+                {topCategoriesLabel || "الأقسام الأكثر زيارة هذا العام"}
               </div>
               <div className="font-heading text-xs font-bold text-purple-deep leading-relaxed tracking-wide">
                 {categoryLines.map((cat, idx) => (
@@ -791,7 +790,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
         {savedSuccess && (
           <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
-            Saved successfully!
+            تم الحفظ بنجاح!
           </span>
         )}
         <button
@@ -799,7 +798,7 @@ export default function YearlyWrapForm({ initial, productsList, categoriesList =
           disabled={isPending}
           className="bg-rose text-white rounded-full px-7 py-2.5 text-sm font-semibold shadow-md hover:bg-rose-dark transition-all cursor-pointer disabled:opacity-50"
         >
-          {isPending ? "Saving..." : "Save Changes"}
+          {isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
         </button>
       </div>
     </form>

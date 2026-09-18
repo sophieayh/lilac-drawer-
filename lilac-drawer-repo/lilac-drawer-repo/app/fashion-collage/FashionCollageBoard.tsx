@@ -1,119 +1,1549 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import ImageSlot from "@/components/ImageSlot";
+import { formatPriceFixed } from "@/lib/format";
+import { useSession } from "@/lib/auth-client";
+import type { products as productsSchema } from "@/db/schema";
 
-const categories = [
-  { id: "clothing", label: "Clothing" },
-  { id: "accessories", label: "Accessories" },
-  { id: "shoes", label: "Shoes" },
-  { id: "bags", label: "Bags" },
-  { id: "beauty", label: "Beauty" },
-];
+type Product = typeof productsSchema.$inferSelect;
 
-const boardItems = [
-  { id: "b1", label: "Sweater", left: "6%", top: "10%", width: "34%", height: "38%" },
-  { id: "b2", label: "Scarf", left: "44%", top: "8%", width: "26%", height: "26%" },
-  { id: "b3", label: "Jewelry box", left: "10%", top: "54%", width: "24%", height: "30%" },
-  { id: "b4", label: "Shoulder bag", left: "40%", top: "42%", width: "30%", height: "34%" },
-  { id: "b5", label: "Cedar blocks", left: "74%", top: "12%", width: "20%", height: "22%" },
-];
+export interface CanvasItem {
+  id: string;
+  sourceType: "catalog" | "upload";
+  productId?: number;
+  productSlug?: string;
+  title: string;
+  imageUrl?: string | null;
+  imageLabel?: string;
+  priceCents?: number;
+  category?: string;
+  // Positioning & Transform
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  zIndex: number;
+  isLocked?: boolean;
+  opacity?: number;
+}
 
-export default function FashionCollageBoard() {
-  const [activeCategory, setActiveCategory] = useState("clothing");
+interface Props {
+  initialProducts?: Product[];
+}
+
+export default function FashionCollageBoard({ initialProducts = [] }: Props) {
+  const { data: session, isPending: isSessionPending } = useSession();
+  const [mounted, setMounted] = useState(false);
+
+  // Storage key based on user account or guest
+  const storageKey = useMemo(() => {
+    return session?.user?.id
+      ? `lilac_sandbox_items_${session.user.id}`
+      : "lilac_sandbox_items_guest";
+  }, [session?.user?.id]);
+
+  // Left Drawer States
+  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<"catalog" | "uploads">("catalog");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userUploads, setUserUploads] = useState<{ id: string; url: string; name: string }[]>([]);
+
+  // Canvas View States
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [canvasBg, setCanvasBg] = useState<"cream" | "white" | "mauve" | "sage">("cream");
+  const [showGrid, setShowGrid] = useState(true);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+
+  // Canvas Items & Selection (starts completely EMPTY on first visit)
+  const [items, setItems] = useState<CanvasItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  // History for Undo/Redo
+  const [history, setHistory] = useState<CanvasItem[][]>([[]]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Dragging & Interaction Refs
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const interactionRef = useRef<{
+    mode: "idle" | "drag-item" | "resize-item" | "rotate-item" | "pan-canvas";
+    itemId?: string;
+    startX: number;
+    startY: number;
+    itemStartX: number;
+    itemStartY: number;
+    itemStartW: number;
+    itemStartH: number;
+    itemStartRot: number;
+    resizeHandle?: "nw" | "ne" | "sw" | "se";
+    centerX: number;
+    centerY: number;
+  }>({
+    mode: "idle",
+    startX: 0,
+    startY: 0,
+    itemStartX: 0,
+    itemStartY: 0,
+    itemStartW: 0,
+    itemStartH: 0,
+    itemStartRot: 0,
+    centerX: 0,
+    centerY: 0,
+  });
+
+  // Track mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 1. Load saved items from localStorage for this account (smooth session-aware loader)
+  useEffect(() => {
+    if (!mounted || typeof window === "undefined" || isSessionPending) return;
+
+    setIsLoaded(false);
+    let timeoutId: NodeJS.Timeout;
+
+    try {
+      const savedData = localStorage.getItem(storageKey);
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setItems(parsed);
+          setHistory([parsed]);
+          setHistoryIndex(0);
+        } else {
+          setItems([]);
+          setHistory([[]]);
+          setHistoryIndex(0);
+        }
+      } else {
+        // First time visit -> Completely empty
+        setItems([]);
+        setHistory([[]]);
+        setHistoryIndex(0);
+      }
+
+      // Load user uploads
+      const savedUploads = localStorage.getItem("lilac_sandbox_user_uploads");
+      if (savedUploads) {
+        const parsedUploads = JSON.parse(savedUploads);
+        if (Array.isArray(parsedUploads)) {
+          setUserUploads(parsedUploads);
+        }
+      }
+    } catch (e) {
+      console.error("Error loading sandbox state:", e);
+    } finally {
+      // Smooth restoration delay to guarantee no flashing of empty state
+      timeoutId = setTimeout(() => {
+        setIsLoaded(true);
+      }, 400);
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [storageKey, isSessionPending, mounted]);
+
+  // 2. Save items automatically whenever items change (after initial load)
+  useEffect(() => {
+    if (!isLoaded || typeof window === "undefined") return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(items));
+      setLastSavedTime(
+        new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+      );
+    } catch (e) {
+      console.error("Error saving sandbox state:", e);
+    }
+  }, [items, storageKey, isLoaded]);
+
+  // Push state to history
+  const pushHistory = useCallback((newItems: CanvasItem[]) => {
+    setHistory((prev) => {
+      const sliced = prev.slice(0, historyIndex + 1);
+      return [...sliced, newItems];
+    });
+    setHistoryIndex((prev) => prev + 1);
+  }, [historyIndex]);
+
+  // Undo / Redo
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const prevIndex = historyIndex - 1;
+      setHistoryIndex(prevIndex);
+      setItems(history[prevIndex]);
+    }
+  }, [historyIndex, history]);
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const nextIndex = historyIndex + 1;
+      setHistoryIndex(nextIndex);
+      setItems(history[nextIndex]);
+    }
+  }, [historyIndex, history]);
+
+  // Categories extracted from products
+  const categoriesList = useMemo(() => {
+    const cats = new Set<string>();
+    for (const p of initialProducts) {
+      if (p.category) cats.add(p.category);
+    }
+    return Array.from(cats).sort();
+  }, [initialProducts]);
+
+  // Set of product IDs currently placed in the sandbox
+  const inSandboxProductIds = useMemo(() => {
+    const set = new Set<number>();
+    for (const it of items) {
+      if (it.productId != null) set.add(it.productId);
+    }
+    return set;
+  }, [items]);
+
+  // Filtered Catalog Products
+  const filteredCatalog = useMemo(() => {
+    return initialProducts.filter((p) => {
+      if (selectedCategory !== "all" && p.category !== selectedCategory) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        return (
+          p.name.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          (p.subtitle ? p.subtitle.toLowerCase().includes(q) : false)
+        );
+      }
+      return true;
+    });
+  }, [initialProducts, selectedCategory, searchQuery]);
+
+  // Add Item to Canvas
+  const addItemToCanvas = useCallback(
+    (itemData: Partial<CanvasItem>, dropClientX?: number, dropClientY?: number) => {
+      let dropX = 350;
+      let dropY = 220;
+
+      if (canvasRef.current && dropClientX != null && dropClientY != null) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        dropX = (dropClientX - rect.left - pan.x) / zoom - 100;
+        dropY = (dropClientY - rect.top - pan.y) / zoom - 100;
+      } else {
+        const containerW = canvasRef.current ? canvasRef.current.clientWidth : 800;
+        const containerH = canvasRef.current ? canvasRef.current.clientHeight : 600;
+        const jitterX = Math.floor(Math.random() * 80) - 40;
+        const jitterY = Math.floor(Math.random() * 80) - 40;
+        dropX = (containerW / 2 - pan.x) / zoom - 100 + jitterX;
+        dropY = (containerH / 2 - pan.y) / zoom - 110 + jitterY;
+      }
+
+      const nextZIndex = items.reduce((max, it) => Math.max(max, it.zIndex), 0) + 1;
+
+      const newItem: CanvasItem = {
+        id: `item-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        sourceType: itemData.sourceType || "catalog",
+        productId: itemData.productId,
+        productSlug: itemData.productSlug,
+        title: itemData.title || "Custom Piece",
+        imageUrl: itemData.imageUrl || null,
+        imageLabel: itemData.imageLabel || itemData.title,
+        priceCents: itemData.priceCents,
+        category: itemData.category,
+        x: Math.max(40, dropX),
+        y: Math.max(40, dropY),
+        width: itemData.width || 210,
+        height: itemData.height || 230,
+        rotation: 0,
+        zIndex: nextZIndex,
+        opacity: 1,
+      };
+
+      const nextItems = [...items, newItem];
+      setItems(nextItems);
+      setSelectedItemId(newItem.id);
+      pushHistory(nextItems);
+    },
+    [items, zoom, pan, pushHistory]
+  );
+
+  // Handle User File Upload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const dataUrl = uploadEvent.target?.result as string;
+        if (dataUrl) {
+          const newUpload = {
+            id: `upload-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            url: dataUrl,
+            name: file.name.replace(/\.[^/.]+$/, ""),
+          };
+          setUserUploads((prev) => {
+            const updated = [newUpload, ...prev];
+            try {
+              localStorage.setItem("lilac_sandbox_user_uploads", JSON.stringify(updated));
+            } catch (err) {
+              console.error("Storage limit reached:", err);
+            }
+            return updated;
+          });
+
+          // Automatically add to canvas
+          addItemToCanvas({
+            sourceType: "upload",
+            title: newUpload.name,
+            imageUrl: newUpload.url,
+            imageLabel: newUpload.name,
+            width: 220,
+            height: 240,
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Delete Selected Item
+  const deleteItem = useCallback(
+    (id: string) => {
+      const nextItems = items.filter((it) => it.id !== id);
+      setItems(nextItems);
+      if (selectedItemId === id) setSelectedItemId(null);
+      pushHistory(nextItems);
+    },
+    [items, selectedItemId, pushHistory]
+  );
+
+  // Duplicate Selected Item
+  const duplicateItem = useCallback(
+    (id: string) => {
+      const it = items.find((i) => i.id === id);
+      if (!it) return;
+      const nextZIndex = items.reduce((max, i) => Math.max(max, i.zIndex), 0) + 1;
+      const duplicated: CanvasItem = {
+        ...it,
+        id: `item-copy-${Date.now()}`,
+        x: it.x + 30,
+        y: it.y + 30,
+        zIndex: nextZIndex,
+      };
+      const nextItems = [...items, duplicated];
+      setItems(nextItems);
+      setSelectedItemId(duplicated.id);
+      pushHistory(nextItems);
+    },
+    [items, pushHistory]
+  );
+
+  // Layering Controls
+  const bringForward = useCallback(
+    (id: string) => {
+      const item = items.find((i) => i.id === id);
+      if (!item) return;
+      const nextItems = items.map((i) => (i.id === id ? { ...i, zIndex: i.zIndex + 1 } : i));
+      setItems(nextItems);
+      pushHistory(nextItems);
+    },
+    [items, pushHistory]
+  );
+
+  const sendBackward = useCallback(
+    (id: string) => {
+      const item = items.find((i) => i.id === id);
+      if (!item) return;
+      const nextItems = items.map((i) => (i.id === id ? { ...i, zIndex: Math.max(1, i.zIndex - 1) } : i));
+      setItems(nextItems);
+      pushHistory(nextItems);
+    },
+    [items, pushHistory]
+  );
+
+  const rotateItem = useCallback(
+    (id: string, deltaAngle: number) => {
+      const nextItems = items.map((i) => (i.id === id ? { ...i, rotation: (i.rotation + deltaAngle) % 360 } : i));
+      setItems(nextItems);
+      pushHistory(nextItems);
+    },
+    [items, pushHistory]
+  );
+
+  // Clear Canvas
+  const clearCanvas = useCallback(() => {
+    if (items.length === 0) return;
+    if (window.confirm("Are you sure you want to clear your sandbox moodboard?")) {
+      setItems([]);
+      setSelectedItemId(null);
+      pushHistory([]);
+    }
+  }, [items, pushHistory]);
+
+  // Export / Download Snapshot (Full Card with Aspect Ratio, Title, Price, and Shadow)
+  const exportCanvasAsImage = useCallback(() => {
+    if (items.length === 0) {
+      alert("Your sandbox is currently empty. Add some pieces first before exporting!");
+      return;
+    }
+
+    // Helper: Draw rounded rectangle path
+    function drawRoundedRect(
+      ctx: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      radius: number
+    ) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    // Helper: Draw image with object-contain (preserving true natural aspect ratio)
+    function drawImageContained(
+      ctx: CanvasRenderingContext2D,
+      img: HTMLImageElement,
+      x: number,
+      y: number,
+      w: number,
+      h: number
+    ) {
+      const naturalW = img.naturalWidth || w;
+      const naturalH = img.naturalHeight || h;
+      const imgAspect = naturalW / naturalH;
+      const boxAspect = w / h;
+
+      let drawW = w;
+      let drawH = h;
+      let drawX = x;
+      let drawY = y;
+
+      if (imgAspect > boxAspect) {
+        drawW = w;
+        drawH = w / imgAspect;
+        drawY = y + (h - drawH) / 2;
+      } else {
+        drawH = h;
+        drawW = h * imgAspect;
+        drawX = x + (w - drawW) / 2;
+      }
+
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    }
+
+    // 1. Calculate dynamic bounding box of all placed items
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const it of items) {
+      minX = Math.min(minX, it.x);
+      minY = Math.min(minY, it.y);
+      maxX = Math.max(maxX, it.x + it.width);
+      maxY = Math.max(maxY, it.y + it.height);
+    }
+
+    const margin = 80;
+    const headerH = 100;
+    const contentW = Math.max(800, maxX - minX);
+    const contentH = Math.max(500, maxY - minY);
+
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = Math.round(contentW + margin * 2);
+    exportCanvas.height = Math.round(contentH + margin * 2 + headerH);
+
+    const ctx = exportCanvas.getContext("2d");
+    if (!ctx) return;
+
+    // Background color
+    const bgColor =
+      canvasBg === "white"
+        ? "#ffffff"
+        : canvasBg === "cream"
+        ? "#fbf6f0"
+        : canvasBg === "mauve"
+        ? "#f6eff8"
+        : "#edf4ea";
+
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    // Optional Dot Grid in background
+    if (showGrid) {
+      ctx.fillStyle = "rgba(122, 90, 140, 0.15)";
+      for (let gx = 0; gx < exportCanvas.width; gx += 24) {
+        for (let gy = 0; gy < exportCanvas.height; gy += 24) {
+          ctx.beginPath();
+          ctx.arc(gx, gy, 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Header Branding & Timestamp
+    ctx.fillStyle = "#4a3058";
+    ctx.font = "bold 26px 'Poppins', sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("Lilac Drawer Moodboard", margin, 50);
+
+    ctx.fillStyle = "#9a8898";
+    ctx.font = "13px 'Poppins', sans-serif";
+    ctx.fillText(
+      new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+      margin,
+      74
+    );
+
+    // Sort items by zIndex
+    const sorted = [...items].sort((a, b) => a.zIndex - b.zIndex);
+    let loadedCount = 0;
+    const totalCount = sorted.length;
+
+    function finalizeAndDownload() {
+      const link = document.createElement("a");
+      link.download = `lilac-moodboard-${Date.now()}.png`;
+      link.href = exportCanvas.toDataURL("image/png");
+      link.click();
+    }
+
+    if (totalCount === 0) {
+      finalizeAndDownload();
+      return;
+    }
+
+    sorted.forEach((item) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+
+      const renderCard = (imageLoaded: boolean) => {
+        ctx.save();
+
+        // Calculate card center coordinates relative to dynamic bounding box
+        const cardW = item.width;
+        const cardH = item.height;
+        const cardCenterX = item.x - minX + margin + cardW / 2;
+        const cardCenterY = item.y - minY + margin + headerH + cardH / 2;
+
+        ctx.translate(cardCenterX, cardCenterY);
+        ctx.rotate((item.rotation * Math.PI) / 180);
+
+        // 1. Draw outer white card with shadow
+        ctx.shadowColor = "rgba(100, 70, 90, 0.14)";
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 6;
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "rgba(220, 205, 225, 0.85)";
+        ctx.lineWidth = 1;
+
+        drawRoundedRect(ctx, -cardW / 2, -cardH / 2, cardW, cardH, 16);
+        ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.stroke();
+
+        // 2. Draw inner image container
+        const padding = 12;
+        const innerX = -cardW / 2 + padding;
+        const innerY = -cardH / 2 + padding;
+        const innerW = cardW - padding * 2;
+        const innerH = cardH - padding * 2 - 28;
+
+        ctx.fillStyle = "rgba(244, 235, 248, 0.45)";
+        drawRoundedRect(ctx, innerX, innerY, innerW, innerH, 10);
+        ctx.fill();
+
+        // 3. Draw image with object-contain (natural proportions, no squishing)
+        if (imageLoaded && img.naturalWidth) {
+          drawImageContained(ctx, img, innerX + 6, innerY + 6, innerW - 12, innerH - 12);
+        } else {
+          ctx.fillStyle = "#7a5a8c";
+          ctx.font = "12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(item.title, 0, innerY + innerH / 2);
+        }
+
+        // 4. Draw bottom label bar (Title + Price)
+        const labelY = innerY + innerH + 18;
+        ctx.fillStyle = "#4a3058";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+
+        const priceText = item.priceCents != null ? formatPriceFixed(item.priceCents) : "";
+        const priceWidth = priceText ? ctx.measureText(priceText).width + 12 : 0;
+        const maxTitleWidth = innerW - priceWidth;
+
+        let displayTitle = item.title;
+        if (ctx.measureText(displayTitle).width > maxTitleWidth) {
+          while (displayTitle.length > 3 && ctx.measureText(displayTitle + "…").width > maxTitleWidth) {
+            displayTitle = displayTitle.slice(0, -1);
+          }
+          displayTitle += "…";
+        }
+        ctx.fillText(displayTitle, innerX + 2, labelY);
+
+        if (priceText) {
+          ctx.fillStyle = "#d4708f";
+          ctx.font = "bold 12px sans-serif";
+          ctx.textAlign = "right";
+          ctx.fillText(priceText, innerX + innerW - 2, labelY);
+        }
+
+        ctx.restore();
+
+        loadedCount++;
+        if (loadedCount === totalCount) {
+          finalizeAndDownload();
+        }
+      };
+
+      img.onload = () => renderCard(true);
+      img.onerror = () => renderCard(false);
+      img.src = item.imageUrl || "/placeholder.png";
+    });
+  }, [items, canvasBg, showGrid]);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+        return;
+      }
+
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedItemId) {
+        e.preventDefault();
+        deleteItem(selectedItemId);
+      } else if (e.key === "Escape") {
+        setSelectedItemId(null);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) handleRedo();
+        else handleUndo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        handleRedo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d" && selectedItemId) {
+        e.preventDefault();
+        duplicateItem(selectedItemId);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedItemId, deleteItem, duplicateItem, handleUndo, handleRedo]);
+
+  // Pointer Handlers for Items
+  const handleItemPointerDown = (e: React.PointerEvent, item: CanvasItem) => {
+    e.stopPropagation();
+    setSelectedItemId(item.id);
+
+    interactionRef.current = {
+      mode: "drag-item",
+      itemId: item.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      itemStartX: item.x,
+      itemStartY: item.y,
+      itemStartW: item.width,
+      itemStartH: item.height,
+      itemStartRot: item.rotation,
+      centerX: item.x + item.width / 2,
+      centerY: item.y + item.height / 2,
+    };
+  };
+
+  // Resize Handle Pointer Down
+  const handleResizePointerDown = (e: React.PointerEvent, item: CanvasItem, handle: "nw" | "ne" | "sw" | "se") => {
+    e.stopPropagation();
+    interactionRef.current = {
+      mode: "resize-item",
+      itemId: item.id,
+      resizeHandle: handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      itemStartX: item.x,
+      itemStartY: item.y,
+      itemStartW: item.width,
+      itemStartH: item.height,
+      itemStartRot: item.rotation,
+      centerX: item.x + item.width / 2,
+      centerY: item.y + item.height / 2,
+    };
+  };
+
+  // Rotate Handle Pointer Down
+  const handleRotatePointerDown = (e: React.PointerEvent, item: CanvasItem) => {
+    e.stopPropagation();
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const itemCenterX = rect.left + pan.x + (item.x + item.width / 2) * zoom;
+    const itemCenterY = rect.top + pan.y + (item.y + item.height / 2) * zoom;
+
+    interactionRef.current = {
+      mode: "rotate-item",
+      itemId: item.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      itemStartX: item.x,
+      itemStartY: item.y,
+      itemStartW: item.width,
+      itemStartH: item.height,
+      itemStartRot: item.rotation,
+      centerX: itemCenterX,
+      centerY: itemCenterY,
+    };
+  };
+
+  // Canvas Pan Pointer Down
+  const handleCanvasPointerDown = (e: React.PointerEvent) => {
+    if (e.target === canvasRef.current || (e.target as HTMLElement).classList.contains("canvas-surface")) {
+      setSelectedItemId(null);
+      interactionRef.current = {
+        mode: "pan-canvas",
+        startX: e.clientX,
+        startY: e.clientY,
+        itemStartX: pan.x,
+        itemStartY: pan.y,
+        itemStartW: 0,
+        itemStartH: 0,
+        itemStartRot: 0,
+        centerX: 0,
+        centerY: 0,
+      };
+    }
+  };
+
+  // Global Pointer Move
+  const handleGlobalPointerMove = useCallback(
+    (e: PointerEvent) => {
+      const current = interactionRef.current;
+      if (current.mode === "idle") return;
+
+      if (current.mode === "drag-item" && current.itemId) {
+        const dx = (e.clientX - current.startX) / zoom;
+        const dy = (e.clientY - current.startY) / zoom;
+
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === current.itemId
+              ? {
+                  ...it,
+                  x: Math.round(current.itemStartX + dx),
+                  y: Math.round(current.itemStartY + dy),
+                }
+              : it
+          )
+        );
+      } else if (current.mode === "resize-item" && current.itemId) {
+        const dx = (e.clientX - current.startX) / zoom;
+        const dy = (e.clientY - current.startY) / zoom;
+        const handle = current.resizeHandle;
+
+        setItems((prev) =>
+          prev.map((it) => {
+            if (it.id !== current.itemId) return it;
+
+            let newW = current.itemStartW;
+            let newH = current.itemStartH;
+            let newX = current.itemStartX;
+            let newY = current.itemStartY;
+
+            if (handle === "se") {
+              newW = Math.max(80, current.itemStartW + dx);
+              newH = Math.max(80, current.itemStartH + dy);
+            } else if (handle === "sw") {
+              newW = Math.max(80, current.itemStartW - dx);
+              newH = Math.max(80, current.itemStartH + dy);
+              newX = current.itemStartX + (current.itemStartW - newW);
+            } else if (handle === "ne") {
+              newW = Math.max(80, current.itemStartW + dx);
+              newH = Math.max(80, current.itemStartH - dy);
+              newY = current.itemStartY + (current.itemStartH - newH);
+            } else if (handle === "nw") {
+              newW = Math.max(80, current.itemStartW - dx);
+              newH = Math.max(80, current.itemStartH - dy);
+              newX = current.itemStartX + (current.itemStartW - newW);
+              newY = current.itemStartY + (current.itemStartH - newH);
+            }
+
+            return {
+              ...it,
+              x: Math.round(newX),
+              y: Math.round(newY),
+              width: Math.round(newW),
+              height: Math.round(newH),
+            };
+          })
+        );
+      } else if (current.mode === "rotate-item" && current.itemId) {
+        const rad = Math.atan2(e.clientY - current.centerY, e.clientX - current.centerX);
+        const deg = Math.round((rad * 180) / Math.PI);
+        const finalAngle = (deg + 90) % 360;
+
+        setItems((prev) =>
+          prev.map((it) => (it.id === current.itemId ? { ...it, rotation: finalAngle } : it))
+        );
+      } else if (current.mode === "pan-canvas") {
+        const dx = e.clientX - current.startX;
+        const dy = e.clientY - current.startY;
+        setPan({
+          x: current.itemStartX + dx,
+          y: current.itemStartY + dy,
+        });
+      }
+    },
+    [zoom]
+  );
+
+  // Global Pointer Up
+  const handleGlobalPointerUp = useCallback(() => {
+    if (interactionRef.current.mode !== "idle") {
+      interactionRef.current.mode = "idle";
+      pushHistory(items);
+    }
+  }, [items, pushHistory]);
+
+  useEffect(() => {
+    window.addEventListener("pointermove", handleGlobalPointerMove);
+    window.addEventListener("pointerup", handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handleGlobalPointerMove);
+      window.removeEventListener("pointerup", handleGlobalPointerUp);
+    };
+  }, [handleGlobalPointerMove, handleGlobalPointerUp]);
+
+  // Zoom Controls
+  const zoomIn = () => setZoom((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))));
+  const zoomOut = () => setZoom((z) => Math.max(0.4, Number((z - 0.15).toFixed(2))));
+  const resetZoom = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  // Drag from Left Drawer to Canvas
+  const handleCatalogDragStart = (e: React.DragEvent, itemData: Partial<CanvasItem>) => {
+    e.dataTransfer.setData("application/json", JSON.stringify(itemData));
+  };
+
+  const handleCanvasDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    try {
+      const dataStr = e.dataTransfer.getData("application/json");
+      if (dataStr) {
+        const parsed = JSON.parse(dataStr);
+        addItemToCanvas(parsed, e.clientX, e.clientY);
+      }
+    } catch (err) {
+      console.error("Drop error:", err);
+    }
+  };
+
+  // Color background mapping (Unified throughout whole canvas)
+  const bgClass =
+    canvasBg === "white"
+      ? "bg-white text-purple-deep"
+      : canvasBg === "cream"
+      ? "bg-[#fbf6f0] text-purple-deep"
+      : canvasBg === "mauve"
+      ? "bg-[#f6eff8] text-purple-deep"
+      : "bg-[#edf4ea] text-purple-deep";
+
+  if (!mounted) {
+    return (
+      <div className="bg-[#fbf6f0] h-screen flex flex-col items-center justify-center font-sans text-purple-deep">
+        <div className="w-10 h-10 rounded-full border-3 border-lilac border-t-transparent animate-spin mb-4" />
+        <div className="text-xs font-bold uppercase tracking-wider text-tan-dark">Loading Sandbox...</div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="bg-cream text-purple-deep min-h-screen grid grid-cols-[72px_1fr] md:grid-cols-[88px_1fr]"
-      style={{ fontFamily: "'Poppins', sans-serif" }}
-    >
-      <h1 className="sr-only">Fashion Collage — arrange your favorite pieces into a moodboard</h1>
-      {/* left sidebar: categories */}
-      <aside className="border-r border-border py-5 flex flex-col items-center gap-1.5">
-        <label className="w-16 px-1 py-3 rounded-2xl flex flex-col items-center gap-1.5 cursor-pointer">
-          <span className="text-xl" aria-hidden="true">↑</span>
-          <span className="text-[10px] font-medium text-tan-dark text-center leading-tight">Upload</span>
-          <input type="file" accept="image/*" className="hidden" />
-        </label>
-        {categories.map((cat) => (
+    <div className={`${bgClass} h-screen flex flex-col overflow-hidden font-sans select-none transition-colors duration-300`}>
+      {/* 1. TOP NAVIGATION & ACTION BAR */}
+      <header className="h-16 border-b border-border bg-white/90 backdrop-blur-md px-4 md:px-6 flex items-center justify-between gap-4 z-30 shrink-0">
+        <div className="flex items-center gap-3 md:gap-5">
+          {/* Toggle Drawer Button */}
           <button
-            key={cat.id}
-            type="button"
-            onClick={() => setActiveCategory(cat.id)}
-            className={`w-16 px-1 py-2.5 rounded-xl flex flex-col items-center justify-center transition-colors ${
-              activeCategory === cat.id ? "bg-mauve-100 text-purple-deep font-bold" : "hover:bg-mauve-50 text-tan-dark"
-            }`}
-            aria-pressed={activeCategory === cat.id}
+            onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+            className="p-2 rounded-xl border border-border hover:bg-mauve-50 text-purple-deep transition-colors cursor-pointer"
+            title={isDrawerOpen ? "Collapse Pieces Drawer" : "Expand Pieces Drawer"}
           >
-            <span className="text-[11px] font-semibold text-center leading-tight">{cat.label}</span>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              {isDrawerOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
           </button>
-        ))}
-      </aside>
 
-      <div className="flex flex-col h-screen overflow-hidden">
-        {/* top bar */}
-        <div className="flex items-center gap-4 px-6 py-3.5 border-b border-border bg-cream-alt flex-wrap">
-          <Link href="/" className="text-xl font-bold text-lilac">
+          <Link href="/" className="font-heading text-lg md:text-xl font-bold text-purple-deep hover:text-rose transition-colors">
             Lilac Drawer
           </Link>
-          <div className="w-px h-6 bg-border" aria-hidden="true" />
-          <nav aria-label="Primary" className="hidden sm:flex gap-5 text-[13px] font-semibold text-tan-dark">
-            <Link href="/" className="text-tan-dark">Home</Link>
-            <Link href="/community" className="text-tan-dark">Community</Link>
-            <Link href="/explore" className="text-tan-dark">Explore</Link>
-            <Link href="/profile" className="text-tan-dark">Profile</Link>
-          </nav>
-          <form role="search" className="flex-1 min-w-[120px] max-w-[280px] flex items-center gap-2.5 bg-mauve-50 rounded-full px-4 py-2">
-            <label htmlFor="collage-search" className="sr-only">Search pieces</label>
-            <svg width="15" height="15" viewBox="0 0 256 256" fill="#b89a7a" aria-hidden="true">
-              <path d="M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z" />
+          <span className="hidden md:inline-block text-border font-light">|</span>
+          <div className="hidden md:flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose">
+            <svg className="w-4 h-4 text-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <input id="collage-search" type="search" placeholder="Search pieces..." className="border-none bg-transparent outline-none text-[13px] flex-1" />
-          </form>
-          <div className="ml-auto flex gap-2 shrink-0">
-            <button type="button" className="border-[1.5px] border-border-mauve text-tan-dark px-4.5 py-2 rounded-full text-[13px] font-semibold">
-              Save
-            </button>
-            <button type="button" className="border-[1.5px] border-border-mauve text-tan-dark px-4.5 py-2 rounded-full text-[13px] font-semibold">
-              Share
-            </button>
-            <button type="button" className="bg-lilac text-white px-5 py-2 rounded-full text-[13px] font-semibold">
-              Follow
-            </button>
+            <span>Fashion Sandbox</span>
           </div>
         </div>
 
-        {/* canvas */}
-        <div className="flex-1 min-h-0 flex items-center justify-center px-6 md:px-8 py-5 bg-mauve-50 relative">
-          <div className="relative w-full max-w-[920px] h-full max-h-[760px] bg-white rounded-[20px] shadow-[0_20px_50px_rgba(80,60,70,0.1)] overflow-hidden">
-            {boardItems.map((item) => (
-              <ImageSlot
-                key={item.id}
-                label={item.label}
-                className="absolute"
-                shape="rounded"
-                radius={14}
-                tone="mauve"
-                style={{ left: item.left, top: item.top, width: item.width, height: item.height }}
-              />
-            ))}
+        {/* Auto-Save & User Status Badge */}
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-mauve-50 border border-border text-[11px] font-semibold text-purple-deep">
+          <span className={`w-2 h-2 rounded-full ${!isLoaded ? "bg-amber-400 animate-ping" : "bg-sage animate-pulse"}`} />
+          <span>
+            {!isLoaded
+              ? "Restoring sandbox..."
+              : session?.user?.name
+              ? `Saved to ${session.user.name}'s Sandbox`
+              : "Auto-saved to Sandbox"}
+          </span>
+          {lastSavedTime && isLoaded && <span className="text-tan-dark">• {lastSavedTime}</span>}
+        </div>
 
-            <div className="absolute bottom-3.5 right-3.5 flex gap-2 bg-white rounded-full p-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.08)]">
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-[15px] cursor-pointer hover:bg-mauve-50">−</span>
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-[15px] cursor-pointer hover:bg-mauve-50">+</span>
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer hover:bg-mauve-50">↻</span>
-              <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer hover:bg-mauve-50">
-                <svg className="w-4 h-4 text-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        {/* Right Actions: Undo, Redo, Clear, Export */}
+        <div className="flex items-center gap-2">
+          {/* Undo Button */}
+          <button
+            onClick={handleUndo}
+            disabled={historyIndex <= 0}
+            className="p-2 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            title="Undo (Ctrl+Z)"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a5 5 0 015 5v2m0 0l-4-4m4 4l4-4" />
+            </svg>
+          </button>
+
+          {/* Redo Button */}
+          <button
+            onClick={handleRedo}
+            disabled={historyIndex >= history.length - 1}
+            className="p-2 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            title="Redo (Ctrl+Y)"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 10H11a5 5 0 00-5 5v2m0 0l4-4m-4 4l-4-4" />
+            </svg>
+          </button>
+
+          <div className="w-px h-6 bg-border mx-1" />
+
+          {/* Clear Canvas */}
+          <button
+            onClick={clearCanvas}
+            disabled={items.length === 0}
+            className="px-3 py-2 rounded-xl border border-border text-xs font-semibold text-tan-dark hover:text-rose hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            title="Clear Sandbox"
+          >
+            Clear
+          </button>
+
+          {/* Export / Download Moodboard */}
+          <button
+            onClick={exportCanvasAsImage}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-deep text-white text-xs font-bold hover:bg-purple-deep/90 shadow-xs transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span className="hidden sm:inline">Export Image</span>
+          </button>
+        </div>
+      </header>
+
+      {/* 2. MAIN WORKSPACE (DRAWER + UNIFIED FULL-VIEWPORT SANDBOX) */}
+      <div className="flex-1 min-h-0 flex relative overflow-hidden">
+        {/* LEFT PALETTE / PIECES & UPLOAD DRAWER */}
+        <aside
+          className={`border-r border-border bg-white flex flex-col transition-all duration-300 z-20 shrink-0 ${
+            isDrawerOpen ? "w-80 md:w-96 shadow-xl" : "w-0 -translate-x-full overflow-hidden border-none"
+          }`}
+        >
+          {/* Drawer Tabs: Catalog vs Uploads */}
+          <div className="p-3 border-b border-border bg-mauve-50/50 flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab("catalog")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeTab === "catalog"
+                  ? "bg-purple-deep text-white shadow-xs"
+                  : "bg-white border border-border text-tan-dark hover:text-purple-deep"
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              <span>Site Pieces ({initialProducts.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("uploads")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeTab === "uploads"
+                  ? "bg-purple-deep text-white shadow-xs"
+                  : "bg-white border border-border text-tan-dark hover:text-purple-deep"
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span>My Uploads ({userUploads.length})</span>
+            </button>
+          </div>
+
+          {/* TAB 1: CATALOG PRODUCTS */}
+          {activeTab === "catalog" && (
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Search Bar & Category Pills */}
+              <div className="p-3 border-b border-border">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search pieces..."
+                    className="w-full pl-9 pr-8 py-2 bg-mauve-50/60 border border-border rounded-xl text-xs text-purple-deep placeholder:text-tan outline-none focus:border-rose"
+                  />
+                  <svg
+                    className="w-3.5 h-3.5 text-tan absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-tan hover:text-purple-deep text-xs font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Categories Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pt-2.5 pb-1 scrollbar-none">
+                  <button
+                    onClick={() => setSelectedCategory("all")}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                      selectedCategory === "all"
+                        ? "bg-purple-deep text-white"
+                        : "bg-mauve-50 text-tan-dark hover:text-purple-deep"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {categoriesList.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                        selectedCategory === cat
+                          ? "bg-purple-deep text-white"
+                          : "bg-mauve-50 text-tan-dark hover:text-purple-deep"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Products Grid in Drawer */}
+              <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2.5">
+                {filteredCatalog.map((prod) => {
+                  const isAlreadyAdded = inSandboxProductIds.has(prod.id);
+
+                  return (
+                    <div
+                      key={prod.id}
+                      draggable
+                      onDragStart={(e) =>
+                        handleCatalogDragStart(e, {
+                          sourceType: "catalog",
+                          productId: prod.id,
+                          productSlug: prod.slug,
+                          title: prod.name,
+                          imageUrl: prod.imageUrl,
+                          imageLabel: prod.imageLabel,
+                          priceCents: prod.priceCents,
+                          category: prod.category,
+                          width: 210,
+                          height: 230,
+                        })
+                      }
+                      onClick={() =>
+                        addItemToCanvas({
+                          sourceType: "catalog",
+                          productId: prod.id,
+                          productSlug: prod.slug,
+                          title: prod.name,
+                          imageUrl: prod.imageUrl,
+                          imageLabel: prod.imageLabel,
+                          priceCents: prod.priceCents,
+                          category: prod.category,
+                          width: 210,
+                          height: 230,
+                        })
+                      }
+                      className={`p-2.5 rounded-2xl border transition-all cursor-grab active:cursor-grabbing group flex flex-col justify-between ${
+                        isAlreadyAdded
+                          ? "bg-mauve-100/60 border-rose/50 shadow-xs"
+                          : "bg-mauve-50/40 hover:bg-mauve-100/70 border-border/80"
+                      }`}
+                    >
+                      <div className="aspect-square rounded-xl overflow-hidden bg-white mb-2 flex items-center justify-center p-1.5 border border-border/50 relative">
+                        <ImageSlot
+                          imageUrl={prod.imageUrl}
+                          label={prod.imageLabel || prod.name}
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                          shape="rounded"
+                          radius={8}
+                          tone="mauve"
+                        />
+                        {isAlreadyAdded && (
+                          <span className="absolute top-1 right-1 bg-rose text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                            <span>✓</span>
+                            <span>Added</span>
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-rose line-clamp-1">
+                          {prod.category}
+                        </div>
+                        <div className="text-xs font-bold text-purple-deep group-hover:text-rose transition-colors line-clamp-1 leading-snug">
+                          {prod.name}
+                        </div>
+                        <div className="flex items-center justify-between mt-1 pt-1 border-t border-border/50">
+                          <span className="text-xs font-bold text-rose">
+                            {formatPriceFixed(prod.priceCents)}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${
+                              isAlreadyAdded
+                                ? "bg-rose text-white border-rose"
+                                : "bg-white text-purple-deep border-border/60 hover:bg-purple-deep hover:text-white"
+                            }`}
+                          >
+                            {isAlreadyAdded ? "+ More" : "+ Add"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: USER UPLOADS */}
+          {activeTab === "uploads" && (
+            <div className="flex-1 flex flex-col p-4 gap-4 min-h-0 overflow-y-auto">
+              {/* Upload Dropzone */}
+              <label className="border-2 border-dashed border-lilac/50 hover:border-lilac rounded-2xl p-6 bg-mauve-50/50 hover:bg-mauve-50 transition-colors flex flex-col items-center justify-center text-center cursor-pointer gap-2 group">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-purple-deep shadow-xs group-hover:scale-110 transition-transform">
+                  <svg className="w-6 h-6 text-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                </div>
+                <span className="text-xs font-bold text-purple-deep">Upload Photos from Device</span>
+                <span className="text-[10.5px] text-tan-dark">PNG, JPG, WebP supported</span>
+              </label>
+
+              {/* Uploaded Photos Grid */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-tan-dark mb-2">
+                  Your Uploaded Items ({userUploads.length})
+                </h4>
+                {userUploads.length === 0 ? (
+                  <p className="text-xs text-tan-dark italic text-center py-6">
+                    No custom uploads yet. Click above to add photos from your device.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {userUploads.map((up) => (
+                      <div
+                        key={up.id}
+                        draggable
+                        onDragStart={(e) =>
+                          handleCatalogDragStart(e, {
+                            sourceType: "upload",
+                            title: up.name,
+                            imageUrl: up.url,
+                            imageLabel: up.name,
+                            width: 220,
+                            height: 240,
+                          })
+                        }
+                        onClick={() =>
+                          addItemToCanvas({
+                            sourceType: "upload",
+                            title: up.name,
+                            imageUrl: up.url,
+                            imageLabel: up.name,
+                            width: 220,
+                            height: 240,
+                          })
+                        }
+                        className="p-2 rounded-2xl bg-mauve-50/50 hover:bg-mauve-100/70 border border-border transition-all cursor-grab active:cursor-grabbing group"
+                      >
+                        <div className="aspect-square rounded-xl overflow-hidden bg-white mb-1.5 flex items-center justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={up.url} alt={up.name} className="w-full h-full object-contain" />
+                        </div>
+                        <div className="text-[11px] font-semibold text-purple-deep truncate">{up.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </aside>
+
+        {/* UNIFIED FULL-VIEWPORT SANDBOX CANVAS */}
+        <main
+          ref={canvasRef}
+          onPointerDown={handleCanvasPointerDown}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleCanvasDrop}
+          className="flex-1 relative overflow-hidden cursor-crosshair canvas-surface w-full h-full"
+        >
+          {/* Subtle Grid Dot Background */}
+          {showGrid && (
+            <div
+              className="absolute inset-0 pointer-events-none opacity-30 canvas-surface"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle, rgba(122, 90, 140, 0.25) 1px, transparent 1px)",
+                backgroundSize: "24px 24px",
+              }}
+            />
+          )}
+
+          {/* Transformable Canvas Surface */}
+          <div
+            className="absolute inset-0 origin-top-left transition-transform duration-75 canvas-surface"
+            style={{
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            }}
+          >
+            {/* Active Canvas Items */}
+            {items.map((item) => {
+              const isSelected = item.id === selectedItemId;
+
+              return (
+                <div
+                  key={item.id}
+                  onPointerDown={(e) => handleItemPointerDown(e, item)}
+                  style={{
+                    position: "absolute",
+                    left: `${item.x}px`,
+                    top: `${item.y}px`,
+                    width: `${item.width}px`,
+                    height: `${item.height}px`,
+                    transform: `rotate(${item.rotation}deg)`,
+                    zIndex: item.zIndex,
+                    opacity: item.opacity ?? 1,
+                  }}
+                  className={`group absolute rounded-2xl cursor-grab active:cursor-grabbing transition-shadow ${
+                    isSelected ? "ring-2 ring-rose ring-offset-2 shadow-2xl" : "hover:shadow-lg shadow-md"
+                  }`}
+                >
+                  {/* Item Content Box */}
+                  <div className="w-full h-full rounded-2xl overflow-hidden bg-white border border-border/80 p-3 shadow-xs flex flex-col justify-between pointer-events-none">
+                    <div className="flex-1 w-full h-full flex items-center justify-center overflow-hidden rounded-xl bg-mauve-50/40">
+                      {item.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <ImageSlot
+                          label={item.imageLabel || item.title}
+                          className="w-full h-full object-contain"
+                          shape="rounded"
+                          radius={8}
+                          tone="mauve"
+                        />
+                      )}
+                    </div>
+
+                    {/* Item Bottom Label */}
+                    <div className="pt-2 flex items-center justify-between gap-1">
+                      <span className="text-[11px] font-bold text-purple-deep truncate">
+                        {item.title}
+                      </span>
+                      {item.priceCents != null && (
+                        <span className="text-[11px] font-bold text-rose shrink-0">
+                          {formatPriceFixed(item.priceCents)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* SELECTION CONTROLS & HANDLES */}
+                  {isSelected && (
+                    <>
+                      {/* Top Rotation Handle */}
+                      <div
+                        onPointerDown={(e) => handleRotatePointerDown(e, item)}
+                        className="absolute -top-7 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-rose text-white flex items-center justify-center shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform"
+                        title="Drag to rotate"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </div>
+
+                      {/* 4 Corner Resize Handles */}
+                      <div
+                        onPointerDown={(e) => handleResizePointerDown(e, item, "nw")}
+                        className="absolute -top-2 -left-2 w-4 h-4 bg-white border-2 border-rose rounded-full cursor-nwse-resize shadow-sm hover:scale-125 transition-transform"
+                      />
+                      <div
+                        onPointerDown={(e) => handleResizePointerDown(e, item, "ne")}
+                        className="absolute -top-2 -right-2 w-4 h-4 bg-white border-2 border-rose rounded-full cursor-nesw-resize shadow-sm hover:scale-125 transition-transform"
+                      />
+                      <div
+                        onPointerDown={(e) => handleResizePointerDown(e, item, "sw")}
+                        className="absolute -bottom-2 -left-2 w-4 h-4 bg-white border-2 border-rose rounded-full cursor-nesw-resize shadow-sm hover:scale-125 transition-transform"
+                      />
+                      <div
+                        onPointerDown={(e) => handleResizePointerDown(e, item, "se")}
+                        className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border-2 border-rose rounded-full cursor-nwse-resize shadow-sm hover:scale-125 transition-transform"
+                      />
+
+                      {/* Floating Item Context Menu Toolbar */}
+                      <div
+                        className="absolute -top-14 left-1/2 -translate-x-1/2 bg-purple-deep text-white rounded-xl py-1 px-2 flex items-center gap-1 shadow-lg pointer-events-auto z-50 whitespace-nowrap"
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        {/* Rotate 90 deg */}
+                        <button
+                          onClick={() => rotateItem(item.id, 90)}
+                          className="p-1.5 hover:bg-white/20 rounded-lg transition-colors cursor-pointer"
+                          title="Rotate 90° Clockwise"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
+
+                        {/* Bring Forward */}
+                        <button
+                          onClick={() => bringForward(item.id)}
+                          className="p-1.5 hover:bg-white/20 rounded-lg transition-colors cursor-pointer"
+                          title="Bring Forward"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                          </svg>
+                        </button>
+
+                        {/* Send Backward */}
+                        <button
+                          onClick={() => sendBackward(item.id)}
+                          className="p-1.5 hover:bg-white/20 rounded-lg transition-colors cursor-pointer"
+                          title="Send Backward"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+
+                        {/* Duplicate */}
+                        <button
+                          onClick={() => duplicateItem(item.id)}
+                          className="p-1.5 hover:bg-white/20 rounded-lg transition-colors cursor-pointer"
+                          title="Duplicate Piece (Ctrl+D)"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                          </svg>
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => deleteItem(item.id)}
+                          className="p-1.5 hover:bg-rose text-rose hover:text-white rounded-lg transition-colors cursor-pointer"
+                          title="Delete (Backspace/Del)"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 1. LOADING STATE WHILE RESTORING SAVED SANDBOX */}
+          {!isLoaded && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center pointer-events-none z-10">
+              <div className="relative mb-3 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full border-3 border-lilac/30 border-t-purple-deep animate-spin" />
+                <div className="absolute w-3 h-3 rounded-full bg-rose animate-pulse" />
+              </div>
+              <h4 className="font-heading text-sm md:text-base font-bold text-purple-deep mb-1">
+                {session?.user?.name
+                  ? `Restoring ${session.user.name}'s Sandbox...`
+                  : "Loading Saved Sandbox..."}
+              </h4>
+              <p className="text-xs text-tan-dark font-medium">
+                Restoring your pieces & layout
+              </p>
+            </div>
+          )}
+
+          {/* 2. EMPTY STATE (SHOWN ONLY ONCE LOADED AND REALLY 0 PIECES) */}
+          {isLoaded && items.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center pointer-events-none animate-in fade-in duration-300">
+              <div className="w-20 h-20 rounded-3xl border-2 border-dashed border-lilac/40 bg-white/70 backdrop-blur-sm flex items-center justify-center mb-4 text-purple-deep shadow-xs">
+                <svg className="w-9 h-9 text-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-              </span>
+              </div>
+              <h3 className="font-heading text-xl md:text-2xl font-bold text-purple-deep mb-2">
+                Your Fashion Sandbox is Ready
+              </h3>
+              <p className="text-xs md:text-sm text-tan-dark max-w-md leading-relaxed mb-5">
+                Drag pieces from the left drawer or upload photos from your device to start designing your aesthetic moodboard.
+              </p>
+              <button
+                onClick={() => setIsDrawerOpen(true)}
+                className="pointer-events-auto inline-flex items-center gap-2 bg-purple-deep text-white text-xs font-bold px-5 py-2.5 rounded-full hover:bg-purple-deep/90 shadow-sm transition-all cursor-pointer"
+              >
+                <span>Browse Pieces</span>
+                <span>→</span>
+              </button>
             </div>
-            <div className="absolute top-3.5 left-3.5 bg-white rounded-full px-3.5 py-1.5 text-[11px] font-semibold text-tan shadow-[0_4px_14px_rgba(0,0,0,0.06)]">
-              Drag pieces to arrange
+          )}
+
+          {/* INSTRUCTION PILL (TOP-LEFT) */}
+          {items.length > 0 && (
+            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm border border-border px-3.5 py-1.5 rounded-full text-xs font-semibold text-tan-dark shadow-xs flex items-center gap-2 pointer-events-none">
+              <svg className="w-3.5 h-3.5 text-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+              </svg>
+              <span>Drag pieces to arrange • Corner handles to scale • Top dot to rotate</span>
             </div>
+          )}
+
+          {/* FLOATING BOTTOM CONTROL BAR (ZOOM & UNIFIED COLOR TONES) */}
+          <div className="absolute bottom-5 right-5 flex items-center gap-2 bg-white/95 backdrop-blur-md border border-border rounded-2xl p-2 shadow-lg z-20">
+            {/* Unified Backdrop Tone Switcher */}
+            <div className="flex items-center gap-1.5 border-r border-border pr-2">
+              {[
+                { id: "cream", bg: "#fbf6f0", label: "Cream" },
+                { id: "white", bg: "#ffffff", label: "White" },
+                { id: "mauve", bg: "#f6eff8", label: "Mauve" },
+                { id: "sage", bg: "#edf4ea", label: "Sage" },
+              ].map((bg) => (
+                <button
+                  key={bg.id}
+                  onClick={() => setCanvasBg(bg.id as any)}
+                  style={{ backgroundColor: bg.bg }}
+                  className={`w-5 h-5 rounded-full border border-border transition-transform cursor-pointer ${
+                    canvasBg === bg.id ? "ring-2 ring-rose ring-offset-1 scale-110" : "hover:scale-105"
+                  }`}
+                  title={`${bg.label} Backdrop`}
+                />
+              ))}
+            </div>
+
+            {/* Grid Toggle */}
+            <button
+              onClick={() => setShowGrid(!showGrid)}
+              className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+                showGrid ? "bg-mauve-100 border-lilac text-purple-deep" : "border-border text-tan-dark hover:bg-mauve-50"
+              }`}
+              title="Toggle Grid"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+
+            {/* Zoom Out (-) */}
+            <button
+              onClick={zoomOut}
+              className="p-1.5 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 transition-colors cursor-pointer"
+              title="Zoom Out"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+              </svg>
+            </button>
+
+            {/* Zoom Percentage */}
+            <button
+              onClick={resetZoom}
+              className="px-2 py-1 rounded-lg text-xs font-bold text-purple-deep hover:bg-mauve-50 transition-colors cursor-pointer"
+              title="Click to reset 100%"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+
+            {/* Zoom In (+) */}
+            <button
+              onClick={zoomIn}
+              className="p-1.5 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 transition-colors cursor-pointer"
+              title="Zoom In"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+
+            {/* Reset / Center Pan */}
+            <button
+              onClick={resetZoom}
+              className="p-1.5 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 transition-colors cursor-pointer"
+              title="Center Canvas"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );

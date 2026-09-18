@@ -28,9 +28,15 @@ export default async function EditProfilePage({ params }: { params: Promise<{ ha
     <>
       <SiteHeader />
       <main className="bg-cream text-purple-deep min-h-screen">
-        <div className="max-w-[480px] mx-auto px-6 py-10">
+        <div className="max-w-[560px] mx-auto px-6 py-10">
           <h1 className="font-heading text-2xl text-purple-deep mb-6">Edit Profile</h1>
-          <EditProfileForm handle={person.handle} initialName={person.name} initialBio={person.bio ?? ""} initialImage={person.image ?? ""} />
+          <EditProfileForm
+            handle={person.handle}
+            initialName={person.name}
+            initialBio={person.bio ?? ""}
+            initialImage={person.image ?? ""}
+            initialCoverImage={person.coverImage ?? ""}
+          />
         </div>
       </main>
     </>

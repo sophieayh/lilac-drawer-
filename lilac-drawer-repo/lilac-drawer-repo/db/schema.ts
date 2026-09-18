@@ -178,6 +178,7 @@ export const communityPosts = pgTable("community_posts", {
   imageUrl: text("image_url"),
   productId: integer("product_id").references((): AnyPgColumn => products.id, { onDelete: "set null" }),
   repostOfId: integer("repost_of_id").references((): AnyPgColumn => communityPosts.id, { onDelete: "cascade" }),
+  articleId: integer("article_id").references((): AnyPgColumn => posts.id, { onDelete: "set null" }),
   postedAt: timestamp("posted_at").notNull().defaultNow(),
   // Denormalized counters, incremented/decremented by the mutation actions
   // that create/remove a comment, repost, or like — avoids a COUNT() query

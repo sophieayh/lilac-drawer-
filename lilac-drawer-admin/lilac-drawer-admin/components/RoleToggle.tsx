@@ -14,7 +14,7 @@ export default function RoleToggle({ userId, role, isSelf }: { userId: string; r
           isAdmin ? "bg-rose/15 text-rose" : "bg-tan/15 text-tan-dark"
         }`}
       >
-        {isAdmin ? "Admin" : "User"}
+        {isAdmin ? "مشرف" : "مستخدم"}
       </span>
       {!isSelf && (
         <button
@@ -23,7 +23,7 @@ export default function RoleToggle({ userId, role, isSelf }: { userId: string; r
           onClick={() => startTransition(() => setUserRole(userId, isAdmin ? "user" : "admin"))}
           className="text-xs font-semibold text-rose hover:underline disabled:opacity-50"
         >
-          {isPending ? "…" : isAdmin ? "Revoke" : "Make admin"}
+          {isPending ? "…" : isAdmin ? "سحب الصلاحية" : "تعيين كمشرف"}
         </button>
       )}
     </div>

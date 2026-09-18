@@ -70,7 +70,7 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
         <div>
           <h1 className="font-heading text-2xl text-purple-deep">{title}</h1>
           <p className="text-sm text-tan-dark mt-1">
-            Configure category details, placement section, and subcategory branches.
+            تحديد تفاصيل القسم وموضع ظهوره في القوائم وإدارة فروع الأقسام الفرعية.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -78,11 +78,11 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
             href="/categories"
             className="rounded-full border border-border px-5 py-2 text-sm font-semibold text-purple-deep hover:bg-mauve-50 transition-colors"
           >
-            Cancel
+            إلغاء
           </Link>
           <button
             type="submit"
-            className="bg-lilac text-white rounded-full px-6 py-2 text-sm font-semibold shadow-[0_2px_8px_rgba(201,163,198,0.4)] hover:bg-lilac/90 transition-colors"
+            className="bg-lilac text-white rounded-full px-6 py-2 text-sm font-semibold shadow-[0_2px_8px_rgba(201,163,198,0.4)] hover:bg-lilac/90 transition-colors cursor-pointer"
           >
             {submitLabel}
           </button>
@@ -95,13 +95,13 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
       {/* Primary info card */}
       <div className="bg-white border border-border rounded-2xl p-6 sm:p-8 flex flex-col gap-6 shadow-[var(--shadow-card)]">
         <h2 className="font-heading text-lg text-purple-deep border-b border-border pb-3">
-          Category Basics
+          البيانات الأساسية للقسم
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label htmlFor="label" className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Category Name *
+              اسم القسم *
             </label>
             <input
               id="label"
@@ -109,21 +109,21 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
               type="text"
               required
               defaultValue={initial?.label ?? ""}
-              placeholder="e.g. Beauty & Makeup"
+              placeholder="مثال: الجمال والمكياج"
               className="w-full rounded-xl border border-border bg-mauve-50/40 px-3.5 py-2.5 text-sm text-purple-deep focus:outline-none focus:ring-2 focus:ring-lilac/50"
             />
           </div>
 
           <div>
             <label htmlFor="slug" className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Slug (URL Identifier)
+              المعرف في الرابط (Slug)
             </label>
             <input
               id="slug"
               name="slug"
               type="text"
               defaultValue={initial?.slug ?? ""}
-              placeholder="e.g. beauty-makeup"
+              placeholder="مثال: beauty-makeup"
               className="w-full rounded-xl border border-border bg-mauve-50/40 px-3.5 py-2.5 text-sm text-purple-deep focus:outline-none focus:ring-2 focus:ring-lilac/50"
             />
           </div>
@@ -132,7 +132,7 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div>
             <label htmlFor="section" className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Menu Section *
+              موضع القائمة *
             </label>
             <select
               id="section"
@@ -140,29 +140,29 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
               defaultValue={initial?.section ?? "header"}
               className="w-full rounded-xl border border-border bg-mauve-50/40 px-3.5 py-2.5 text-sm text-purple-deep focus:outline-none focus:ring-2 focus:ring-lilac/50"
             >
-              <option value="header">Header Navigation (With Hover Menu)</option>
-              <option value="sidebar">Sidebar Filter Menu</option>
-              <option value="explore">Explore Grid</option>
+              <option value="header">شريط التنقل العلوي (مع قائمة منسدلة)</option>
+              <option value="sidebar">قائمة فلاتر الشريط الجانبي</option>
+              <option value="explore">شبكة استكشف</option>
             </select>
           </div>
 
           <div>
             <label htmlFor="icon" className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Icon / Symbol (Optional)
+              الأيقونة / الرمز (اختياري)
             </label>
             <input
               id="icon"
               name="icon"
               type="text"
               defaultValue={initial?.icon ?? ""}
-              placeholder="Optional"
+              placeholder="اختياري"
               className="w-full rounded-xl border border-border bg-mauve-50/40 px-3.5 py-2.5 text-sm text-purple-deep focus:outline-none focus:ring-2 focus:ring-lilac/50"
             />
           </div>
 
           <div>
             <label htmlFor="colorHex" className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Badge Color (Hex)
+              لون الشارة (Hex)
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -180,20 +180,20 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Category Route
+              مسار القسم
             </label>
             <div className="w-full rounded-xl border border-border bg-mauve-50/20 px-3.5 py-2.5 text-xs text-tan-dark font-mono flex items-center gap-2">
               <span className="text-rose">/category/</span>
               <span>[slug]</span>
-              <span className="ml-auto text-[10px] uppercase font-bold bg-lilac/20 text-purple-deep px-2 py-0.5 rounded">
-                Auto Filtered
+              <span className="mr-auto text-[10px] uppercase font-bold bg-lilac/20 text-purple-deep px-2 py-0.5 rounded">
+                فلترة تلقائية
               </span>
             </div>
           </div>
 
           <div>
             <label htmlFor="sortOrder" className="block text-xs font-bold uppercase tracking-wider text-tan-dark mb-1.5">
-              Display Sort Order
+              ترتيب العرض
             </label>
             <input
               id="sortOrder"
@@ -211,9 +211,9 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
               type="checkbox"
               name="isActive"
               defaultChecked={initial?.isActive ?? true}
-              className="w-4 h-4 rounded text-lilac focus:ring-lilac accent-purple-deep"
+              className="w-4 h-4 rounded text-lilac focus:ring-lilac accent-purple-deep cursor-pointer"
             />
-            <span className="text-sm font-semibold text-purple-deep">Active and Visible on Site</span>
+            <span className="text-sm font-semibold text-purple-deep">نشط وظاهر في الموقع المباشر</span>
           </label>
         </div>
       </div>
@@ -223,29 +223,29 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
         <div className="flex items-center justify-between gap-4 flex-wrap border-b border-border pb-4">
           <div>
             <h2 className="font-heading text-lg text-purple-deep">
-              Subcategories
+              الأقسام الفرعية
             </h2>
             <p className="text-xs text-tan-dark mt-1">
-              Configure branch subcategories. Articles and products will automatically filter by these branches.
+              تحديد الفروع التابعة للقسم. سيتم تصفية المقالات والمنتجات تلقائياً حسب هذه الفروع.
             </p>
           </div>
           <button
             type="button"
             onClick={addSubcategory}
-            className="flex items-center gap-2 bg-mauve-100 hover:bg-mauve-200 text-purple-deep px-4 py-2 rounded-xl text-xs font-bold transition-colors"
+            className="flex items-center gap-2 bg-mauve-100 hover:bg-mauve-200 text-purple-deep px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            + Add Subcategory
+            + إضافة قسم فرعي
           </button>
         </div>
 
         {subcategories.length === 0 ? (
           <div className="text-center py-8 px-4 rounded-xl border-2 border-dashed border-border bg-mauve-50/30">
-            <p className="text-sm text-tan-dark">No subcategories configured yet.</p>
+            <p className="text-sm text-tan-dark">لم يتم تكوين أقسام فرعية بعد.</p>
             <p className="text-xs text-tan-dark/70 mt-1">
-              Click &quot;+ Add Subcategory&quot; to create branch items.
+              اضغط &quot;+ إضافة قسم فرعي&quot; لإنشاء فروع جديدة.
             </p>
           </div>
         ) : (
@@ -261,7 +261,7 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
                       {idx + 1}
                     </span>
                     <span className="text-xs font-semibold text-purple-deep">
-                      {sub.label || `Item #${idx + 1}`}
+                      {sub.label || `فرع #${idx + 1}`}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -269,8 +269,8 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
                       type="button"
                       onClick={() => moveSubcategory(idx, "up")}
                       disabled={idx === 0}
-                      title="Move up"
-                      className="p-1 rounded text-tan-dark hover:text-purple-deep hover:bg-white disabled:opacity-30"
+                      title="نقل لأعلى"
+                      className="p-1 rounded text-tan-dark hover:text-purple-deep hover:bg-white disabled:opacity-30 cursor-pointer"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -280,8 +280,8 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
                       type="button"
                       onClick={() => moveSubcategory(idx, "down")}
                       disabled={idx === subcategories.length - 1}
-                      title="Move down"
-                      className="p-1 rounded text-tan-dark hover:text-purple-deep hover:bg-white disabled:opacity-30"
+                      title="نقل لأسفل"
+                      className="p-1 rounded text-tan-dark hover:text-purple-deep hover:bg-white disabled:opacity-30 cursor-pointer"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -290,8 +290,8 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
                     <button
                       type="button"
                       onClick={() => removeSubcategory(idx)}
-                      title="Remove branch"
-                      className="p-1 rounded text-rose hover:bg-rose/10 ml-2"
+                      title="إزالة الفرع"
+                      className="p-1 rounded text-rose hover:bg-rose/10 mr-2 cursor-pointer"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -303,27 +303,27 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-tan-dark mb-1">
-                      Subcategory Name *
+                      اسم القسم الفرعي *
                     </label>
                     <input
                       type="text"
                       required
                       value={sub.label}
                       onChange={(e) => updateSubcategory(idx, "label", e.target.value)}
-                      placeholder="e.g. Makeup Essentials"
+                      placeholder="مثال: أساسيات المكياج"
                       className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-purple-deep focus:outline-none focus:ring-2 focus:ring-lilac/50"
                     />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-tan-dark mb-1">
-                      Short Description
+                      وصف موجز
                     </label>
                     <input
                       type="text"
                       value={sub.description || ""}
                       onChange={(e) => updateSubcategory(idx, "description", e.target.value)}
-                      placeholder="e.g. Foundations, blushes & setting sprays tested for all-day wear"
+                      placeholder="مثال: كريمات الأساس، أحمر الخدود، ومثبتات المكياج"
                       className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-purple-deep focus:outline-none focus:ring-2 focus:ring-lilac/50"
                     />
                   </div>
@@ -339,11 +339,11 @@ export default function CategoryForm({ initial, action, title, submitLabel }: Pr
           href="/categories"
           className="rounded-full border border-border px-5 py-2 text-sm font-semibold text-purple-deep hover:bg-mauve-50 transition-colors"
         >
-          Cancel
+          إلغاء
         </Link>
         <button
           type="submit"
-          className="bg-lilac text-white rounded-full px-7 py-2.5 text-sm font-semibold shadow-[0_2px_8px_rgba(201,163,198,0.4)] hover:bg-lilac/90 transition-colors"
+          className="bg-lilac text-white rounded-full px-7 py-2.5 text-sm font-semibold shadow-[0_2px_8px_rgba(201,163,198,0.4)] hover:bg-lilac/90 transition-colors cursor-pointer"
         >
           {submitLabel}
         </button>

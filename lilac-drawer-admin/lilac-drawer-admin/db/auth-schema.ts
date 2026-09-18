@@ -14,6 +14,7 @@ export const user = pgTable("user", {
     .notNull(),
   handle: text("handle").notNull().unique(),
   bio: text("bio"),
+  coverImage: text("cover_image"),
   // Access-control flag for the admin dashboard (/admin). Not exposed as a
   // signup field — only settable by an existing admin via the dashboard's
   // Users page, or manually the very first time (see README).

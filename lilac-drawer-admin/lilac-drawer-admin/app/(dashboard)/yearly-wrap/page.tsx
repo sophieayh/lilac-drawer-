@@ -4,7 +4,7 @@ import { products, siteCategories } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 import YearlyWrapForm from "./YearlyWrapForm";
 
-export const metadata = { title: "Yearly Wrap Settings" };
+export const metadata = { title: "إعدادات حصاد العام" };
 
 export default async function YearlyWrapPage() {
   const wrap = await getYearlyWrap();

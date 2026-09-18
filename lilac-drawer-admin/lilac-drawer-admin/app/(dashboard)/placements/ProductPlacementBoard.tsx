@@ -18,79 +18,79 @@ interface PlacementZoneConfig {
 const PRODUCT_ZONES: PlacementZoneConfig[] = [
   {
     key: "isFeaturedHome",
-    title: "Home — Featured Picks",
-    badge: "Home Deals",
-    description: "Featured product deals in the right sidebar list on the homepage.",
+    title: "الرئيسية — اختيارات مميزة",
+    badge: "عروض الرئيسية",
+    description: "عروض المنتجات المميزة في القائمة الجانبية بالصفحة الرئيسية.",
     recommendedCount: 4,
   },
   {
     key: "isTopPick",
-    title: "Home — Top 10 Ranked",
-    badge: "Top Picks",
-    description: "Ranked items in the 'Top 10 Ranked' section on the homepage.",
+    title: "الرئيسية — أفضل 10 منتجات",
+    badge: "أفضل الاختيارات",
+    description: "المنتجات المصنفة في قسم 'أفضل 10 اختيارات' بالصفحة الرئيسية.",
     recommendedCount: 10,
   },
   {
     key: "isFeaturedDeals",
-    title: "Deals — Featured Deals",
-    badge: "Deals Hero",
-    description: "Hero showcase deals grid at the top of the /deals page.",
+    title: "العروض — العروض المميزة",
+    badge: "واجهة العروض",
+    description: "شبكة العروض البارزة في أعلى صفحة العروض.",
     recommendedCount: 6,
   },
   {
     key: "isTodayDeal",
-    title: "Deals — Today's Deals",
-    badge: "Today's Deal",
-    description: "Special daily limited-time deals on the /deals page.",
+    title: "العروض — عروض اليوم",
+    badge: "عرض اليوم",
+    description: "عروض يومية خاصة ومحدودة الوقت في صفحة العروض.",
     recommendedCount: 4,
   },
   {
     key: "isSaleOff",
-    title: "Deals — Sale Off",
-    badge: "Sale Off",
-    description: "Clearance and discounted sale items on the /deals page.",
+    title: "العروض — تخفيضات كبرى",
+    badge: "تخفيضات",
+    description: "منتجات التصفية والخصومات في صفحة العروض.",
     recommendedCount: 6,
   },
   {
     key: "isNewArrival",
-    title: "Explore — New Arrivals",
-    badge: "New Arrival",
-    description: "Freshly added products in Explore's New Arrivals section.",
+    title: "استكشف — أحدث المنتجات",
+    badge: "وصل حديثاً",
+    description: "المنتجات المضافة حديثاً في قسم وصل حديثاً بصفحة استكشف.",
     recommendedCount: 6,
   },
   {
     key: "isBestSeller",
-    title: "Explore — Best Sellers",
-    badge: "Best Seller",
-    description: "Top-selling favorite products in Explore.",
+    title: "استكشف — الأكثر مبيعاً",
+    badge: "الأكثر مبيعاً",
+    description: "أفضل المنتجات وأكثرها طلباً في صفحة استكشف.",
     recommendedCount: 6,
   },
   {
     key: "isExploreDeal",
-    title: "Explore — Deals Grid",
-    badge: "Explore Deals",
-    description: "Curated deal cards across the /explore page.",
+    title: "استكشف — شبكة العروض",
+    badge: "عروض استكشف",
+    description: "بطاقات العروض المختارة في صفحة استكشف.",
     recommendedCount: 8,
   },
   {
     key: "isRecommended",
-    title: "Explore — Recommended",
-    badge: "Recommended",
-    description: "Hand-picked recommendations on the Explore page.",
+    title: "استكشف — موصى به",
+    badge: "موصى به",
+    description: "ترشيحات مختارة بعناية في صفحة استكشف.",
     recommendedCount: 8,
   },
   {
     key: "isSaved",
-    title: "Saved Picks",
-    badge: "Saved",
-    description: "Saved and curated essentials collection.",
+    title: "المختارات المحفوظة",
+    badge: "محفوظة",
+    description: "مجموعة المنتجات المحفوظة والأساسية.",
     recommendedCount: 8,
   },
   {
     key: "isSuggested",
-    title: "Suggested",
-    badge: "Suggested",
-    description: "Editor-suggested items across the store.",
+    title: "مقترحات المحرر",
+    badge: "مقترحات",
+    description: "منتجات يقترحها المحرر عبر أقسام المتجر.",
     recommendedCount: 6,
   },
 ];
@@ -103,19 +103,19 @@ function formatPrice(cents: number | null | undefined): string {
 export default function ProductPlacementBoard({ initialProducts }: { initialProducts: Product[] }) {
   const [productsList, setProductsList] = useState<Product[]>(initialProducts);
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("ALL");
+  const [activeCategory, setActiveCategory] = useState<string>("الكل");
   const [dragOverZone, setDragOverZone] = useState<string | null>(null);
   const [draggedProductId, setDraggedProductId] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const categories = ["ALL", ...Array.from(new Set(initialProducts.map((p) => p.category)))];
+  const categories = ["الكل", ...Array.from(new Set(initialProducts.map((p) => p.category)))];
 
   const filteredProducts = productsList.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.slug.toLowerCase().includes(search.toLowerCase()) ||
       (p.subtitle && p.subtitle.toLowerCase().includes(search.toLowerCase()));
-    const matchesCategory = activeCategory === "ALL" || p.category === activeCategory;
+    const matchesCategory = activeCategory === "الكل" || p.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -168,24 +168,31 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
 
   return (
     <div className="flex flex-col gap-6">
+      {isPending && (
+        <div className="flex items-center gap-2 text-xs font-semibold text-rose bg-pink-100/50 px-3 py-1.5 rounded-full self-start">
+          <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          جاري حفظ التغييرات…
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-[340px_1fr] gap-6 items-start">
         {/* Left Column: Draggable Products Pool */}
         <div className="bg-white rounded-2xl border border-border p-4.5 shadow-sm sticky top-6 max-h-[calc(100vh-140px)] flex flex-col">
           <div className="mb-3.5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-heading text-base text-purple-deep flex items-center gap-2">
-                <span>All Products</span>
+                <span>جميع المنتجات</span>
                 <span className="text-xs bg-mauve-100 text-purple-deep px-2 py-0.5 rounded-full font-bold">
                   {filteredProducts.length}
                 </span>
               </h2>
-              <span className="text-[11px] text-tan uppercase tracking-wide">Drag to assign ⠿</span>
+              <span className="text-[11px] text-tan uppercase tracking-wide">اسحب للتعيين ⠿</span>
             </div>
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search products…"
+              placeholder="البحث في المنتجات…"
               className="w-full border border-border rounded-lg px-3 py-2 text-xs outline-none focus:border-lilac bg-cream/30"
             />
           </div>
@@ -197,7 +204,7 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
                 key={c}
                 type="button"
                 onClick={() => setActiveCategory(c)}
-                className={`text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap font-medium transition-colors ${
+                className={`text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap font-medium transition-colors cursor-pointer ${
                   activeCategory === c
                     ? "bg-purple-deep text-white font-semibold"
                     : "bg-mauve-50 text-tan-dark hover:bg-mauve-100"
@@ -209,7 +216,7 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
           </div>
 
           {/* Products List */}
-          <div className="overflow-y-auto pr-1 flex flex-col gap-2 flex-1 divide-y divide-border/40">
+          <div className="overflow-y-auto pl-1 flex flex-col gap-2 flex-1 divide-y divide-border/40">
             {filteredProducts.map((p) => {
               const activePlacements = PRODUCT_ZONES.filter((z) => Boolean(p[z.key]));
               const isBeingDragged = draggedProductId === p.id;
@@ -274,7 +281,7 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
             })}
 
             {filteredProducts.length === 0 && (
-              <div className="text-center py-8 text-xs text-tan">No products found.</div>
+              <div className="text-center py-8 text-xs text-tan">لم يتم العثور على منتجات.</div>
             )}
           </div>
         </div>
@@ -309,7 +316,7 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
                         {zone.title}
                       </h3>
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="text-left shrink-0">
                       <span
                         className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                           assignedProducts.length === 0
@@ -326,7 +333,7 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
                   <p className="text-xs text-tan-dark mb-4 leading-relaxed">{zone.description}</p>
 
                   {/* Assigned Products in this Zone */}
-                  <div className="flex flex-col gap-2 mb-3 max-h-[280px] overflow-y-auto pr-1">
+                  <div className="flex flex-col gap-2 mb-3 max-h-[280px] overflow-y-auto pl-1">
                     {assignedProducts.map((product, idx) => (
                       <div
                         key={product.id}
@@ -350,7 +357,7 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
                           )}
                           <div className="min-w-0">
                             <Link
-                              href={`/products/${product.id}`}
+                              href={`/products/${product.id}/edit`}
                               className="text-xs font-semibold text-purple-deep hover:underline truncate block"
                             >
                               {product.name}
@@ -366,7 +373,7 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
                         <button
                           type="button"
                           onClick={() => handleTogglePlacement(product.id, zone.key, false)}
-                          title={`Remove from ${zone.badge}`}
+                          title={`إزالة من ${zone.badge}`}
                           className="w-6 h-6 rounded-full text-tan hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                         >
                           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -385,10 +392,10 @@ export default function ProductPlacementBoard({ initialProducts }: { initialProd
                   }`}
                 >
                   {isOver ? (
-                    <span>Release to drop product here</span>
+                    <span>أفلت هنا لإضافة المنتج</span>
                   ) : (
                     <div className="flex items-center justify-center gap-1.5">
-                      <span>Drop product card here</span>
+                      <span>اسحب بطاقة المنتج وأفلتها هنا</span>
                     </div>
                   )}
                 </div>

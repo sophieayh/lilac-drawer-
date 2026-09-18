@@ -8,6 +8,7 @@ import JsonLd from "@/components/JsonLd";
 import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
 import CommentForm from "@/components/community/CommentForm";
+import ArticleEmbedCard from "@/components/community/ArticleEmbedCard";
 import { auth } from "@/lib/auth";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import { getPostById, getCommentsForPost, hasUserLikedPost, hasUserRepostedPost, relativeTime } from "@/db/queries";
@@ -124,7 +125,18 @@ export default async function CommunityPostPage({
             </h1>
             <div className="flex gap-3.5 mb-3">
               <Link href={`/community/${post.authorHandle}`}>
-                <ImageSlot label={`${post.authorName} avatar`} className="w-12 h-12 shrink-0" shape="circle" tone="mauve" />
+                {post.authorImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={post.authorImage}
+                    alt={`${post.authorName} avatar`}
+                    className="w-12 h-12 rounded-full object-cover shrink-0 border border-lilac/30"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold text-lg shrink-0 border border-lilac/40 shadow-2xs">
+                    {post.authorName?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+                )}
               </Link>
               <div>
                 <Link href={`/community/${post.authorHandle}`} className="font-semibold text-purple-deep block">
@@ -158,6 +170,20 @@ export default async function CommunityPostPage({
                     ) : null
                   )}
                 </Link>
+
+                {originalPost.articleTitle && originalPost.articleSlug && (
+                  <ArticleEmbedCard
+                    article={{
+                      title: originalPost.articleTitle,
+                      slug: originalPost.articleSlug,
+                      excerpt: originalPost.articleExcerpt,
+                      imageUrl: originalPost.articleImageUrl,
+                      imageLabel: originalPost.articleImageLabel,
+                      category: originalPost.articleCategory,
+                      author: originalPost.articleAuthor,
+                    }}
+                  />
+                )}
               </div>
             )}
 
@@ -174,14 +200,45 @@ export default async function CommunityPostPage({
                 <ImageSlot label={post.imageLabel} className="w-full h-[320px] mb-4" shape="rounded" radius={16} tone="mauve" />
               ) : null
             )}
+
+            {/* Attached Shared Article with Opinion */}
+            {post.articleId && post.articleSlug && post.articleTitle && (
+              <div className="mb-4">
+                <ArticleEmbedCard
+                  article={{
+                    title: post.articleTitle,
+                    slug: post.articleSlug,
+                    excerpt: post.articleExcerpt,
+                    imageUrl: post.articleImageUrl,
+                    imageLabel: post.articleImageLabel,
+                    category: post.articleCategory,
+                    author: post.articleAuthor,
+                  }}
+                />
+              </div>
+            )}
+
             <div className="text-xs text-tan mb-4" suppressHydrationWarning>{relativeTime(post.postedAt)} ago</div>
-            <div className="flex gap-8 text-tan text-sm border-t border-border pt-3.5">
-              <span className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.636 1.066.526 1.674l-.32 1.776a.75.75 0 00.942.86l2.146-.667c.535-.166 1.11-.082 1.58.223A9.458 9.458 0 0012 20.25z" />
+            <div className="flex items-center gap-5 sm:gap-8 text-tan-dark text-sm border-t border-border pt-3.5">
+              <a
+                href="#comments"
+                className="group inline-flex items-center gap-1.5 py-1 transition-colors duration-200 cursor-pointer select-none text-tan-dark hover:text-purple-deep font-semibold text-sm"
+                title="Jump to Comments"
+              >
+                <svg
+                  className="w-4.5 h-4.5 transition-transform duration-200 group-hover:scale-125 group-hover:-rotate-6 stroke-current"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.9}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.636 1.066.526 1.674l-.32 1.776a.75.75 0 00.942.86l2.146-.667c.535-.166 1.11-.082 1.58.223A9.458 9.458 0 0012 20.25z"
+                  />
                 </svg>
-                <span>{post.commentCount}</span>
-              </span>
+                <span className="text-[13.5px] tabular-nums tracking-tight transition-colors duration-200">{post.commentCount}</span>
+              </a>
               <RepostButton postId={post.id} initialReposted={reposted} initialCount={post.repostCount} isLoggedIn={!!userId} />
               <LikeButton postId={post.id} initialLiked={liked} initialCount={post.likeCount} isLoggedIn={!!userId} />
             </div>
@@ -189,13 +246,15 @@ export default async function CommunityPostPage({
 
           <CommentForm postId={post.id} isLoggedIn={!!userId} />
 
-          <section className="mt-6">
+          <section id="comments" className="mt-6 scroll-mt-6">
             <h2 className="font-heading text-lg text-purple-deep mb-4">
               {postComments.length} {postComments.length === 1 ? "Comment" : "Comments"}
             </h2>
             {postComments.map((c) => (
               <div key={c.id} className="flex gap-3 py-3.5 border-b border-border">
-                <ImageSlot label={`${c.authorName} avatar`} className="w-9 h-9 shrink-0" shape="circle" tone="pink" />
+                <div className="w-9 h-9 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-bold text-xs shrink-0 border border-lilac/40">
+                  {c.authorName?.charAt(0)?.toUpperCase() || "U"}
+                </div>
                 <div>
                   <div className="text-sm">
                     <Link href={`/community/${c.authorHandle}`} className="font-semibold text-purple-deep">

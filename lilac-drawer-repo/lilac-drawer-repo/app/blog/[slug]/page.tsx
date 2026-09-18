@@ -7,6 +7,7 @@ import ImageSlot from "@/components/ImageSlot";
 import JsonLd from "@/components/JsonLd";
 import ShareButton from "./ShareButton";
 import TableOfContents from "./TableOfContents";
+import ShareToCommunityModal from "@/components/blog/ShareToCommunityModal";
 import { slugify } from "@/lib/slugify";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import { getAllPostSlugs, getPostBySlug, getRelatedPosts, formatDate } from "@/db/queries";
@@ -293,7 +294,17 @@ export default async function BlogPostPage({
             {post.category}
           </span>
           <span className="text-[13px] text-purple-deep/70 truncate">{post.title}</span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <ShareToCommunityModal
+              articleId={post.id}
+              articleTitle={post.title}
+              articleSlug={post.slug}
+              articleExcerpt={post.excerpt}
+              articleImageUrl={post.imageUrl}
+              articleCategory={post.category}
+              articleAuthor={post.author}
+              variant="button"
+            />
             <ShareButton title={post.title} />
           </div>
         </div>
@@ -614,6 +625,18 @@ export default async function BlogPostPage({
                   )}
                 </div>
               )}
+
+              {/* Community Discussion Callout Banner */}
+              <ShareToCommunityModal
+                articleId={post.id}
+                articleTitle={post.title}
+                articleSlug={post.slug}
+                articleExcerpt={post.excerpt}
+                articleImageUrl={post.imageUrl}
+                articleCategory={post.category}
+                articleAuthor={post.author}
+                variant="banner"
+              />
 
               {/* Author Footer Card */}
               <div className="flex items-center gap-4 border-t-2 border-purple-deep pt-6 mt-4">

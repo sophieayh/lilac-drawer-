@@ -15,7 +15,7 @@ export default function PublishToggle({ id, isPublished }: { id: number; isPubli
         isPublished ? "bg-sage/15 text-sage" : "bg-tan/15 text-tan-dark"
       }`}
     >
-      {isPending ? "…" : isPublished ? "Published" : "Draft"}
+      {isPending ? "…" : isPublished ? "منشور" : "مسودة"}
     </button>
   );
 }

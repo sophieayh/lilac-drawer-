@@ -115,10 +115,11 @@ export async function createPost(
   productId?: number,
   imageUrl?: string | null,
   imageLabel?: string | null,
+  articleId?: number,
 ): Promise<{ id: number }> {
   const userId = await requireUserId();
   const trimmed = body.trim();
-  if (!trimmed && !imageUrl) throw new Error("Post can't be empty.");
+  if (!trimmed && !imageUrl && !articleId) throw new Error("Post can't be empty.");
   if (trimmed.length > 2000) throw new Error("Post is too long (max 2000 characters).");
 
   const [row] = await db
@@ -127,6 +128,7 @@ export async function createPost(
       userId,
       body: trimmed,
       productId: productId ?? null,
+      articleId: articleId ?? null,
       hasImage: !!imageUrl,
       imageUrl: imageUrl ?? null,
       imageLabel: imageLabel ?? (imageUrl ? "Attached photo" : null),
@@ -138,3 +140,37 @@ export async function createPost(
   if (author) revalidatePath(`/community/${author.handle}`);
   return { id: row.id };
 }
+
+export async function shareArticleToCommunity(
+  articleId: number,
+  opinion: string,
+): Promise<{ id: number }> {
+  return createPost(opinion, undefined, undefined, undefined, articleId);
+}
+
+export async function deletePost(postId: number): Promise<{ success: boolean }> {
+  const userId = await requireUserId();
+
+  // Verify ownership
+  const [existing] = await db
+    .select({ id: communityPosts.id, userId: communityPosts.userId })
+    .from(communityPosts)
+    .where(eq(communityPosts.id, postId))
+    .limit(1);
+
+  if (!existing || existing.userId !== userId) {
+    throw new Error("You are not authorized to delete this post.");
+  }
+
+  // Delete related likes and comments first
+  await db.delete(likes).where(eq(likes.postId, postId));
+  await db.delete(comments).where(eq(comments.postId, postId));
+  await db.delete(communityPosts).where(eq(communityPosts.id, postId));
+
+  revalidatePath("/community");
+  const [author] = await db.select({ handle: user.handle }).from(user).where(eq(user.id, userId)).limit(1);
+  if (author) revalidatePath(`/community/${author.handle}`);
+
+  return { success: true };
+}
+

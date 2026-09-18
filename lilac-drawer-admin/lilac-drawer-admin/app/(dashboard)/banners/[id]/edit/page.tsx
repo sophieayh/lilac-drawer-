@@ -3,7 +3,7 @@ import { getBannerById } from "@/db/queries";
 import { updateBanner } from "@/lib/actions";
 import BannerForm from "../../BannerForm";
 
-export const metadata = { title: "Edit Banner" };
+export const metadata = { title: "تعديل البانر" };
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -19,10 +19,11 @@ export default async function EditBannerPage({ params }: Props) {
 
   return (
     <BannerForm
-      title={`Edit Banner — ${banner.title}`}
-      submitLabel="Save Changes"
+      title={`تعديل البانر — ${banner.title}`}
+      submitLabel="حفظ التعديلات"
       initial={banner}
       action={updateBanner.bind(null, banner.id)}
     />
   );
 }
+

@@ -74,8 +74,8 @@ function productValuesFromForm(formData: FormData) {
 export async function createProduct(formData: FormData) {
   await requireAdmin();
   const values = productValuesFromForm(formData);
-  if (!values.name) throw new Error("Product name is required.");
-  if (!values.slug) throw new Error("Couldn't derive a slug — set one manually.");
+  if (!values.name) throw new Error("اسم المنتج مطلوب.");
+  if (!values.slug) throw new Error("تعذر إنشاء رابط مخصص (Slug) — يرجى كتابته يدوياً.");
 
   await db.insert(products).values(values);
   revalidatePath("/products");
@@ -85,8 +85,8 @@ export async function createProduct(formData: FormData) {
 export async function updateProduct(id: number, formData: FormData) {
   await requireAdmin();
   const values = productValuesFromForm(formData);
-  if (!values.name) throw new Error("Product name is required.");
-  if (!values.slug) throw new Error("Couldn't derive a slug — set one manually.");
+  if (!values.name) throw new Error("اسم المنتج مطلوب.");
+  if (!values.slug) throw new Error("تعذر إنشاء رابط مخصص (Slug) — يرجى كتابته يدوياً.");
 
   await db.update(products).set({ ...values, updatedAt: new Date() }).where(eq(products.id, id));
   revalidatePath("/products");
@@ -132,7 +132,7 @@ function postValuesFromForm(formData: FormData) {
     topicLabel: topicLabel || null,
     imageLabel: String(formData.get("imageLabel") ?? "").trim() || title,
     imageUrl: String(formData.get("imageUrl") ?? "").trim() || null,
-    author: String(formData.get("author") ?? "").trim() || "the Lilac Drawer editors",
+    author: String(formData.get("author") ?? "").trim() || "محررو خزانة ليلك",
     isPublished: formData.get("isPublished") === "on",
     isHomeSpread: formData.get("isHomeSpread") === "on",
     isNewHome: formData.get("isNewHome") === "on",
@@ -148,9 +148,9 @@ function postValuesFromForm(formData: FormData) {
 export async function createArticle(formData: FormData) {
   await requireAdmin();
   const values = postValuesFromForm(formData);
-  if (!values.title) throw new Error("Title is required.");
-  if (!values.excerpt) throw new Error("Excerpt is required.");
-  if (!values.slug) throw new Error("Couldn't derive a slug — set one manually.");
+  if (!values.title) throw new Error("عنوان المقال مطلوب.");
+  if (!values.excerpt) throw new Error("المقدمة أو المقتطف الموجز للمقال مطلوب.");
+  if (!values.slug) throw new Error("تعذر إنشاء رابط مخصص (Slug) — يرجى كتابته يدوياً.");
 
   await db.insert(posts).values(values);
   revalidatePath("/articles");
@@ -160,9 +160,9 @@ export async function createArticle(formData: FormData) {
 export async function updateArticle(id: number, formData: FormData) {
   await requireAdmin();
   const values = postValuesFromForm(formData);
-  if (!values.title) throw new Error("Title is required.");
-  if (!values.excerpt) throw new Error("Excerpt is required.");
-  if (!values.slug) throw new Error("Couldn't derive a slug — set one manually.");
+  if (!values.title) throw new Error("عنوان المقال مطلوب.");
+  if (!values.excerpt) throw new Error("المقدمة أو المقتطف الموجز للمقال مطلوب.");
+  if (!values.slug) throw new Error("تعذر إنشاء رابط مخصص (Slug) — يرجى كتابته يدوياً.");
 
   await db.update(posts).set(values).where(eq(posts.id, id));
   revalidatePath("/articles");
@@ -214,7 +214,7 @@ const VALID_PLACEMENT_KEYS = new Set([
 export async function updatePostPlacement(id: number, key: string, value: boolean) {
   await requireAdmin();
   if (!VALID_PLACEMENT_KEYS.has(key)) {
-    throw new Error(`Invalid placement key: ${key}`);
+    throw new Error(`موضع عرض المقال غير صالح: ${key}`);
   }
   await db.update(posts).set({ [key]: value }).where(eq(posts.id, id));
   revalidatePath("/placements");
@@ -238,7 +238,7 @@ const VALID_PRODUCT_PLACEMENT_KEYS = new Set([
 export async function updateProductPlacement(id: number, key: string, value: boolean) {
   await requireAdmin();
   if (!VALID_PRODUCT_PLACEMENT_KEYS.has(key)) {
-    throw new Error(`Invalid product placement key: ${key}`);
+    throw new Error(`موضع عرض المنتج غير صالح: ${key}`);
   }
   await db.update(products).set({ [key]: value }).where(eq(products.id, id));
   revalidatePath("/placements");
@@ -252,11 +252,12 @@ export async function updateProductPlacement(id: number, key: string, value: boo
 export async function setUserRole(id: string, role: "admin" | "user") {
   const currentAdmin = await requireAdmin();
   if (currentAdmin.id === id && role !== "admin") {
-    throw new Error("You can't remove your own admin access.");
+    throw new Error("لا يمكنك إزالة صلاحية الإدارة عن حسابك الحالي.");
   }
   await db.update(user).set({ role }).where(eq(user.id, id));
   revalidatePath("/users");
 }
+
 
 // ---------------------------------------------------------------------------
 // Site Categories & Subcategories (Menus)
@@ -307,7 +308,7 @@ function categoryValuesFromForm(formData: FormData) {
 export async function createCategory(formData: FormData) {
   await requireAdmin();
   const values = categoryValuesFromForm(formData);
-  if (!values.label) throw new Error("Category label is required.");
+  if (!values.label) throw new Error("اسم القسم مطلوب.");
 
   await db.insert(siteCategories).values(values);
   revalidatePath("/categories");
@@ -317,7 +318,7 @@ export async function createCategory(formData: FormData) {
 export async function updateCategory(id: number, formData: FormData) {
   await requireAdmin();
   const values = categoryValuesFromForm(formData);
-  if (!values.label) throw new Error("Category label is required.");
+  if (!values.label) throw new Error("اسم القسم مطلوب.");
 
   await db.update(siteCategories).set(values).where(eq(siteCategories.id, id));
   revalidatePath("/categories");
@@ -368,10 +369,10 @@ function bannerValuesFromForm(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const subtitle = String(formData.get("subtitle") ?? "").trim() || null;
   const imageUrl = String(formData.get("imageUrl") ?? "").trim();
-  const imageLabel = String(formData.get("imageLabel") ?? "").trim() || title || "Advertisement";
+  const imageLabel = String(formData.get("imageLabel") ?? "").trim() || title || "إعلان";
   const linkUrl = String(formData.get("linkUrl") ?? "").trim();
   const placement = String(formData.get("placement") ?? "community_banner").trim() || "community_banner";
-  const badgeText = String(formData.get("badgeText") ?? "").trim() || "Sponsored";
+  const badgeText = String(formData.get("badgeText") ?? "").trim() || "إعلان مميز";
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
   const isActive = formData.get("isActive") === "on";
 
@@ -391,9 +392,9 @@ function bannerValuesFromForm(formData: FormData) {
 export async function createBanner(formData: FormData) {
   await requireAdmin();
   const values = bannerValuesFromForm(formData);
-  if (!values.title) throw new Error("Banner title is required.");
-  if (!values.imageUrl) throw new Error("Banner image URL or file upload is required.");
-  if (!values.linkUrl) throw new Error("Destination link URL is required.");
+  if (!values.title) throw new Error("عنوان البانر مطلوب.");
+  if (!values.imageUrl) throw new Error("صورة البانر أو رابطها مطلوب.");
+  if (!values.linkUrl) throw new Error("الرابط المستهدف مطلوب.");
 
   await db.insert(banners).values(values);
   revalidatePath("/banners");
@@ -403,9 +404,9 @@ export async function createBanner(formData: FormData) {
 export async function updateBanner(id: number, formData: FormData) {
   await requireAdmin();
   const values = bannerValuesFromForm(formData);
-  if (!values.title) throw new Error("Banner title is required.");
-  if (!values.imageUrl) throw new Error("Banner image URL or file upload is required.");
-  if (!values.linkUrl) throw new Error("Destination link URL is required.");
+  if (!values.title) throw new Error("عنوان البانر مطلوب.");
+  if (!values.imageUrl) throw new Error("صورة البانر أو رابطها مطلوب.");
+  if (!values.linkUrl) throw new Error("الرابط المستهدف مطلوب.");
 
   await db.update(banners).set({ ...values, updatedAt: new Date() }).where(eq(banners.id, id));
   revalidatePath("/banners");

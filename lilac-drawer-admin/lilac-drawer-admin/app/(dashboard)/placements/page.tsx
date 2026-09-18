@@ -7,7 +7,7 @@ import PlacementsContainer from "./PlacementsContainer";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Site Placements & Layout | Admin",
+  title: "أماكن العرض وتنسيق الموقع | لوحة التحكم",
 };
 
 export default async function PlacementsPage({

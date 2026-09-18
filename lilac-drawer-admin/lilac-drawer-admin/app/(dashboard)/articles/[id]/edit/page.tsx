@@ -4,7 +4,7 @@ import ArticleForm from "../../ArticleForm";
 import { getPostById, getAllProducts, getAllCategories } from "@/db/queries";
 import { updateArticle } from "@/lib/actions";
 
-export const metadata = { title: "Edit Article" };
+export const metadata = { title: "تعديل المقال" };
 
 export default async function EditArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,9 +19,9 @@ export default async function EditArticlePage({ params }: { params: Promise<{ id
     <div className="flex flex-col gap-6">
       <div>
         <Link href="/articles" className="text-xs font-semibold text-rose hover:underline">
-          ← Articles
+          ← المقالات
         </Link>
-        <h1 className="font-heading text-2xl text-purple-deep mt-1">Edit article</h1>
+        <h1 className="font-heading text-2xl text-purple-deep mt-1">تعديل المقال</h1>
       </div>
       <ArticleForm
         post={post}

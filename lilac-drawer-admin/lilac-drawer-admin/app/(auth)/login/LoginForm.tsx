@@ -18,7 +18,7 @@ export default function LoginForm() {
     const { error: signInError } = await authClient.signIn.email({ email, password });
     setLoading(false);
     if (signInError) {
-      setError("Incorrect email or password.");
+      setError("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
       return;
     }
     router.push("/");
@@ -32,13 +32,13 @@ export default function LoginForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <label htmlFor="email" className={labelCls}>
-          Email
+          البريد الإلكتروني
         </label>
         <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={field} />
       </div>
       <div>
         <label htmlFor="password" className={labelCls}>
-          Password
+          كلمة المرور
         </label>
         <input
           id="password"
@@ -50,11 +50,11 @@ export default function LoginForm() {
         />
       </div>
       {error && <p className="text-xs text-rose">{error}</p>}
-      <button type="submit" disabled={loading} className="bg-lilac text-white rounded-full py-3 font-semibold text-sm disabled:opacity-50">
-        {loading ? "Signing in…" : "Log In"}
+      <button type="submit" disabled={loading} className="bg-lilac text-white rounded-full py-3 font-semibold text-sm disabled:opacity-50 cursor-pointer">
+        {loading ? "جاري تسجيل الدخول…" : "تسجيل الدخول"}
       </button>
-      <p className="text-xs text-tan-dark text-center">
-        No account here yet? Sign up on the main site, then have an existing admin grant you access from the Users page.
+      <p className="text-xs text-tan-dark text-center leading-relaxed">
+        ليس لديك حساب بعد؟ سجّل في الموقع الرئيسي أولاً، ثم اطلب من أحد المشرفين منحك صلاحية الوصول من صفحة المستخدمين.
       </p>
     </form>
   );

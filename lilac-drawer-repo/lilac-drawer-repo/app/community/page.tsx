@@ -57,7 +57,7 @@ export default async function CommunityPage() {
         <div className="grid lg:grid-cols-[1fr_360px] gap-8 px-6 md:px-12 py-6 max-w-[1400px] mx-auto">
           {/* Main Community Feed Column */}
           <main className="min-w-0 border-r-0 lg:border-r border-border lg:pr-8">
-            <div className="sticky top-0 bg-cream/95 backdrop-blur-xs pt-2 pb-3.5 border-b-[2.5px] border-purple-deep z-10">
+            <div className="pt-2 pb-3.5 border-b-[2.5px] border-purple-deep mb-2">
               <div className="flex justify-between items-center text-[10.5px] tracking-widest uppercase text-tan mb-1.5">
                 <span>Vol. 03 · No. 12</span>
                 <span>Lilac Drawer Community Feed</span>
@@ -211,7 +211,9 @@ export default async function CommunityPage() {
                           className="w-9 h-9 rounded-full object-cover border border-lilac shrink-0"
                         />
                       ) : (
-                        <ImageSlot label={`${s.name} avatar`} className="w-9 h-9 shrink-0" shape="circle" tone="purple" />
+                        <div className="w-9 h-9 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-bold text-xs shrink-0 border border-lilac/40">
+                          {s.name?.charAt(0)?.toUpperCase() || "U"}
+                        </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-bold text-purple-deep group-hover:text-rose transition-colors truncate">

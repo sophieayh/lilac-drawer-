@@ -58,12 +58,12 @@ export default function ImageUploadField({
     try {
       const res = await fetch("/api/upload", { method: "POST", body });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload failed.");
+      if (!res.ok) throw new Error(data.error ?? "فشل رفع الصورة.");
       setUrlAndPreview(data.url);
       setStatus("idle");
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : "فشل رفع الصورة.");
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -80,7 +80,7 @@ export default function ImageUploadField({
 
       <div className="flex items-center gap-3">
         <label className="text-xs font-medium text-purple-deep border border-border rounded-lg px-3 py-2 cursor-pointer hover:border-lilac">
-          {status === "uploading" ? "Uploading…" : preview ? "Replace photo" : "Upload photo"}
+          {status === "uploading" ? "جاري الرفع…" : preview ? "تغيير الصورة" : "رفع صورة"}
           <input
             ref={fileInputRef}
             type="file"
@@ -98,7 +98,7 @@ export default function ImageUploadField({
             }}
             className="text-xs text-tan-dark hover:text-purple-deep"
           >
-            Remove
+            إزالة
           </button>
         )}
       </div>
@@ -106,7 +106,7 @@ export default function ImageUploadField({
       {status === "error" && <p className="text-xs text-red-600">{error}</p>}
 
       <details className="text-xs text-tan-dark">
-        <summary className="cursor-pointer select-none">Or paste a photo URL directly</summary>
+        <summary className="cursor-pointer select-none">أو الصق رابط الصورة مباشرة (URL)</summary>
         <input
           type="url"
           value={url}

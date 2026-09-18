@@ -18,58 +18,58 @@ interface PlacementZoneConfig {
 const ZONES: PlacementZoneConfig[] = [
   {
     key: "isHomeSpread",
-    title: "Home — Editorial Spread (Top Box)",
-    badge: "Homepage Top",
-    description: "Featured 2-article split box at the top of the homepage.",
+    title: "الرئيسية — صندوق المقالات الافتتاحي (أعلى الصفحة)",
+    badge: "أعلى الرئيسية",
+    description: "صندوق مميز مقسم لمقالين في أعلى الصفحة الرئيسية.",
     recommendedCount: 2,
   },
   {
     key: "isNewHome",
-    title: "Home — New + Updated",
-    badge: "Homepage Sidebar",
-    description: "Articles in the 'New + Updated' sidebar list under Today's Picks.",
+    title: "الرئيسية — جديد ومحدث",
+    badge: "شريط الرئيسية الجانبي",
+    description: "مقالات في القائمة الجانبية 'جديد ومحدث' أسفل اختيارات اليوم.",
     recommendedCount: 4,
   },
   {
     key: "isHomeReview",
-    title: "Home — Latest Reviews",
-    badge: "Homepage Reviews",
-    description: "Featured review cards strip across the middle of the homepage.",
+    title: "الرئيسية — أحدث المراجعات",
+    badge: "مراجعات الرئيسية",
+    description: "شريط بطاقات المراجعات المميزة في منتصف الصفحة الرئيسية.",
     recommendedCount: 3,
   },
   {
     key: "isHomeGuide",
-    title: "Home — Featured Buying Guide (Banner)",
-    badge: "Homepage Guide",
-    description: "Large featured buying guide banner across the lower section of the homepage.",
+    title: "الرئيسية — دليل الشراء المميز (بانر)",
+    badge: "دليل الرئيسية",
+    description: "بانر عريض لدليل الشراء المميز في الجزء السفلي من الصفحة الرئيسية.",
     recommendedCount: 1,
   },
   {
     key: "isHomePreview",
-    title: "Home — From the Blog",
-    badge: "Homepage Blog",
-    description: "The 3 preview cards in the 'From the Blog' row near the footer.",
+    title: "الرئيسية — من المدونة",
+    badge: "مدونة الرئيسية",
+    description: "3 بطاقات معاينة في صف 'من المدونة' بالقرب من التذييل.",
     recommendedCount: 3,
   },
   {
     key: "isRecentBlog",
-    title: "Blog — Latest Posts",
-    badge: "Blog Hero Grid",
-    description: "Main highlighted articles at the top of the /blog page.",
+    title: "المدونة — أحدث التدوينات",
+    badge: "شبكة المدونة الرئيسية",
+    description: "المقالات الرئيسية البارزة في أعلى صفحة المدونة.",
     recommendedCount: 4,
   },
   {
     key: "isSideStory",
-    title: "Blog — Side Column",
-    badge: "Blog Sidebar",
-    description: "Side-column articles on the /blog page.",
+    title: "المدونة — العمود الجانبي",
+    badge: "شريط المدونة الجانبي",
+    description: "مقالات العمود الجانبي في صفحة المدونة.",
     recommendedCount: 2,
   },
   {
     key: "isDealsPreview",
-    title: "Deals — Latest Blog",
-    badge: "Deals Page",
-    description: "Articles featured at the bottom of the /deals page.",
+    title: "العروض — أحدث المقالات",
+    badge: "صفحة العروض",
+    description: "المقالات المعروضة في أسفل صفحة العروض.",
     recommendedCount: 3,
   },
 ];
@@ -77,18 +77,18 @@ const ZONES: PlacementZoneConfig[] = [
 export default function PlacementBoard({ initialPosts, hideHeader = false }: { initialPosts: Post[]; hideHeader?: boolean }) {
   const [postsList, setPostsList] = useState<Post[]>(initialPosts);
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("ALL");
+  const [activeCategory, setActiveCategory] = useState<string>("الكل");
   const [dragOverZone, setDragOverZone] = useState<string | null>(null);
   const [draggedPostId, setDraggedPostId] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const categories = ["ALL", ...Array.from(new Set(initialPosts.map((p) => p.category)))];
+  const categories = ["الكل", ...Array.from(new Set(initialPosts.map((p) => p.category)))];
 
   const filteredPosts = postsList.filter((p) => {
     const matchesSearch =
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       p.slug.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = activeCategory === "ALL" || p.category === activeCategory;
+    const matchesCategory = activeCategory === "الكل" || p.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -145,15 +145,15 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
       {!hideHeader && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
           <div>
-            <h1 className="font-heading text-2xl text-purple-deep">Site Placements & Layout</h1>
+            <h1 className="font-heading text-2xl text-purple-deep">أماكن العرض وتنسيق الموقع</h1>
             <p className="text-sm text-tan-dark mt-1">
-              Drag and drop articles into site sections to control where they appear across the pages.
+              اسحب وأفلت المقالات في أقسام الموقع لتحديد أماكن ظهورها عبر الصفحات.
             </p>
           </div>
           {isPending && (
             <div className="flex items-center gap-2 text-xs font-semibold text-rose bg-pink-100/50 px-3 py-1.5 rounded-full self-start">
               <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-              Saving changes…
+              جاري حفظ التغييرات…
             </div>
           )}
         </div>
@@ -162,7 +162,7 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
       {hideHeader && isPending && (
         <div className="flex items-center gap-2 text-xs font-semibold text-rose bg-pink-100/50 px-3 py-1.5 rounded-full self-start">
           <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Saving changes…
+          جاري حفظ التغييرات…
         </div>
       )}
 
@@ -172,18 +172,18 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
           <div className="mb-3.5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-heading text-base text-purple-deep flex items-center gap-2">
-                <span>All Articles</span>
+                <span>جميع المقالات</span>
                 <span className="text-xs bg-mauve-100 text-purple-deep px-2 py-0.5 rounded-full font-bold">
                   {filteredPosts.length}
                 </span>
               </h2>
-              <span className="text-[11px] text-tan uppercase tracking-wide">Drag to assign ⠿</span>
+              <span className="text-[11px] text-tan uppercase tracking-wide">اسحب للتعيين ⠿</span>
             </div>
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search articles…"
+              placeholder="البحث في المقالات…"
               className="w-full border border-border rounded-lg px-3 py-2 text-xs outline-none focus:border-lilac bg-cream/30"
             />
           </div>
@@ -195,7 +195,7 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
                 key={c}
                 type="button"
                 onClick={() => setActiveCategory(c)}
-                className={`text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap font-medium transition-colors ${
+                className={`text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap font-medium transition-colors cursor-pointer ${
                   activeCategory === c
                     ? "bg-purple-deep text-white font-semibold"
                     : "bg-mauve-50 text-tan-dark hover:bg-mauve-100"
@@ -207,7 +207,7 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
           </div>
 
           {/* Articles List */}
-          <div className="overflow-y-auto pr-1 flex flex-col gap-2 flex-1 divide-y divide-border/40">
+          <div className="overflow-y-auto pl-1 flex flex-col gap-2 flex-1 divide-y divide-border/40">
             {filteredPosts.map((p) => {
               const activePlacements = ZONES.filter((z) => Boolean(p[z.key]));
               const isBeingDragged = draggedPostId === p.id;
@@ -269,7 +269,7 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
             })}
 
             {filteredPosts.length === 0 && (
-              <div className="text-center py-8 text-xs text-tan">No articles found.</div>
+              <div className="text-center py-8 text-xs text-tan">لم يتم العثور على مقالات.</div>
             )}
           </div>
         </div>
@@ -304,7 +304,7 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
                         {zone.title}
                       </h3>
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="text-left shrink-0">
                       <span
                         className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                           assignedArticles.length === 0
@@ -345,7 +345,7 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
                           )}
                           <div className="min-w-0">
                             <Link
-                              href={`/articles/${article.id}`}
+                              href={`/articles/${article.id}/edit`}
                               className="text-xs font-semibold text-purple-deep hover:underline truncate block"
                             >
                               {article.title}
@@ -360,7 +360,7 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
                         <button
                           type="button"
                           onClick={() => handleTogglePlacement(article.id, zone.key, false)}
-                          title={`Remove from ${zone.badge}`}
+                          title={`إزالة من ${zone.badge}`}
                           className="w-6 h-6 rounded-full text-tan hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                         >
                           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -379,10 +379,10 @@ export default function PlacementBoard({ initialPosts, hideHeader = false }: { i
                   }`}
                 >
                   {isOver ? (
-                    <span>Release to drop article here</span>
+                    <span>أفلت هنا لإضافة المقال</span>
                   ) : (
                     <div className="flex items-center justify-center gap-1.5">
-                      <span>Drop article card here</span>
+                      <span>اسحب بطاقة المقال وأفلتها هنا</span>
                     </div>
                   )}
                 </div>

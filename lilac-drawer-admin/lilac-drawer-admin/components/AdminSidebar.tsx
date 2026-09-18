@@ -12,7 +12,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     href: "/",
-    label: "Overview",
+    label: "نظرة عامة",
     icon: (active) => (
       <svg
         className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/articles",
-    label: "Articles",
+    label: "المقالات والمراجعات",
     icon: (active) => (
       <svg
         className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
@@ -42,7 +42,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/placements",
-    label: "Site Placements",
+    label: "أماكن العرض وتنسيق الموقع",
     icon: (active) => (
       <svg
         className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/categories",
-    label: "Categories & Menus",
+    label: "الأقسام والقوائم",
     icon: (active) => (
       <svg
         className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
@@ -72,7 +72,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/products",
-    label: "Products & Links",
+    label: "المنتجات وروابط الأفلييت",
     icon: (active) => (
       <svg
         className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
@@ -87,7 +87,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/banners",
-    label: "Banners & Ads",
+    label: "البانرات والإعلانات",
     icon: (active) => (
       <svg
         className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
@@ -102,7 +102,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/yearly-wrap",
-    label: "Yearly Wrap",
+    label: "حصاد العام",
     icon: (active) => (
       <svg
         className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
@@ -117,7 +117,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/users",
-    label: "Users & Roles",
+    label: "المستخدمون والصلاحيات",
     icon: (active) => (
       <svg
         className={`w-5 h-5 transition-colors ${active ? "text-white" : "text-purple-deep/70 group-hover:text-purple-deep"}`}
@@ -153,7 +153,7 @@ export default function AdminSidebar({ orientation = "vertical" }: { orientation
             <span className="shrink-0">{item.icon(isActive)}</span>
             <span className={isActive ? "!text-white" : ""}>{item.label}</span>
             {isActive && !isHorizontal && (
-              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-rose-light" aria-hidden="true" />
+              <span className="mr-auto w-1.5 h-1.5 rounded-full bg-rose-light" aria-hidden="true" />
             )}
           </Link>
         );

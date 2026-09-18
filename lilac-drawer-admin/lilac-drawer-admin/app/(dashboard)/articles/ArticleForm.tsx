@@ -22,14 +22,14 @@ type SiteCategory = typeof siteCategories.$inferSelect;
 const STORE_SUGGESTIONS = ["Amazon", "Walmart", "Best Buy", "Target", "eBay", "B&H Photo", "Home Depot"];
 
 const PLACEMENT_FLAGS: { key: keyof Post; label: string }[] = [
-  { key: "isHomeSpread", label: "Home — Editorial Spread (Top Box)" },
-  { key: "isNewHome", label: "Home — New + Updated" },
-  { key: "isHomePreview", label: "Home — From the Blog" },
-  { key: "isHomeReview", label: "Home — Latest Reviews" },
-  { key: "isHomeGuide", label: "Home — Featured Buying Guide (Banner)" },
-  { key: "isRecentBlog", label: "Blog — Latest Posts" },
-  { key: "isSideStory", label: "Blog — Side column" },
-  { key: "isDealsPreview", label: "Deals — Latest Blog" },
+  { key: "isHomeSpread", label: "الرئيسية — صندوق المقالات الافتتاحي (أعلى الصفحة)" },
+  { key: "isNewHome", label: "الرئيسية — جديد ومحدث" },
+  { key: "isHomePreview", label: "الرئيسية — من المدونة" },
+  { key: "isHomeReview", label: "الرئيسية — أحدث المراجعات" },
+  { key: "isHomeGuide", label: "الرئيسية — دليل الشراء المميز (بانر)" },
+  { key: "isRecentBlog", label: "المدونة — أحدث التدوينات" },
+  { key: "isSideStory", label: "المدونة — العمود الجانبي" },
+  { key: "isDealsPreview", label: "العروض — أحدث المقالات" },
 ];
 
 function generateId(): string {
@@ -306,13 +306,13 @@ export default function ArticleForm({
       {/* Basic Metadata */}
       <div className="bg-white border border-border rounded-xl p-5 md:p-6 flex flex-col gap-5">
         <h2 className="text-base font-semibold text-purple-deep border-b border-border pb-3">
-          1. Article Basics & Cover
+          1. البيانات الأساسية والغلاف
         </h2>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className={labelCls} htmlFor="title">
-              Article Title *
+              عنوان المقال *
             </label>
             <input
               id="title"
@@ -320,14 +320,14 @@ export default function ArticleForm({
               required
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="e.g. The Best Wi-Fi Routers for 2026"
+              placeholder="مثال: أفضل أجهزة الراوتر لعام 2026"
               className={field}
             />
           </div>
 
           <div>
             <label className={labelCls} htmlFor="slug">
-              URL Slug *
+              المعرف في الرابط (Slug) *
             </label>
             <input
               id="slug"
@@ -338,23 +338,23 @@ export default function ArticleForm({
                 setSlugTouched(true);
                 setSlug(e.target.value);
               }}
-              placeholder="the-best-wifi-routers"
+              placeholder="best-wifi-routers"
               className={field}
             />
-            <p className="text-xs text-tan-dark mt-1">URL: /blog/{slug || "…"}</p>
+            <p className="text-xs text-tan-dark mt-1">الرابط: /blog/{slug || "…"}</p>
           </div>
 
           <div className="sm:col-span-2">
             <CategorySelectField
               availableCategories={availableCategories}
               initialValue={post?.category}
-              label="Category *"
+              label="القسم *"
             />
           </div>
 
           <div className="sm:col-span-2">
             <label className={labelCls} htmlFor="excerpt">
-              Article Summary / Excerpt *
+              الملخص / مقتطف المقال *
             </label>
             <textarea
               id="excerpt"
@@ -362,29 +362,29 @@ export default function ArticleForm({
               required
               rows={2}
               defaultValue={post?.excerpt ?? ""}
-              placeholder="A brief overview or hook for this buying guide..."
+              placeholder="ملخص موجز أو مقدمة جذابة لهذا الدليل..."
               className={field}
             />
             <p className="text-xs text-tan-dark mt-1">
-              Shown at the top of the article, on card teasers, and in search engine snippets.
+              يظهر في أعلى المقال، وعلى بطاقات المعاينة، وفي مقتطفات محركات البحث.
             </p>
           </div>
 
           <div>
             <label className={labelCls} htmlFor="author">
-              Author
+              الكاتب
             </label>
             <input
               id="author"
               name="author"
-              defaultValue={post?.author ?? "the Lilac Drawer editors"}
+              defaultValue={post?.author ?? "محرري خزانة ليلك"}
               className={field}
             />
           </div>
 
           <div>
             <label className={labelCls} htmlFor="topicLabel">
-              Topic Label <span className="text-tan-dark font-normal">(optional, e.g. &quot;Electronics&quot;)</span>
+              تسمية الموضوع <span className="text-tan-dark font-normal">(اختياري، مثل: &quot;إلكترونيات&quot;)</span>
             </label>
             <input
               id="topicLabel"
@@ -396,19 +396,19 @@ export default function ArticleForm({
 
           <div>
             <label className={labelCls} htmlFor="imageLabel">
-              Main Cover Alt Text / Label
+              النص البديل لغلاف المقال
             </label>
             <input
               id="imageLabel"
               name="imageLabel"
               defaultValue={post?.imageLabel ?? ""}
-              placeholder="e.g. Modern Wi-Fi 7 Router on a wooden desk"
+              placeholder="مثال: جهاز راوتر حديث على طاولة خشبية"
               className={field}
             />
           </div>
 
           <div>
-            <label className={labelCls}>Main Cover Photo</label>
+            <label className={labelCls}>صورة الغلاف الرئيسية</label>
             <ImageUploadField name="imageUrl" defaultValue={post?.imageUrl} kind="articles" />
           </div>
         </div>
@@ -419,10 +419,10 @@ export default function ArticleForm({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
           <div>
             <h2 className="text-base font-semibold text-purple-deep flex items-center gap-2">
-              2. Keyword Auto-Links (Key-Value)
+              2. الروابط التلقائية للكلمات المفتاحية
             </h2>
             <p className="text-xs text-tan-dark mt-0.5">
-              Whenever these keywords appear in product reviews or custom text, they automatically become clickable links.
+              عندما تظهر هذه الكلمات في نصوص المراجعات أو الأقسام المخصصة، تتحول تلقائياً إلى روابط قابلة للنقر.
             </p>
           </div>
           <button
@@ -430,13 +430,13 @@ export default function ArticleForm({
             onClick={() => addKeywordLink()}
             className="self-start sm:self-auto text-xs font-semibold bg-mauve-100 border border-border text-purple-deep hover:bg-lilac hover:text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
           >
-            + Add Keyword Link
+            + إضافة كلمة مفتاحية
           </button>
         </div>
 
         {keywordLinks.length === 0 ? (
           <p className="text-xs text-tan-dark italic py-2">
-            No keyword links added yet. (e.g. &quot;TP-Link Archer BE230&quot; &rarr; https://amazon.com/...)
+            لا توجد كلمات مفتاحية مضافة بعد. (مثال: &quot;TP-Link Archer BE230&quot; &rarr; https://amazon.com/...)
           </p>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -448,19 +448,19 @@ export default function ArticleForm({
                 <div className="flex-1 grid sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] uppercase font-semibold text-tan-dark block mb-0.5">
-                      Keyword / Phrase
+                      الكلمة / العبارة المفتاحية
                     </label>
                     <input
                       type="text"
                       value={item.keyword}
                       onChange={(e) => updateKeywordLink(idx, "keyword", e.target.value)}
-                      placeholder="e.g. TP-Link Archer BE230"
+                      placeholder="مثال: TP-Link Archer BE230"
                       className={fieldSm}
                     />
                   </div>
                   <div>
                     <label className="text-[10px] uppercase font-semibold text-tan-dark block mb-0.5">
-                      Target Link URL
+                      رابط الوجهة
                     </label>
                     <input
                       type="url"
@@ -475,7 +475,7 @@ export default function ArticleForm({
                   type="button"
                   onClick={() => removeKeywordLink(idx)}
                   className="text-tan-dark hover:text-red-500 p-1 rounded mt-3 cursor-pointer"
-                  title="Remove keyword link"
+                  title="إزالة الكلمة المفتاحية"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -490,10 +490,10 @@ export default function ArticleForm({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border pb-4">
           <div>
             <h2 className="text-base font-semibold text-purple-deep flex items-center gap-2">
-              3. Featured Products &quot;Everything We Recommend&quot;
+              3. المنتجات المميزة (ترشيحات المقال)
             </h2>
             <p className="text-xs text-tan-dark mt-0.5">
-              Select products from your catalog or add new products with multi-store pricing (Amazon, Walmart, Best Buy, etc.).
+              اختر منتجات من الكتالوج أو أضف منتجات جديدة مع روابط وأسعار المتاجر المتعددة (أمازون، وول مارت، إلخ).
             </p>
           </div>
 
@@ -506,7 +506,7 @@ export default function ArticleForm({
                   onChange={(e) => setSelectedCatalogId(e.target.value)}
                   className="text-xs bg-white border border-border rounded-lg px-2.5 py-1.5 text-purple-deep outline-none focus:border-lilac max-w-[200px] truncate"
                 >
-                  <option value="">Pick from Catalog ({availableProducts.length})...</option>
+                  <option value="">اختر من الكتالوج ({availableProducts.length})...</option>
                   {availableProducts.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} (${(p.priceCents / 100).toFixed(2)})
@@ -519,7 +519,7 @@ export default function ArticleForm({
                   disabled={!selectedCatalogId}
                   className="text-xs font-semibold bg-purple-deep hover:bg-lilac disabled:opacity-40 text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0"
                 >
-                  + Add from Catalog
+                  + إضافة من الكتالوج
                 </button>
               </div>
             )}
@@ -529,16 +529,16 @@ export default function ArticleForm({
               onClick={addProduct}
               className="text-xs font-semibold bg-mauve-100 hover:bg-lilac hover:text-white border border-border text-purple-deep px-3 py-2 rounded-lg transition-colors cursor-pointer"
             >
-              + Blank Product
+              + منتج فارغ
             </button>
           </div>
         </div>
 
         {productsList.length === 0 ? (
           <div className="text-center py-8 bg-mauve-50/40 rounded-xl border border-dashed border-border flex flex-col items-center gap-2">
-            <p className="text-sm font-medium text-purple-deep">No products added to this article yet.</p>
+            <p className="text-sm font-medium text-purple-deep">لم يتم إضافة منتجات لهذا المقال بعد.</p>
             <p className="text-xs text-tan-dark max-w-sm">
-              Select a product from your catalog dropdown above or add a blank product with multi-store pricing.
+              اختر منتجاً من قائمة الكتالوج أعلاه أو أضف منتجاً جديداً بأسعار ومتاجر متعددة.
             </p>
             <div className="flex items-center gap-2 mt-2">
               {availableProducts.length > 0 && (
@@ -551,7 +551,7 @@ export default function ArticleForm({
                   }}
                   className="text-xs font-semibold bg-purple-deep text-white px-4 py-2 rounded-lg cursor-pointer"
                 >
-                  Pick from Catalog
+                  اختر من الكتالوج
                 </button>
               )}
               <button
@@ -559,7 +559,7 @@ export default function ArticleForm({
                 onClick={addProduct}
                 className="text-xs font-semibold bg-mauve-100 border border-border text-purple-deep px-4 py-2 rounded-lg cursor-pointer"
               >
-                + Add Blank Product
+                + إضافة منتج فارغ
               </button>
             </div>
           </div>
@@ -577,7 +577,7 @@ export default function ArticleForm({
                       {pIdx + 1}
                     </span>
                     <span className="text-sm font-bold text-purple-deep">
-                      {prod.name || `Product #${pIdx + 1}`}
+                      {prod.name || `المنتج #${pIdx + 1}`}
                     </span>
                     {prod.subtitle && (
                       <span className="text-xs bg-pink-100 text-rose px-2 py-0.5 rounded-full font-medium">
@@ -594,9 +594,9 @@ export default function ArticleForm({
                         }}
                         defaultValue=""
                         className="text-[11px] bg-white border border-border rounded px-2 py-1 text-tan-dark outline-none focus:border-lilac max-w-[130px] truncate"
-                        title="Fill info from an existing catalog product"
+                        title="تعبئة البيانات من منتج موجود في الكتالوج"
                       >
-                        <option value="">Sync with catalog...</option>
+                        <option value="">مزامنة مع الكتالوج...</option>
                         {availableProducts.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
@@ -624,9 +624,9 @@ export default function ArticleForm({
                     <button
                       type="button"
                       onClick={() => removeProduct(pIdx)}
-                      className="text-xs text-red-600 hover:bg-red-50 px-2.5 py-1 rounded border border-red-200 ml-2 cursor-pointer"
+                      className="text-xs text-red-600 hover:bg-red-50 px-2.5 py-1 rounded border border-red-200 mr-2 cursor-pointer"
                     >
-                      Delete
+                      حذف
                     </button>
                   </div>
                 </div>
@@ -634,29 +634,29 @@ export default function ArticleForm({
                 {/* Main Product Info */}
                 <div className="grid sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className={labelCls}>Product Name *</label>
+                    <label className={labelCls}>اسم المنتج *</label>
                     <input
                       type="text"
                       value={prod.name}
                       onChange={(e) => updateProduct(pIdx, "name", e.target.value)}
-                      placeholder="e.g. TP-Link Archer BE230"
+                      placeholder="مثال: TP-Link Archer BE230"
                       className={field}
                     />
                   </div>
 
                   <div>
-                    <label className={labelCls}>Subtitle / Recommendation Tag</label>
+                    <label className={labelCls}>العنوان الفرعي / وسم الترشيح</label>
                     <input
                       type="text"
                       value={prod.subtitle ?? ""}
                       onChange={(e) => updateProduct(pIdx, "subtitle", e.target.value)}
-                      placeholder="e.g. Best Wi-Fi 7 Router Overall"
+                      placeholder="مثال: أفضل راوتر Wi-Fi 7 بشكل عام"
                       className={field}
                     />
                   </div>
 
                   <div>
-                    <label className={labelCls}>Product Photo</label>
+                    <label className={labelCls}>صورة المنتج</label>
                     <ImageUploadField
                       value={prod.imageUrl ?? ""}
                       onChange={(url) => updateProduct(pIdx, "imageUrl", url)}
@@ -665,12 +665,12 @@ export default function ArticleForm({
                   </div>
 
                   <div>
-                    <label className={labelCls}>Photo Alt Text / Label</label>
+                    <label className={labelCls}>النص البديل للصورة</label>
                     <input
                       type="text"
                       value={prod.imageLabel ?? ""}
                       onChange={(e) => updateProduct(pIdx, "imageLabel", e.target.value)}
-                      placeholder="e.g. TP-Link Archer BE230 front view"
+                      placeholder="مثال: منظر أمامي لجهاز TP-Link Archer BE230"
                       className={field}
                     />
                   </div>
@@ -681,14 +681,14 @@ export default function ArticleForm({
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-xs font-bold text-purple-deep block">
-                        Multi-Store Pricing & Affiliate Links
+                        الأسعار والمتاجر المتعددة وروابط الأفلييت
                       </span>
                       <span className="text-[11px] text-tan-dark">
-                        Add prices & links for Amazon, Walmart, Best Buy, etc.
+                        أضف الأسعار والروابط لكل متجر (أمازون، وول مارت، بيست باي، إلخ).
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[11px] text-tan-dark mr-1">Quick add:</span>
+                      <span className="text-[11px] text-tan-dark ml-1">إضافة سريعة:</span>
                       {STORE_SUGGESTIONS.slice(0, 3).map((st) => (
                         <button
                           key={st}
@@ -704,13 +704,13 @@ export default function ArticleForm({
                         onClick={() => addStorePrice(pIdx, "Store")}
                         className="text-[11px] font-semibold text-rose border border-rose/30 px-2 py-0.5 rounded hover:bg-rose/10 cursor-pointer"
                       >
-                        + Other Store
+                        + متجر آخر
                       </button>
                     </div>
                   </div>
 
                   {prod.stores.length === 0 ? (
-                    <p className="text-xs text-tan-dark italic">No store links added yet.</p>
+                    <p className="text-xs text-tan-dark italic">لم تتم إضافة روابط متاجر بعد.</p>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {prod.stores.map((store, sIdx) => (
@@ -725,7 +725,7 @@ export default function ArticleForm({
                               onChange={(e) =>
                                 updateStorePrice(pIdx, sIdx, "storeName", e.target.value)
                               }
-                              placeholder="Store (e.g. Amazon)"
+                              placeholder="المتجر (Amazon)"
                               className={fieldSm}
                             />
                           </div>
@@ -736,7 +736,7 @@ export default function ArticleForm({
                               onChange={(e) =>
                                 updateStorePrice(pIdx, sIdx, "price", e.target.value)
                               }
-                              placeholder="Price ($99.99)"
+                              placeholder="السعر ($99.99)"
                               className={fieldSm}
                             />
                           </div>
@@ -755,7 +755,7 @@ export default function ArticleForm({
                             type="button"
                             onClick={() => removeStorePrice(pIdx, sIdx)}
                             className="text-tan-dark hover:text-red-500 p-1 cursor-pointer"
-                            title="Remove store"
+                            title="إزالة المتجر"
                           >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                           </button>
@@ -768,17 +768,17 @@ export default function ArticleForm({
                 {/* Product Summary / Review */}
                 <div>
                   <label className={labelCls}>
-                    Product Review / Deep Dive Text
+                    نص المراجعة والتقييم المفصل للمنتج
                   </label>
                   <textarea
                     rows={4}
                     value={prod.summary}
                     onChange={(e) => updateProduct(pIdx, "summary", e.target.value)}
-                    placeholder="Describe testing results, pros, cons, performance, and key takeaways. Separate paragraphs with blank lines."
+                    placeholder="اشرح نتائج الاختبارات، المميزات، العيوب، الأداء، وأهم الملاحظات. افصل بين الفقرات بسطر فارغ."
                     className={`${field} font-sans text-xs leading-relaxed`}
                   />
                   <p className="text-[11px] text-tan-dark mt-1">
-                    Tip: Any keywords defined in Section 2 (like product names) will automatically become clickable links.
+                    ملاحظة: أي كلمات مفتاحية تم تعريفها في القسم 2 (مثل أسماء المنتجات) ستتحول تلقائياً إلى روابط قابلة للنقر.
                   </p>
                 </div>
               </div>
@@ -792,10 +792,10 @@ export default function ArticleForm({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
           <div>
             <h2 className="text-base font-semibold text-purple-deep flex items-center gap-2">
-              4. Custom Article Sections
+              4. الأقسام المخصصة الإضافية
             </h2>
             <p className="text-xs text-tan-dark mt-0.5">
-              Add unlimited custom blocks below the product reviews (e.g. How We Tested, Buying Advice, FAQs).
+              أضف فقرات وأقسام غير محدودة أسفل مراجعات المنتجات (مثل: كيف اختبرنا المنتجات، نصائح الشراء، الأسئلة الشائعة).
             </p>
           </div>
           <button
@@ -803,13 +803,13 @@ export default function ArticleForm({
             onClick={addCustomSection}
             className="self-start sm:self-auto text-xs font-semibold bg-mauve-100 border border-border text-purple-deep hover:bg-lilac hover:text-white px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
           >
-            + Add Section
+            + إضافة قسم
           </button>
         </div>
 
         {customSections.length === 0 ? (
           <p className="text-xs text-tan-dark italic py-2">
-            No custom sections added. You can add sections like &quot;How we tested&quot;, &quot;Buying Guide&quot;, or &quot;Who is this for?&quot;.
+            لم تتم إضافة أقسام مخصصة. يمكنك إضافة أقسام مثل &quot;كيف اختبرنا الأجهزة&quot; أو &quot;دليل الشراء&quot; أو &quot;لمن يناسب هذا المنتج؟&quot;.
           </p>
         ) : (
           <div className="flex flex-col gap-5">
@@ -820,7 +820,7 @@ export default function ArticleForm({
               >
                 <div className="flex items-center justify-between border-b border-border pb-2">
                   <span className="text-xs font-bold text-purple-deep uppercase tracking-wider">
-                    Section {secIdx + 1}: {sec.title || "Untitled Section"}
+                    القسم {secIdx + 1}: {sec.title || "قسم بدون عنوان"}
                   </span>
                   <div className="flex items-center gap-1.5">
                     <button
@@ -842,27 +842,27 @@ export default function ArticleForm({
                     <button
                       type="button"
                       onClick={() => removeCustomSection(secIdx)}
-                      className="text-xs text-red-600 hover:bg-red-50 px-2.5 py-1 rounded border border-red-200 ml-2 cursor-pointer"
+                      className="text-xs text-red-600 hover:bg-red-50 px-2.5 py-1 rounded border border-red-200 mr-2 cursor-pointer"
                     >
-                      Delete
+                      حذف
                     </button>
                   </div>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-3.5">
                   <div className="sm:col-span-2">
-                    <label className={labelCls}>Section Title / Heading *</label>
+                    <label className={labelCls}>عنوان القسم *</label>
                     <input
                       type="text"
                       value={sec.title}
                       onChange={(e) => updateCustomSection(secIdx, "title", e.target.value)}
-                      placeholder="e.g. How We Tested Routers in 2026"
+                      placeholder="مثال: كيف اختبرنا أجهزة الراوتر في 2026"
                       className={field}
                     />
                   </div>
 
                   <div>
-                    <label className={labelCls}>Optional Section Photo</label>
+                    <label className={labelCls}>صورة القسم (اختياري)</label>
                     <ImageUploadField
                       value={sec.imageUrl ?? ""}
                       onChange={(url) => updateCustomSection(secIdx, "imageUrl", url)}
@@ -871,24 +871,24 @@ export default function ArticleForm({
                   </div>
 
                   <div>
-                    <label className={labelCls}>Photo Caption / Alt Text</label>
+                    <label className={labelCls}>النص البديل للصورة</label>
                     <input
                       type="text"
                       value={sec.imageLabel ?? ""}
                       onChange={(e) => updateCustomSection(secIdx, "imageLabel", e.target.value)}
-                      placeholder="e.g. Testing lab setup"
+                      placeholder="مثال: إعدادات مختبر الاختبار"
                       className={field}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className={labelCls}>Section Content / Paragraphs</label>
+                  <label className={labelCls}>محتوى وفقرات القسم</label>
                   <textarea
                     rows={4}
                     value={sec.content}
                     onChange={(e) => updateCustomSection(secIdx, "content", e.target.value)}
-                    placeholder="Write section content here. Separate paragraphs with blank lines. Wrap in **double asterisks** for bold."
+                    placeholder="اكتب محتوى القسم هنا. افصل بين الفقرات بسطر فارغ. استخدم **نجمتين** للنص العريض."
                     className={`${field} font-sans text-xs leading-relaxed`}
                   />
                 </div>
@@ -902,11 +902,11 @@ export default function ArticleForm({
       <div className="bg-white border border-border rounded-xl p-5 md:p-6">
         <details className="text-sm">
           <summary className="font-semibold text-purple-deep cursor-pointer select-none">
-            Standard Markdown Body (Fallback / Legacy)
+            محتوى الماركداون التقليدي (احتياطي / توافقي)
           </summary>
           <div className="mt-4 flex flex-col gap-2">
             <p className="text-xs text-tan-dark">
-              If structured products are not added, the article displays this plain body.
+              إذا لم يتم إضافة منتجات مهيكلة، سيعرض المقال هذا النص العادي.
             </p>
             <textarea
               id="body"
@@ -914,7 +914,7 @@ export default function ArticleForm({
               rows={8}
               defaultValue={post?.body ?? ""}
               className={`${field} font-mono text-xs leading-relaxed`}
-              placeholder="## Optional Markdown Body..."
+              placeholder="## نص ماركداون اختياري..."
             />
           </div>
         </details>
@@ -923,7 +923,7 @@ export default function ArticleForm({
       {/* Publish & Placements */}
       <div className="bg-white border border-border rounded-xl p-5 md:p-6 flex flex-col gap-5">
         <h2 className="text-base font-semibold text-purple-deep border-b border-border pb-3">
-          5. Publishing & Placement
+          5. النشر وأماكن العرض
         </h2>
 
         <div>
@@ -934,20 +934,20 @@ export default function ArticleForm({
               defaultChecked={post?.isPublished ?? false}
               className="size-4 rounded text-lilac"
             />
-            Publish this article on the site
+            نشر هذا المقال في الموقع المباشر
           </label>
-          <p className="text-xs text-tan-dark mt-1 ml-6">
-            Leave unchecked to save as a draft — it stays invisible on the public site until you publish it.
+          <p className="text-xs text-tan-dark mt-1 mr-6">
+            اتركه غير محدد لحفظه كمسودة — سيبقى مخفياً عن الزوار حتى يتم نشره.
           </p>
         </div>
 
         <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-purple-deep uppercase tracking-wide">
-              Where it appears on the site
+              أماكن ظهور المقال في الموقع
             </p>
             <a href="/placements" className="text-xs font-semibold text-rose hover:underline">
-              Visual Placements Manager &rarr;
+              مدير أماكن العرض المرئي &larr;
             </a>
           </div>
           <div className="grid sm:grid-cols-2 gap-2.5">
@@ -964,7 +964,7 @@ export default function ArticleForm({
             ))}
           </div>
           <p className="text-xs text-tan-dark mt-2">
-            Every article automatically appears in its category grid on /blog. These checkboxes place it in extra featured spots too.
+            يظهر كل مقال تلقائياً في شبكة قسمه في /blog. تتيح لك هذه الخيارات ظهوره في أماكن مميزة إضافية.
           </p>
         </div>
       </div>
@@ -974,13 +974,13 @@ export default function ArticleForm({
           type="submit"
           className="bg-lilac hover:bg-lilac/90 text-white rounded-full py-3 px-8 font-semibold text-sm transition-colors shadow-sm cursor-pointer"
         >
-          {post ? "Save changes" : "Create article"}
+          {post ? "حفظ التغييرات" : "إنشاء المقال"}
         </button>
         <a
           href="/articles"
           className="text-sm font-semibold text-tan-dark hover:text-purple-deep"
         >
-          Cancel
+          إلغاء
         </a>
       </div>
     </form>

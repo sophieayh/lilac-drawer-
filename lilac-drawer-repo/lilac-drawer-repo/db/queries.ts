@@ -66,28 +66,102 @@ export async function getTodayDeals() {
   return db.select().from(products).where(and(eq(products.isTodayDeal, true), hasDiscount)).limit(4);
 }
 
+export async function getAllTodayDeals(limit?: number) {
+  const query = db
+    .select()
+    .from(products)
+    .where(and(eq(products.isTodayDeal, true), hasDiscount))
+    .orderBy(desc(products.discountPercent), asc(products.priceCents));
+  return limit ? query.limit(limit) : query;
+}
+
 export async function getNewArrivals() {
   return db.select().from(products).where(and(eq(products.isNewArrival, true), hasDiscount)).limit(3);
+}
+
+export async function getAllNewArrivals(limit?: number) {
+  const query = db
+    .select()
+    .from(products)
+    .where(eq(products.isNewArrival, true))
+    .orderBy(desc(products.createdAt), desc(products.id));
+  return limit ? query.limit(limit) : query;
 }
 
 export async function getBestSellers() {
   return db.select().from(products).where(and(eq(products.isBestSeller, true), hasDiscount)).limit(3);
 }
 
-export async function getExploreDeals() {
-  return db.select().from(products).where(eq(products.isExploreDeal, true)).limit(4);
+export async function getAllBestSellers(limit?: number) {
+  const query = db
+    .select()
+    .from(products)
+    .where(eq(products.isBestSeller, true))
+    .orderBy(asc(products.rank), desc(products.discountPercent));
+  return limit ? query.limit(limit) : query;
 }
 
-export async function getExploreRecommended() {
-  return db.select().from(products).where(eq(products.isRecommended, true)).limit(4);
+export async function getAllDealsProducts(limit?: number) {
+  const query = db
+    .select()
+    .from(products)
+    .where(hasDiscount)
+    .orderBy(desc(products.discountPercent), asc(products.priceCents));
+  return limit ? query.limit(limit) : query;
 }
 
-export async function getSavedPicks() {
-  return db.select().from(products).where(eq(products.isSaved, true)).limit(4);
+
+export async function getAllProducts() {
+  return db.select().from(products).orderBy(asc(products.id));
 }
 
-export async function getSuggestedProducts() {
-  return db.select().from(products).where(eq(products.isSuggested, true)).limit(2);
+export async function getExploreDeals(limit = 8) {
+  const explicit = await db.select().from(products).where(eq(products.isExploreDeal, true)).limit(limit);
+  if (explicit.length >= limit) return explicit;
+  const discounted = await db
+    .select()
+    .from(products)
+    .where(hasDiscount)
+    .orderBy(desc(products.discountPercent), asc(products.priceCents))
+    .limit(limit);
+  if (discounted.length > 0) return discounted;
+  return db.select().from(products).orderBy(asc(products.id)).limit(limit);
+}
+
+export async function getExploreRecommended(limit = 8) {
+  const explicit = await db.select().from(products).where(eq(products.isRecommended, true)).limit(limit);
+  if (explicit.length > 0) return explicit;
+  return db.select().from(products).orderBy(asc(products.id)).limit(limit);
+}
+
+export async function getSavedPicks(limit = 4) {
+  const explicit = await db.select().from(products).where(eq(products.isSaved, true)).limit(limit);
+  if (explicit.length >= limit) return explicit;
+  const fallback = await db.select().from(products).orderBy(asc(products.rank)).limit(limit);
+  const combined = [...explicit];
+  const seen = new Set(explicit.map((p) => p.id));
+  for (const p of fallback) {
+    if (!seen.has(p.id) && combined.length < limit) {
+      combined.push(p);
+      seen.add(p.id);
+    }
+  }
+  return combined;
+}
+
+export async function getSuggestedProducts(limit = 4) {
+  const explicit = await db.select().from(products).where(eq(products.isSuggested, true)).limit(limit);
+  if (explicit.length >= limit) return explicit;
+  const fallback = await db.select().from(products).where(eq(products.isTopPick, true)).limit(limit);
+  const combined = [...explicit];
+  const seen = new Set(explicit.map((p) => p.id));
+  for (const p of fallback) {
+    if (!seen.has(p.id) && combined.length < limit) {
+      combined.push(p);
+      seen.add(p.id);
+    }
+  }
+  return combined.length > 0 ? combined : db.select().from(products).limit(limit);
 }
 
 export async function getProductBySlug(slug: string) {
@@ -164,6 +238,23 @@ export async function getSideStories() {
   return db.select().from(posts).where(and(eq(posts.isSideStory, true), published)).orderBy(...postOrder).limit(2);
 }
 
+export async function getHomeHeroPost() {
+  const rows = await db
+    .select()
+    .from(posts)
+    .where(and(or(eq(posts.isHomeSpread, true), eq(posts.isHomeGuide, true)), published))
+    .orderBy(...postOrder)
+    .limit(1);
+  if (rows[0]) return rows[0];
+  const fallback = await db
+    .select()
+    .from(posts)
+    .where(published)
+    .orderBy(...postOrder)
+    .limit(1);
+  return fallback[0] ?? null;
+}
+
 export async function getHomeGuidePost() {
   const rows = await db
     .select()
@@ -203,15 +294,38 @@ export async function getDealsBlogPreview() {
   return db.select().from(posts).where(and(eq(posts.isDealsPreview, true), published)).orderBy(...postOrder).limit(3);
 }
 
+export async function getAllDealsBlogPosts(limit?: number) {
+  const query = db
+    .select()
+    .from(posts)
+    .where(and(or(eq(posts.isDealsPreview, true), eq(posts.isHomeSpread, true), eq(posts.isHomeReview, true), eq(posts.isHomeGuide, true)), published))
+    .orderBy(...postOrder);
+  return limit ? query.limit(limit) : query;
+}
+
+
 export async function getPostsByCategory(category: string, limit = 4, excludeSlug?: string) {
   const rows = await db
     .select()
     .from(posts)
-    .where(and(eq(posts.category, category), published))
+    .where(and(sql`LOWER(${posts.category}) = LOWER(${category})`, published))
     .orderBy(...postOrder)
     .limit(excludeSlug ? limit + 1 : limit);
   return excludeSlug ? rows.filter((p) => p.slug !== excludeSlug).slice(0, limit) : rows;
 }
+
+export async function getCategoryOrAllPosts(category?: string, limit = 100) {
+  if (!category || category.toLowerCase() === "all") {
+    return db.select().from(posts).where(published).orderBy(...postOrder).limit(limit);
+  }
+  return db
+    .select()
+    .from(posts)
+    .where(and(sql`LOWER(${posts.category}) = LOWER(${category})`, published))
+    .orderBy(...postOrder)
+    .limit(limit);
+}
+
 
 export async function getAllPostSlugs() {
   return db
@@ -431,6 +545,7 @@ export function findRelatedArticleForProduct(
 // ---------- community ----------
 const originalPosts = alias(communityPosts, "original_posts");
 const originalUser = alias(user, "original_user");
+const originalArticle = alias(posts, "original_article");
 
 const postWithAuthor = {
   id: communityPosts.id,
@@ -440,6 +555,7 @@ const postWithAuthor = {
   imageUrl: communityPosts.imageUrl,
   productId: communityPosts.productId,
   repostOfId: communityPosts.repostOfId,
+  articleId: communityPosts.articleId,
   postedAt: communityPosts.postedAt,
   commentCount: communityPosts.commentCount,
   repostCount: communityPosts.repostCount,
@@ -455,6 +571,23 @@ const postWithAuthor = {
   originalHasImage: originalPosts.hasImage,
   originalImageUrl: originalPosts.imageUrl,
   originalPostedAt: originalPosts.postedAt,
+  // Attached Article Details
+  articleTitle: posts.title,
+  articleSlug: posts.slug,
+  articleExcerpt: posts.excerpt,
+  articleImageUrl: posts.imageUrl,
+  articleImageLabel: posts.imageLabel,
+  articleCategory: posts.category,
+  articleAuthor: posts.author,
+  // Attached Article Details (for original post in reposts)
+  originalArticleId: originalPosts.articleId,
+  originalArticleTitle: originalArticle.title,
+  originalArticleSlug: originalArticle.slug,
+  originalArticleExcerpt: originalArticle.excerpt,
+  originalArticleImageUrl: originalArticle.imageUrl,
+  originalArticleImageLabel: originalArticle.imageLabel,
+  originalArticleCategory: originalArticle.category,
+  originalArticleAuthor: originalArticle.author,
 };
 
 export async function getCommunityFeed(limit = 10) {
@@ -464,6 +597,8 @@ export async function getCommunityFeed(limit = 10) {
     .innerJoin(user, eq(communityPosts.userId, user.id))
     .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
+    .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+    .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
 }
@@ -475,6 +610,8 @@ export async function getPostsByHandle(handle: string, limit = 10) {
     .innerJoin(user, eq(communityPosts.userId, user.id))
     .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
+    .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+    .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
     .where(eq(user.handle, handle))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
@@ -487,6 +624,8 @@ export async function getPostById(id: number) {
     .innerJoin(user, eq(communityPosts.userId, user.id))
     .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
+    .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+    .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
     .where(eq(communityPosts.id, id))
     .limit(1);
   return rows[0] ?? null;
@@ -557,6 +696,8 @@ export async function getMediaPostsByHandle(handle: string, limit = 20) {
     .innerJoin(user, eq(communityPosts.userId, user.id))
     .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
+    .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+    .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
     .where(and(eq(user.handle, handle), eq(communityPosts.hasImage, true)))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
@@ -571,6 +712,8 @@ export async function getLikedPostsByUserId(userId: string, limit = 20) {
     .innerJoin(user, eq(communityPosts.userId, user.id))
     .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
+    .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+    .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
     .where(eq(likes.userId, userId))
     .orderBy(desc(likes.createdAt))
     .limit(limit);

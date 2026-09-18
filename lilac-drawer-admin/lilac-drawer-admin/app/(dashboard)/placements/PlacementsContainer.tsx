@@ -24,9 +24,9 @@ export default function PlacementsContainer({
       {/* Header & Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
         <div>
-          <h1 className="font-heading text-2xl text-purple-deep">Site Placements & Layout</h1>
+          <h1 className="font-heading text-2xl text-purple-deep">أماكن العرض وتنسيق الموقع</h1>
           <p className="text-sm text-tan-dark mt-1">
-            Drag and drop articles and products into site sections to control where they appear across the live store.
+            اسحب وأفلت المقالات والمنتجات في أقسام الموقع لتحديد أماكن ظهورها عبر صفحات المتجر.
           </p>
         </div>
 
@@ -42,7 +42,7 @@ export default function PlacementsContainer({
             }`}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-            <span>Articles</span>
+            <span>المقالات</span>
             <span className="text-[10px] bg-mauve-50 text-purple-deep px-1.5 py-0.5 rounded-full font-bold">
               {initialPosts.length}
             </span>
@@ -57,7 +57,7 @@ export default function PlacementsContainer({
             }`}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-            <span>Products & Deals</span>
+            <span>المنتجات والعروض</span>
             <span className="text-[10px] bg-pink-100 text-rose px-1.5 py-0.5 rounded-full font-bold">
               {initialProducts.length}
             </span>

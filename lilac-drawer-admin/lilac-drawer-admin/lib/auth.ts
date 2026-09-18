@@ -34,6 +34,11 @@ export const auth = betterAuth({
         required: false,
         input: true,
       },
+      coverImage: {
+        type: "string",
+        required: false,
+        input: true,
+      },
       role: {
         type: "string",
         required: false,

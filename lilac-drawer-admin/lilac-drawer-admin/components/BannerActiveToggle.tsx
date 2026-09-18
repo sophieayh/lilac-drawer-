@@ -15,7 +15,7 @@ export default function BannerActiveToggle({ id, isActive }: { id: number; isAct
         isActive ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : "bg-tan/15 text-tan-dark hover:bg-tan/25"
       }`}
     >
-      {isPending ? "…" : isActive ? "Active" : "Inactive"}
+      {isPending ? "…" : isActive ? "نشط" : "معطل"}
     </button>
   );
 }

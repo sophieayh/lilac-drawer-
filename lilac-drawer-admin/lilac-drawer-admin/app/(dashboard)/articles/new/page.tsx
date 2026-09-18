@@ -3,7 +3,7 @@ import ArticleForm from "../ArticleForm";
 import { createArticle } from "@/lib/actions";
 import { getAllProducts, getAllCategories } from "@/db/queries";
 
-export const metadata = { title: "Write Article" };
+export const metadata = { title: "كتابة مقال جديد" };
 
 export default async function NewArticlePage() {
   const [products, categories] = await Promise.all([
@@ -15,9 +15,9 @@ export default async function NewArticlePage() {
     <div className="flex flex-col gap-6">
       <div>
         <Link href="/articles" className="text-xs font-semibold text-rose hover:underline">
-          ← Articles
+          ← المقالات
         </Link>
-        <h1 className="font-heading text-2xl text-purple-deep mt-1">Write a new article</h1>
+        <h1 className="font-heading text-2xl text-purple-deep mt-1">كتابة مقال جديد</h1>
       </div>
       <ArticleForm
         availableProducts={products}

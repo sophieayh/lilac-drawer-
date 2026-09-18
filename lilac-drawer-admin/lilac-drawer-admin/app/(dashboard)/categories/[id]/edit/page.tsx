@@ -3,7 +3,7 @@ import { getCategoryById } from "@/db/queries";
 import { updateCategory } from "@/lib/actions";
 import CategoryForm from "../../CategoryForm";
 
-export const metadata = { title: "Edit Category" };
+export const metadata = { title: "تعديل القسم" };
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -19,8 +19,8 @@ export default async function EditCategoryPage({ params }: Props) {
 
   return (
     <CategoryForm
-      title={`Edit Category — ${category.label}`}
-      submitLabel="Save Changes"
+      title={`تعديل القسم — ${category.label}`}
+      submitLabel="حفظ التغييرات"
       initial={category}
       action={updateCategory.bind(null, category.id)}
     />

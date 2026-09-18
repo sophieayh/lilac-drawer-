@@ -4,7 +4,7 @@ import ProductForm from "../../ProductForm";
 import { getProductById, getAllCategories } from "@/db/queries";
 import { updateProduct } from "@/lib/actions";
 
-export const metadata = { title: "Edit Product" };
+export const metadata = { title: "تعديل المنتج" };
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,9 +18,9 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     <div className="flex flex-col gap-6">
       <div>
         <Link href="/products" className="text-xs font-semibold text-rose hover:underline">
-          ← Products
+          ← المنتجات
         </Link>
-        <h1 className="font-heading text-2xl text-purple-deep mt-1">Edit product</h1>
+        <h1 className="font-heading text-2xl text-purple-deep mt-1">تعديل المنتج</h1>
       </div>
       <ProductForm product={product} availableCategories={categories} action={updateProduct.bind(null, product.id)} />
     </div>

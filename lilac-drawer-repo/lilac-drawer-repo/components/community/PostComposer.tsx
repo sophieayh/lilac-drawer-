@@ -174,7 +174,7 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 text-purple-deep hover:text-rose text-sm font-medium py-1.5 px-3 rounded-full hover:bg-mauve-50 transition-colors"
+              className="group inline-flex items-center gap-1.5 text-purple-deep hover:text-rose text-sm font-semibold py-1 transition-colors duration-200 cursor-pointer select-none"
               title="Attach Photo"
             >
               <svg
@@ -187,12 +187,13 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                className="transition-transform duration-200 group-hover:scale-125"
               >
                 <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
                 <circle cx="9" cy="9" r="2" />
                 <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
               </svg>
-              <span>Photo</span>
+              <span className="transition-colors duration-200">Photo</span>
             </button>
           </div>
 

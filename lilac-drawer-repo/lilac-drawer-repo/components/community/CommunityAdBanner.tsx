@@ -91,15 +91,21 @@ export default function CommunityAdBanner({ banners }: { banners: BannerItem[] }
     >
       <div className="relative rounded-2xl overflow-hidden border border-border bg-white shadow-xs group">
         {/* Banner Slides Carousel Track */}
-        <div className="relative overflow-hidden w-full min-h-[170px] sm:min-h-[190px] md:min-h-[210px]">
+        <div className="relative overflow-hidden w-full min-h-[340px] sm:min-h-[380px] md:min-h-[420px]">
           {banners.map((ad, idx) => {
             const isExternal = ad.linkUrl.startsWith("http://") || ad.linkUrl.startsWith("https://");
             const isCurrent = idx === currentIndex;
 
+            const SlideWrapper = isExternal ? "a" : Link;
+            const slideProps = isExternal
+              ? { href: ad.linkUrl, target: "_blank", rel: "noopener noreferrer" }
+              : { href: ad.linkUrl };
+
             return (
-              <div
+              <SlideWrapper
                 key={ad.id}
-                className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out flex flex-col justify-end ${
+                {...slideProps}
+                className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out flex flex-col justify-end cursor-pointer ${
                   isCurrent
                     ? "opacity-100 translate-x-0 pointer-events-auto z-10"
                     : idx < currentIndex
@@ -114,7 +120,7 @@ export default function CommunityAdBanner({ banners }: { banners: BannerItem[] }
                     <img
                       src={ad.imageUrl}
                       alt={ad.imageLabel || ad.title}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-out"
+                      className="w-full h-full object-cover object-center"
                     />
                   ) : (
                     <ImageSlot
@@ -123,54 +129,29 @@ export default function CommunityAdBanner({ banners }: { banners: BannerItem[] }
                       tone="purple"
                     />
                   )}
-                  {/* Solid dark tint for clean legibility without gradient */}
-                  <div className="absolute inset-0 bg-purple-deep/80" />
+                  {/* Solid dark tint for clean legibility */}
+                  <div className="absolute inset-0 bg-purple-deep/75" />
                 </div>
 
                 {/* Badge Tag */}
-                <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
-                  <span className="text-[10.5px] uppercase tracking-wider font-bold text-purple-deep bg-cream/95 backdrop-blur-md px-2.5 py-0.5 rounded-full shadow-xs border border-purple-deep/10">
-                    {ad.badgeText || "Sponsored"}
+                <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5">
+                  <span className="text-xs uppercase tracking-wider font-bold text-purple-deep bg-cream/95 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-purple-deep/10">
+                    {ad.badgeText || "Exclusive Deal"}
                   </span>
                 </div>
 
-                {/* Content Overlay & Direct Click Area */}
-                <div className="relative z-20 p-4 sm:p-6 text-white flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                  <div className="max-w-[540px]">
-                    <h3 className="font-heading text-lg sm:text-xl md:text-2xl font-bold leading-tight text-white drop-shadow-sm mb-1 line-clamp-1 sm:line-clamp-2">
-                      {ad.title}
-                    </h3>
-                    {ad.subtitle && (
-                      <p className="text-xs sm:text-sm text-pink-100 font-medium line-clamp-2 leading-snug drop-shadow-xs max-w-[460px]">
-                        {ad.subtitle}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* CTA Link Button */}
-                  <div className="shrink-0 self-start sm:self-end">
-                    {isExternal ? (
-                      <a
-                        href={ad.linkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose text-white text-xs sm:text-sm font-semibold hover:bg-rose-dark active:scale-95 transition-all shadow-md hover:shadow-lg"
-                      >
-                        <span>Shop Now</span>
-                        <span className="text-sm">↗</span>
-                      </a>
-                    ) : (
-                      <Link
-                        href={ad.linkUrl}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose text-white text-xs sm:text-sm font-semibold hover:bg-rose-dark active:scale-95 transition-all shadow-md hover:shadow-lg"
-                      >
-                        <span>View Deal</span>
-                        <span className="text-sm">→</span>
-                      </Link>
-                    )}
-                  </div>
+                {/* Content Overlay */}
+                <div className="relative z-20 p-6 sm:p-8 text-white max-w-[680px]">
+                  <h3 className="font-heading text-2xl sm:text-3xl md:text-[32px] font-bold leading-tight text-white drop-shadow-sm mb-2 line-clamp-2">
+                    {ad.title}
+                  </h3>
+                  {ad.subtitle && (
+                    <p className="text-sm sm:text-base text-pink-100 font-medium line-clamp-3 leading-relaxed drop-shadow-xs max-w-[540px]">
+                      {ad.subtitle}
+                    </p>
+                  )}
                 </div>
-              </div>
+              </SlideWrapper>
             );
           })}
         </div>
@@ -181,30 +162,42 @@ export default function CommunityAdBanner({ banners }: { banners: BannerItem[] }
             <button
               type="button"
               aria-label="Previous advertisement"
-              onClick={prevSlide}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-cream/80 hover:bg-cream text-purple-deep backdrop-blur-sm flex items-center justify-center font-bold text-sm shadow-md transition-all opacity-0 group-hover:opacity-100 hover:scale-105"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                prevSlide();
+              }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-cream/85 hover:bg-cream text-purple-deep backdrop-blur-sm flex items-center justify-center font-bold text-base shadow-md transition-all opacity-0 group-hover:opacity-100 hover:scale-105 cursor-pointer"
             >
               ‹
             </button>
             <button
               type="button"
               aria-label="Next advertisement"
-              onClick={nextSlide}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-cream/80 hover:bg-cream text-purple-deep backdrop-blur-sm flex items-center justify-center font-bold text-sm shadow-md transition-all opacity-0 group-hover:opacity-100 hover:scale-105"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                nextSlide();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-cream/85 hover:bg-cream text-purple-deep backdrop-blur-sm flex items-center justify-center font-bold text-base shadow-md transition-all opacity-0 group-hover:opacity-100 hover:scale-105 cursor-pointer"
             >
               ›
             </button>
 
             {/* Pagination Indicators / Dots */}
-            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-purple-deep/40 backdrop-blur-xs px-2.5 py-1 rounded-full">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-purple-deep/40 backdrop-blur-xs px-3 py-1.5 rounded-full">
               {banners.map((_, i) => (
                 <button
                   key={i}
                   type="button"
                   aria-label={`Go to slide ${i + 1}`}
-                  onClick={() => setCurrentIndex(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === currentIndex ? "w-5 bg-rose" : "w-1.5 bg-white/60 hover:bg-white"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setCurrentIndex(i);
+                  }}
+                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                    i === currentIndex ? "w-6 bg-rose" : "w-2 bg-white/60 hover:bg-white"
                   }`}
                 />
               ))}

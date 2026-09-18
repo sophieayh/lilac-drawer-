@@ -282,12 +282,14 @@ export default async function BlogPage() {
               Latest Posts
             </span>
             <Link
-              href="#recent-posts"
-              className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors"
+              href="/blog/all"
+              className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors inline-flex items-center gap-1 group"
             >
-              View All
+              <span>View All</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </div>
+
 
           {/* Asymmetric 5-card grid: 1.2fr 1fr 1fr 1fr */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr] gap-6">
@@ -445,10 +447,11 @@ export default async function BlogPage() {
               REVIEWS
             </h2>
             <Link
-              href="#reviews"
-              className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors"
+              href="/blog/reviews"
+              className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors inline-flex items-center gap-1 group"
             >
-              View All &raquo;
+              <span>View All</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-9 border-b border-[#f3e6d0]">
@@ -479,10 +482,11 @@ export default async function BlogPage() {
               CARE
             </h2>
             <Link
-              href="#care"
-              className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors"
+              href="/blog/care"
+              className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors inline-flex items-center gap-1 group"
             >
-              View All &raquo;
+              <span>View All</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-9 border-b border-[#f3e6d0]">
@@ -513,12 +517,14 @@ export default async function BlogPage() {
               GUIDES
             </h2>
             <Link
-              href="#guides"
-              className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors"
+              href="/blog/guides"
+              className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors inline-flex items-center gap-1 group"
             >
-              View All &raquo;
+              <span>View All</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </div>
+
           {guidePost && (
             <Link
               href={`/blog/${guidePost.slug}`}
