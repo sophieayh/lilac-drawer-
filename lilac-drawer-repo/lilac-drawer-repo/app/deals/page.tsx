@@ -3,6 +3,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import ImageSlot from "@/components/ImageSlot";
 import JsonLd from "@/components/JsonLd";
+import InlineNewsletterForm from "@/components/InlineNewsletterForm";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import { slugify } from "@/lib/slugify";
 import {
@@ -456,22 +457,13 @@ export default async function DealsPage() {
               <div className="text-xs font-bold tracking-wide uppercase text-pink-200 mb-3">
                 Newsletter
               </div>
-              <form className="flex gap-2">
-                <label htmlFor="deals-newsletter" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="deals-newsletter"
-                  type="email"
-                  placeholder="Enter your email"
-                  className="flex-1 border-none rounded-md px-3 py-2.5 text-[12.5px]"
-                />
-                <button type="submit" aria-label="Subscribe" className="bg-rose-light hover:bg-rose text-white border-none rounded-md px-3.5 py-2.5 font-bold transition-colors cursor-pointer flex items-center justify-center">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
-                </button>
-              </form>
+              <InlineNewsletterForm
+                id="deals-newsletter"
+                placeholder="Enter your email"
+                className="flex gap-2"
+                inputClassName="flex-1 border-none rounded-md px-3 py-2.5 text-[12.5px] bg-white text-purple-deep outline-none focus:ring-2 focus:ring-rose"
+                buttonClassName="bg-rose-light hover:bg-rose text-white border-none rounded-md px-3.5 py-2.5 font-bold transition-colors cursor-pointer flex items-center justify-center text-xs"
+              />
             </div>
           </div>
           <div className="text-center text-[11.5px] text-lilac/50 pt-4 border-t border-white/10">

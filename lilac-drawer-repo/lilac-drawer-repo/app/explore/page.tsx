@@ -10,7 +10,7 @@ import {
   getExploreDeals,
   getSavedPicks,
   getRecentBlogPosts,
-  getCommunityFeed,
+  getCommunityBuzzPosts,
   formatPrice,
   formatPriceFixed,
 } from "@/db/queries";
@@ -91,7 +91,7 @@ export default async function ExplorePage() {
     getExploreDeals(4),
     getSavedPicks(4),
     getRecentBlogPosts(),
-    getCommunityFeed(3),
+    getCommunityBuzzPosts(3),
   ]);
 
   // Featured Hero Deal Spotlight (pick the highest discount product or first deal)
@@ -509,17 +509,26 @@ export default async function ExplorePage() {
                       className="p-3 rounded-2xl bg-mauve-50/50 hover:bg-mauve-50 border border-border/60 transition-colors block group"
                     >
                       <div className="flex items-center gap-2 mb-1.5">
-                        <div className="w-6 h-6 rounded-full bg-purple-deep text-white text-[10px] font-bold flex items-center justify-center uppercase shrink-0">
-                          {cp.authorName ? cp.authorName[0] : "U"}
-                        </div>
+                        {cp.authorImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={cp.authorImage}
+                            alt={`${cp.authorName} avatar`}
+                            className="w-6 h-6 rounded-full object-cover shrink-0 border border-lilac/30 shadow-2xs"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-mauve-100 text-purple-deep text-[10px] font-bold flex items-center justify-center uppercase shrink-0 border border-lilac/40">
+                            {cp.authorName ? cp.authorName[0] : "U"}
+                          </div>
+                        )}
                         <span className="text-xs font-bold text-purple-deep group-hover:text-rose transition-colors truncate">
                           {cp.authorName}
                         </span>
-                        <span className="text-[10.5px] text-tan-dark ml-auto">
+                        <span className="text-[10.5px] text-tan ml-auto">
                           @{cp.authorHandle}
                         </span>
                       </div>
-                      <p className="text-xs text-purple-deep/90 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-ink/90 line-clamp-2 leading-relaxed">
                         {cp.body}
                       </p>
                     </Link>

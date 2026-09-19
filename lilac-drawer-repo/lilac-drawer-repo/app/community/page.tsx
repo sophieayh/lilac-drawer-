@@ -43,9 +43,10 @@ export default async function CommunityPage() {
       getActiveBanners("community_banner"),
     ]);
 
+  const postIdsToCheck = communityPosts.map((p) => (p.repostOfId && !p.body.trim() ? p.repostOfId : p.id));
   const [likedIds, repostedIds] = userId
     ? await Promise.all([
-        getLikedPostIds(communityPosts.map((p) => p.id), userId),
+        getLikedPostIds(postIdsToCheck, userId),
         getRepostedPostIds(userId),
       ])
     : [new Set<number>(), new Set<number>()];
@@ -54,39 +55,31 @@ export default async function CommunityPage() {
     <>
       <SiteHeader />
       <div className="bg-cream text-ink min-h-screen">
-        <div className="grid lg:grid-cols-[1fr_360px] gap-8 px-6 md:px-12 py-6 max-w-[1400px] mx-auto">
-          {/* Main Community Feed Column */}
-          <main className="min-w-0 border-r-0 lg:border-r border-border lg:pr-8">
-            <div className="pt-2 pb-3.5 border-b-[2.5px] border-purple-deep mb-2">
-              <div className="flex justify-between items-center text-[10.5px] tracking-widest uppercase text-tan mb-1.5">
-                <span>Vol. 03 · No. 12</span>
-                <span>Lilac Drawer Community Feed</span>
-              </div>
-              <div className="flex justify-between items-baseline">
-                <h1 className="font-heading text-[30px] md:text-[34px] font-bold text-purple-deep tracking-tight">
-                  Community
-                </h1>
-                <span className="font-heading text-[13px] text-rose italic">live from the feed</span>
-              </div>
-            </div>
+        <div className="px-6 md:px-12 py-6 max-w-[1400px] mx-auto space-y-6">
+          {/* Dynamic Full-Width Community Advertisement Banner */}
+          <CommunityAdBanner banners={communityBanners} />
 
-            {/* Dynamic Community Advertisement Banner with Infinite Auto-Scroll */}
-            <CommunityAdBanner banners={communityBanners} />
-
-            {/* Post Composer */}
-            <PostComposer isLoggedIn={!!userId} />
+          {/* 2-Column Grid (Main Feed on left, Must-Read Guides & Sidebar on right) */}
+          <div className="grid lg:grid-cols-[1fr_360px] gap-8">
+            {/* Main Community Feed Column */}
+            <main className="min-w-0 border-r-0 lg:border-r border-border lg:pr-8">
+              {/* Post Composer */}
+              <PostComposer isLoggedIn={!!userId} />
 
             {/* Feed Posts */}
             <div className="divide-y divide-border">
-              {communityPosts.map((p) => (
-                <PostCard
-                  key={p.id}
-                  post={p}
-                  isLiked={likedIds.has(p.id)}
-                  isReposted={repostedIds.has(p.id)}
-                  isLoggedIn={!!userId}
-                />
-              ))}
+              {communityPosts.map((p) => {
+                const targetId = p.repostOfId && !p.body.trim() ? p.repostOfId : p.id;
+                return (
+                  <PostCard
+                    key={p.id}
+                    post={p}
+                    isLiked={likedIds.has(targetId)}
+                    isReposted={repostedIds.has(targetId)}
+                    isLoggedIn={!!userId}
+                  />
+                );
+              })}
 
               {communityPosts.length === 0 && (
                 <div className="text-center py-16 text-tan-dark">
@@ -232,6 +225,7 @@ export default async function CommunityPage() {
           </aside>
         </div>
       </div>
-    </>
-  );
+    </div>
+  </>
+);
 }

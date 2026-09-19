@@ -289,4 +289,87 @@ export const yearlyWrap = pgTable("yearly_wrap", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+/**
+ * Newsletter & email subscribers.
+ */
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
 
+export type EmailBlockType =
+  | "header"
+  | "hero_banner"
+  | "heading"
+  | "text"
+  | "product_card"
+  | "article_card"
+  | "button"
+  | "coupon"
+  | "divider"
+  | "social_footer";
+
+export interface EmailBlock {
+  id: string;
+  type: EmailBlockType;
+  title?: string;
+  subtitle?: string;
+  content?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  buttonStyle?: "primary" | "secondary" | "outline" | "gold";
+  productName?: string;
+  productPrice?: string;
+  productComparePrice?: string;
+  productBadge?: string;
+  productUrl?: string;
+  articleTitle?: string;
+  articleCategory?: string;
+  articleExcerpt?: string;
+  articleUrl?: string;
+  couponCode?: string;
+  couponDiscount?: string;
+  couponNote?: string;
+  alignment?: "left" | "center" | "right";
+  direction?: "ltr" | "rtl";
+  bgColor?: string;
+  textColor?: string;
+}
+
+/**
+ * Visual email builder campaigns & sent newsletters.
+ */
+export const emailCampaigns = pgTable("email_campaigns", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull().default("Untitled Campaign"),
+  subject: text("subject").notNull(),
+  previewText: text("preview_text"),
+  senderName: varchar("sender_name", { length: 120 }).notNull().default("Lilac Drawer"),
+  recipientType: varchar("recipient_type", { length: 40 }).notNull().default("all_subscribers"),
+  recipientCount: integer("recipient_count").notNull().default(0),
+  blocks: jsonb("blocks").$type<EmailBlock[]>().notNull(),
+  htmlContent: text("html_content").notNull().default(""),
+  status: varchar("status", { length: 40 }).notNull().default("draft"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const emailSettings = pgTable("email_settings", {
+  id: serial("id").primaryKey(),
+  provider: varchar("provider", { length: 40 }).notNull().default("smtp"),
+  smtpHost: text("smtp_host"),
+  smtpPort: integer("smtp_port").default(465),
+  smtpSecure: boolean("smtp_secure").default(true),
+  smtpUser: text("smtp_user"),
+  smtpPass: text("smtp_pass"),
+  senderName: varchar("sender_name", { length: 120 }).notNull().default("Lilac Drawer"),
+  senderEmail: varchar("sender_email", { length: 160 }).notNull().default("newsletter@lilacdrawer.com"),
+  resendApiKey: text("resend_api_key"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

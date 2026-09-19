@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { slugify } from "@/lib/slugify";
 import type { SubCategoryItem } from "@/db/schema";
 import { useSession, signOut } from "@/lib/auth-client";
+import SubscribeModal from "@/components/SubscribeModal";
+import HeaderSearchBar from "@/components/HeaderSearchBar";
+import { checkIsSubscribed } from "@/lib/newsletter-actions";
 
 interface CategoryNavData {
   id?: number;
@@ -200,6 +203,8 @@ export default function SiteHeader() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [categories, setCategories] = useState<CategoryNavData[]>(fallbackCategories);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
+  const [subscribeModalOpen, setSubscribeModalOpen] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const { data: session, isPending: isAuthPending } = useSession();
   const userDropdownRef = useRef<HTMLDivElement>(null);
@@ -207,6 +212,35 @@ export default function SiteHeader() {
 
   const currentUser = session?.user;
   const userHandle = (currentUser as { handle?: string })?.handle || "me";
+
+  useEffect(() => {
+    // Check initial subscription state from localStorage
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("lilac_newsletter_subscribed") === "true";
+      if (stored) setIsSubscribed(true);
+    }
+
+    // Verify subscription status for logged-in user
+    if (session?.user?.email || session?.user?.id) {
+      checkIsSubscribed(session.user.email, session.user.id).then((res) => {
+        if (res.isSubscribed) {
+          setIsSubscribed(true);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("lilac_newsletter_subscribed", "true");
+          }
+        }
+      });
+    }
+
+    function handleGlobalSubscribed() {
+      setIsSubscribed(true);
+    }
+
+    window.addEventListener("lilac-subscribed", handleGlobalSubscribed);
+    return () => {
+      window.removeEventListener("lilac-subscribed", handleGlobalSubscribed);
+    };
+  }, [session]);
 
   useEffect(() => {
     let isMounted = true;
@@ -260,15 +294,6 @@ export default function SiteHeader() {
   return (
     <>
       <header className="border-b border-border/60 bg-cream-alt">
-        {/* affiliate disclosure bar */}
-        <div className="bg-mauve-100 text-tan-dark text-center py-2 px-6 text-[13px]">
-          Reader-supported. When you buy through links on our site, we may earn an affiliate
-          commission.{" "}
-          <Link href="/blog" className="text-gold font-semibold hover:underline">
-            Learn more
-          </Link>
-        </div>
-
         <div className="flex items-center justify-between gap-6 px-6 md:px-12 py-4.5 max-w-[1400px] mx-auto">
           {/* Logo */}
           <Link
@@ -278,22 +303,8 @@ export default function SiteHeader() {
             Lilac <span className="text-gold">Drawer</span>
           </Link>
 
-          {/* Search Bar */}
-          <form
-            role="search"
-            className="flex-1 max-w-[440px] hidden md:flex items-center gap-2.5 bg-mauve-50 rounded-full px-4.5 py-2.5 border border-transparent focus-within:border-lilac/40 transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 256 256" fill="#b89a7a" aria-hidden="true">
-              <path d="M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z" />
-            </svg>
-            <input
-              type="search"
-              name="q"
-              placeholder="Show me the best..."
-              aria-label="Search the site"
-              className="border-none bg-transparent outline-none text-sm flex-1 text-purple-deep placeholder:text-tan-dark/70"
-            />
-          </form>
+          {/* Search Bar with Live Suggestions */}
+          <HeaderSearchBar variant="desktop" />
 
           {/* Desktop Right Auth & Action Controls */}
           <div className="hidden sm:flex items-center gap-3 shrink-0">
@@ -416,13 +427,16 @@ export default function SiteHeader() {
               </div>
             )}
 
-            {/* Subscribe Quick Button */}
-            <Link
-              href="#subscribe"
-              className="bg-cream-alt border border-lilac/70 hover:border-lilac hover:bg-lilac hover:text-white text-purple-deep px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap"
-            >
-              Subscribe
-            </Link>
+            {/* Subscribe Quick Button - Only shown when not subscribed */}
+            {!isSubscribed && (
+              <button
+                type="button"
+                onClick={() => setSubscribeModalOpen(true)}
+                className="bg-cream-alt border border-lilac/70 hover:border-lilac hover:bg-lilac hover:text-white text-purple-deep px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer"
+              >
+                Subscribe
+              </button>
+            )}
           </div>
 
           {/* Mobile Hamburger Button */}
@@ -519,18 +533,7 @@ export default function SiteHeader() {
             </div>
 
             {/* Mobile Search */}
-            <form role="search" className="flex items-center gap-2.5 bg-white rounded-full px-4.5 py-2.5 mb-4 shadow-xs border border-border/70">
-              <svg width="16" height="16" viewBox="0 0 256 256" fill="#b89a7a" aria-hidden="true">
-                <path d="M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z" />
-              </svg>
-              <input
-                type="search"
-                name="q"
-                placeholder="Show me the best..."
-                aria-label="Search the site"
-                className="border-none bg-transparent outline-none text-sm flex-1 text-purple-deep"
-              />
-            </form>
+            <HeaderSearchBar variant="mobile" onNavigate={() => setMenuOpen(false)} />
 
             {/* Primary Nav Links */}
             <nav aria-label="Primary" className="flex flex-col gap-1 mb-4">
@@ -616,13 +619,18 @@ export default function SiteHeader() {
               </div>
             </div>
 
-            <Link
-              href="#subscribe"
-              onClick={() => setMenuOpen(false)}
-              className="mt-5 block text-center bg-lilac text-white px-6 py-2.5 rounded-full text-sm font-semibold shadow-sm"
-            >
-              Subscribe
-            </Link>
+            {!isSubscribed && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setSubscribeModalOpen(true);
+                }}
+                className="mt-5 w-full block text-center bg-lilac hover:bg-purple-deep text-white px-6 py-2.5 rounded-full text-sm font-semibold shadow-sm transition-all cursor-pointer"
+              >
+                Subscribe
+              </button>
+            )}
           </div>
         )}
 
@@ -769,6 +777,13 @@ export default function SiteHeader() {
           </div>
         </div>
       </div>
+
+      <SubscribeModal
+        isOpen={subscribeModalOpen}
+        onClose={() => setSubscribeModalOpen(false)}
+        initialEmail={currentUser?.email || ""}
+        onSubscribed={() => setIsSubscribed(true)}
+      />
     </>
   );
 }

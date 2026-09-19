@@ -3,7 +3,8 @@ import ImageSlot from "@/components/ImageSlot";
 import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
 import ArticleEmbedCard from "@/components/community/ArticleEmbedCard";
-import { relativeTime } from "@/db/queries";
+import PostImageMedia from "@/components/community/PostImageMedia";
+import { relativeTime } from "@/lib/format";
 
 export interface CommunityPostItem {
   id: number;
@@ -62,6 +63,12 @@ export default function PostCard({
   isLoggedIn = false,
 }: PostCardProps) {
   const isBareRepost = !!p.repostOfId && !p.body.trim();
+  const effectivePostId = isBareRepost && p.repostOfId ? p.repostOfId : p.id;
+  const effectiveAuthorName = isBareRepost && p.originalAuthorName ? p.originalAuthorName : p.authorName;
+  const effectiveAuthorHandle = isBareRepost && p.originalAuthorHandle ? p.originalAuthorHandle : p.authorHandle;
+  const effectiveAuthorImage = isBareRepost ? (p.originalAuthorImage ?? p.authorImage) : p.authorImage;
+  const effectiveBody = isBareRepost ? (p.originalBody || "") : p.body;
+  const effectiveImageUrl = isBareRepost ? (p.originalImageUrl ?? p.imageUrl) : p.imageUrl;
 
   return (
     <article className="px-6 py-4.5 border-b border-border card-hover">
@@ -121,26 +128,13 @@ export default function PostCard({
             </Link>
           )}
 
-          {/* User's own image (if present) */}
+          {/* User's own image (if present) with natural aspect-ratio and full-screen view */}
           {p.hasImage && (
-            <Link href={`/community/post/${p.id}`} className="block mb-3">
-              {p.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={p.imageUrl}
-                  alt={p.imageLabel || "Post image"}
-                  className="w-full max-h-[440px] rounded-2xl object-cover border border-border bg-mauve-50"
-                />
-              ) : p.imageLabel ? (
-                <ImageSlot
-                  label={p.imageLabel}
-                  className="w-full h-[260px]"
-                  shape="rounded"
-                  radius={16}
-                  tone="mauve"
-                />
-              ) : null}
-            </Link>
+            <PostImageMedia
+              imageUrl={p.imageUrl}
+              imageLabel={p.imageLabel}
+              maxHeight="max-h-[560px]"
+            />
           )}
 
           {/* Attached Shared Article with User Opinion */}
@@ -199,22 +193,12 @@ export default function PostCard({
                       <p className="text-[14.5px] leading-relaxed text-ink mb-1.5">{p.originalBody}</p>
                     )}
                     {p.originalHasImage && (
-                      p.originalImageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.originalImageUrl}
-                          alt={p.originalImageLabel || "Reposted image"}
-                          className="w-full max-h-[300px] rounded-xl object-cover border border-border bg-mauve-50 mt-2"
-                        />
-                      ) : p.originalImageLabel ? (
-                        <ImageSlot
-                          label={p.originalImageLabel}
-                          className="w-full h-[220px] mt-2"
-                          shape="rounded"
-                          radius={12}
-                          tone="mauve"
-                        />
-                      ) : null
+                      <PostImageMedia
+                        imageUrl={p.originalImageUrl}
+                        imageLabel={p.originalImageLabel || "Reposted image"}
+                        maxHeight="max-h-[400px]"
+                        className="mt-2"
+                      />
                     )}
                   </Link>
 
@@ -241,7 +225,7 @@ export default function PostCard({
 
           <div className="flex items-center gap-5 sm:gap-8 text-tan-dark text-sm max-w-[420px] mt-3">
             <Link
-              href={`/community/post/${p.id}`}
+              href={`/community/post/${effectivePostId}`}
               className="group inline-flex items-center gap-1.5 py-1 transition-colors duration-200 cursor-pointer select-none text-tan-dark hover:text-purple-deep font-semibold text-sm"
               title="Comments & Replies"
             >
@@ -260,13 +244,18 @@ export default function PostCard({
               <span className="text-[13.5px] tabular-nums tracking-tight transition-colors duration-200">{p.commentCount}</span>
             </Link>
             <RepostButton
-              postId={p.id}
+              postId={effectivePostId}
               initialReposted={isReposted}
               initialCount={p.repostCount}
               isLoggedIn={isLoggedIn}
+              postAuthorName={effectiveAuthorName}
+              postAuthorHandle={effectiveAuthorHandle}
+              postAuthorImage={effectiveAuthorImage}
+              postBody={effectiveBody}
+              postImageUrl={effectiveImageUrl}
             />
             <LikeButton
-              postId={p.id}
+              postId={effectivePostId}
               initialLiked={isLiked}
               initialCount={p.likeCount}
               isLoggedIn={isLoggedIn}

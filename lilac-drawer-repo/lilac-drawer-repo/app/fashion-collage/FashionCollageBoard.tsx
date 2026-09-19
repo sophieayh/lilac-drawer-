@@ -47,7 +47,7 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
 
   // Left Drawer States
   const [isDrawerOpen, setIsDrawerOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<"catalog" | "uploads">("catalog");
+  const [activeTab, setActiveTab] = useState<"catalog" | "uploads" | "look">("catalog");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [userUploads, setUserUploads] = useState<{ id: string; url: string; name: string }[]>([]);
@@ -63,6 +63,11 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
   const [items, setItems] = useState<CanvasItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  // Total Look Pricing Calculation
+  const totalLookCents = useMemo(() => {
+    return items.reduce((acc, item) => acc + (item.priceCents || 0), 0);
+  }, [items]);
 
   // History for Undo/Redo
   const [history, setHistory] = useState<CanvasItem[][]>([[]]);
@@ -981,33 +986,54 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
             isDrawerOpen ? "w-80 md:w-96 shadow-xl" : "w-0 -translate-x-full overflow-hidden border-none"
           }`}
         >
-          {/* Drawer Tabs: Catalog vs Uploads */}
-          <div className="p-3 border-b border-border bg-mauve-50/50 flex items-center gap-2">
+          {/* Drawer Tabs: Catalog vs Uploads vs Look Breakdown & Prices */}
+          <div className="p-2.5 border-b border-border bg-mauve-50/50 grid grid-cols-3 gap-1.5">
             <button
               onClick={() => setActiveTab("catalog")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
                 activeTab === "catalog"
                   ? "bg-purple-deep text-white shadow-xs"
                   : "bg-white border border-border text-tan-dark hover:text-purple-deep"
               }`}
+              title="Site Catalog Pieces"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              <span>Site Pieces ({initialProducts.length})</span>
+              <span className="truncate">Pieces ({initialProducts.length})</span>
             </button>
+
             <button
               onClick={() => setActiveTab("uploads")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
                 activeTab === "uploads"
                   ? "bg-purple-deep text-white shadow-xs"
                   : "bg-white border border-border text-tan-dark hover:text-purple-deep"
               }`}
+              title="Uploaded Images"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              <span>My Uploads ({userUploads.length})</span>
+              <span className="truncate">Uploads ({userUploads.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("look")}
+              className={`py-2 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 relative ${
+                activeTab === "look"
+                  ? "bg-purple-deep text-white shadow-xs"
+                  : "bg-white border border-border text-tan-dark hover:text-purple-deep"
+              }`}
+              title="Look Breakdown, Prices & Links"
+            >
+              <svg className="w-3.5 h-3.5 shrink-0 text-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="truncate">Look ({items.length})</span>
+              {items.length > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-rose absolute top-1.5 right-1.5" />
+              )}
             </button>
           </div>
 
@@ -1230,6 +1256,171 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
               </div>
             </div>
           )}
+
+          {/* TAB 3: LOOK BREAKDOWN, TOTAL PRICES & PRODUCT LINKS */}
+          {activeTab === "look" && (
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Header Pricing Summary Banner */}
+              <div className="p-4 bg-gradient-to-br from-mauve-100/80 to-mauve-50/90 border-b border-border">
+                <div className="flex items-center justify-between text-xs text-tan-dark mb-1 font-semibold">
+                  <span>Total Look Value</span>
+                  <span className="px-2 py-0.5 rounded-md bg-white border border-border/80 text-[10.5px] font-bold text-purple-deep">
+                    {items.length} {items.length === 1 ? "Piece" : "Pieces"}
+                  </span>
+                </div>
+                <div className="font-heading text-2xl font-bold text-purple-deep tracking-tight">
+                  {formatPriceFixed(totalLookCents)}
+                </div>
+                <p className="text-[11px] text-tan mt-1 leading-snug">
+                  Comprehensive prices & direct store links for all pieces placed on your moodboard.
+                </p>
+              </div>
+
+              {/* Placed Pieces List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+                {items.length === 0 ? (
+                  <div className="text-center py-12 px-4 rounded-2xl bg-mauve-50/40 border border-dashed border-border mt-2">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center mx-auto mb-2 text-rose shadow-2xs">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h5 className="font-heading text-sm font-bold text-purple-deep mb-1">No Pieces on Board</h5>
+                    <p className="text-xs text-tan-dark mb-4 max-w-[220px] mx-auto">
+                      Add items from Site Pieces or Uploads to view their pricing summary and links here.
+                    </p>
+                    <button
+                      onClick={() => setActiveTab("catalog")}
+                      className="px-4 py-2 rounded-full bg-purple-deep text-white text-xs font-bold hover:bg-purple-deep/90 transition-all cursor-pointer shadow-xs"
+                    >
+                      Browse Site Pieces →
+                    </button>
+                  </div>
+                ) : (
+                  items.map((item, index) => {
+                    const isSelected = item.id === selectedItemId;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-3 rounded-2xl border transition-all flex flex-col gap-2.5 bg-white shadow-xs ${
+                          isSelected ? "border-rose ring-1 ring-rose" : "border-border hover:border-purple-deep/40"
+                        }`}
+                      >
+                        <div className="flex gap-3">
+                          {/* Item Thumbnail */}
+                          <div
+                            onClick={() => setSelectedItemId(item.id)}
+                            className="w-14 h-14 rounded-xl overflow-hidden bg-mauve-50/60 border border-border/80 p-1 flex items-center justify-center shrink-0 cursor-pointer hover:opacity-90"
+                            title="Click to select on canvas"
+                          >
+                            {item.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={item.imageUrl}
+                                alt={item.title}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <ImageSlot
+                                label={item.imageLabel || item.title}
+                                className="w-full h-full object-contain"
+                                shape="rounded"
+                                radius={8}
+                                tone="mauve"
+                              />
+                            )}
+                          </div>
+
+                          {/* Info & Price */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] uppercase font-bold tracking-wider text-tan">
+                                #{index + 1} · {item.sourceType === "catalog" ? item.category || "Piece" : "Upload"}
+                              </span>
+                            </div>
+                            <h4
+                              onClick={() => setSelectedItemId(item.id)}
+                              className="text-xs font-bold text-purple-deep truncate cursor-pointer hover:text-rose transition-colors"
+                              title={item.title}
+                            >
+                              {item.title}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {item.priceCents != null ? (
+                                <span className="text-xs font-bold text-rose">
+                                  {formatPriceFixed(item.priceCents)}
+                                </span>
+                              ) : (
+                                <span className="text-[11px] text-tan italic">Custom Upload</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Action Buttons: View Deal Link + Canvas Tools */}
+                        <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
+                          {item.productSlug ? (
+                            <Link
+                              href={`/deals/${item.productSlug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 font-bold text-purple-deep hover:text-rose transition-colors"
+                            >
+                              <span>View Product Deal</span>
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </Link>
+                          ) : (
+                            <span className="text-[11px] text-tan">User Photo</span>
+                          )}
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setSelectedItemId(item.id)}
+                              className="text-[11px] font-semibold text-tan-dark hover:text-purple-deep transition-colors cursor-pointer"
+                              title="Focus piece on canvas"
+                            >
+                              {isSelected ? "Selected" : "Select"}
+                            </button>
+                            <span className="text-border">•</span>
+                            <button
+                              onClick={() => deleteItem(item.id)}
+                              className="text-[11px] font-semibold text-tan hover:text-rose transition-colors cursor-pointer"
+                              title="Remove piece from board"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Persistent Quick Pricing Footer in Drawer when on Catalog or Uploads tab */}
+          {activeTab !== "look" && items.length > 0 && (
+            <div className="p-3 border-t border-border bg-white shadow-md flex items-center justify-between gap-2 shrink-0">
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-wider font-bold text-tan">Look Total</div>
+                <div className="text-sm font-bold text-purple-deep truncate">
+                  {formatPriceFixed(totalLookCents)}{" "}
+                  <span className="text-[11px] font-medium text-tan">({items.length} pcs)</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab("look")}
+                className="px-3 py-1.5 rounded-xl bg-purple-deep text-white text-xs font-bold hover:bg-purple-deep/90 transition-all cursor-pointer shadow-xs whitespace-nowrap"
+              >
+                View Prices & Links →
+              </button>
+            </div>
+          )}
+
         </aside>
 
         {/* UNIFIED FULL-VIEWPORT SANDBOX CANVAS */}

@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { subscribeNewsletter as subscribeNewsletterAction } from "@/lib/newsletter-actions";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -25,6 +27,20 @@ export default function LoginForm() {
       setError(signInError.message || "Incorrect email or password. Please try again.");
       return;
     }
+
+    if (subscribeNewsletter) {
+      try {
+        await subscribeNewsletterAction(email.trim());
+        if (typeof window !== "undefined") {
+          localStorage.setItem("lilac_newsletter_subscribed", "true");
+          localStorage.setItem("lilac_subscribed_email", email.trim().toLowerCase());
+          window.dispatchEvent(new Event("lilac-subscribed"));
+        }
+      } catch {
+        // Non-blocking
+      }
+    }
+
     router.push(redirectTo);
     router.refresh();
   }
@@ -54,7 +70,7 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className="text-[11px] font-semibold text-rose hover:underline"
+            className="text-[11px] font-semibold text-rose hover:underline cursor-pointer"
           >
             {showPassword ? "Hide" : "Show"}
           </button>
@@ -70,6 +86,22 @@ export default function LoginForm() {
             className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm bg-cream-alt text-purple-deep outline-none focus:border-lilac focus:ring-2 focus:ring-lilac/20 transition-all"
           />
         </div>
+      </div>
+
+      {/* Newsletter Subscription Checkbox */}
+      <div className="pt-1">
+        <label htmlFor="login-subscribe-newsletter" className="flex items-start gap-2.5 cursor-pointer text-xs text-purple-deep/90 leading-relaxed select-none">
+          <input
+            id="login-subscribe-newsletter"
+            type="checkbox"
+            checked={subscribeNewsletter}
+            onChange={(e) => setSubscribeNewsletter(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded text-rose border-border focus:ring-rose accent-rose cursor-pointer shrink-0"
+          />
+          <span>
+            Subscribe to our weekly newsletter for curated honest reviews and exclusive deals.
+          </span>
+        </label>
       </div>
 
       {error && (

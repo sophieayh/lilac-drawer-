@@ -5,6 +5,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ImageSlot from "@/components/ImageSlot";
 import Reveal from "@/components/Reveal";
 import JsonLd from "@/components/JsonLd";
+import InlineNewsletterForm from "@/components/InlineNewsletterForm";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import {
   getHomeSpreadPosts,
@@ -382,24 +383,7 @@ export default async function HomePage() {
             <p className="text-[15px] text-plum/80 mb-6">
               One product, tested and worth it. Every Thursday.
             </p>
-            <form className="flex justify-center gap-3 max-w-[420px] mx-auto">
-              <label htmlFor="newsletter-email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="newsletter-email"
-                type="email"
-                required
-                placeholder="you@email.com"
-                className="flex-1 px-4.5 py-3.5 border-[1.5px] border-rose rounded-lg text-sm bg-cream-alt"
-              />
-              <button
-                type="submit"
-                className="bg-plum text-white px-5.5 py-3.5 rounded-xl font-semibold text-sm shadow-[0_4px_14px_rgba(90,47,69,0.25)]"
-              >
-                Subscribe
-              </button>
-            </form>
+            <InlineNewsletterForm />
           </section>
         </Reveal>
       </main>

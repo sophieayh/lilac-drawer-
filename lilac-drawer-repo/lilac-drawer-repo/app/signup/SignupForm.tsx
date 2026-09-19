@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { subscribeNewsletter as subscribeNewsletterAction } from "@/lib/newsletter-actions";
 
 export default function SignupForm() {
   const [name, setName] = useState("");
@@ -54,6 +55,19 @@ export default function SignupForm() {
     if (signUpError) {
       setError(signUpError.message ?? "Something went wrong. Try a different email or username.");
       return;
+    }
+
+    if (subscribeNewsletter) {
+      try {
+        await subscribeNewsletterAction(email.trim());
+        if (typeof window !== "undefined") {
+          localStorage.setItem("lilac_newsletter_subscribed", "true");
+          localStorage.setItem("lilac_subscribed_email", email.trim().toLowerCase());
+          window.dispatchEvent(new Event("lilac-subscribed"));
+        }
+      } catch {
+        // Non-blocking
+      }
     }
 
     router.push(redirectTo !== "/profile" ? redirectTo : `/community/${cleanHandle}`);

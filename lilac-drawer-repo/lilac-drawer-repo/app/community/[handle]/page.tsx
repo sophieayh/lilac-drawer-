@@ -9,6 +9,8 @@ import PostCard from "@/components/community/PostCard";
 import PostComposer from "@/components/community/PostComposer";
 import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
+import FollowButton from "@/components/community/FollowButton";
+import ProfileHeaderMedia from "@/components/community/ProfileHeaderMedia";
 import { communityNavItems, profileTabs } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
@@ -22,6 +24,8 @@ import {
   getPeopleSuggestions,
   getLikedPostIds,
   getRepostedPostIds,
+  isUserFollowing,
+  getFollowCounts,
   relativeTime,
 } from "@/db/queries";
 
@@ -66,9 +70,11 @@ export default async function CommunityProfilePage({
   const viewerId = session?.user?.id;
   const isOwnProfile = viewerId === person.id;
 
-  const [postCount, suggestions] = await Promise.all([
+  const [postCount, suggestions, isFollowing, followCounts] = await Promise.all([
     getCommunityPostCountByUserId(person.id),
     getPeopleSuggestions(viewerId, 3),
+    viewerId && !isOwnProfile ? isUserFollowing(viewerId, person.id) : Promise.resolve(false),
+    getFollowCounts(person.id),
   ]);
 
   // Media grid for the sidebar always shows this profile's photos,
@@ -85,9 +91,10 @@ export default async function CommunityProfilePage({
     activeTab === "Replies" ? getCommentsByUserId(person.id, 20) : Promise.resolve([]),
   ]);
 
+  const postIdsToCheck = feedPosts.map((p) => (p.repostOfId && !p.body.trim() ? p.repostOfId : p.id));
   const [likedIds, repostedIds] = viewerId
     ? await Promise.all([
-        getLikedPostIds(feedPosts.map((p) => p.id), viewerId),
+        getLikedPostIds(postIdsToCheck, viewerId),
         getRepostedPostIds(viewerId),
       ])
     : [new Set<number>(), new Set<number>()];
@@ -113,67 +120,35 @@ export default async function CommunityProfilePage({
       <div className="bg-cream text-ink min-h-screen">
         <div className="grid lg:grid-cols-[1fr_340px] gap-8 px-6 md:px-12 py-6 max-w-[1400px] mx-auto">
           <main className="min-w-0 border-r-0 lg:border-r border-border lg:pr-8 min-h-screen">
-          <div className="px-6 py-3.5 border-b border-border flex items-center gap-5">
-            <Link href="/community" aria-label="Back to community feed" className="text-lg text-ink">
-              ←
-            </Link>
-            <div>
-              <div className="font-heading text-[17px] text-purple-deep font-bold">{person.name}</div>
-              <div className="text-xs text-tan">
-                {postCount} {postCount === 1 ? "post" : "posts"}
-              </div>
-            </div>
-          </div>
-
-          {person.coverImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={person.coverImage}
-              alt={`${person.name} cover photo`}
-              className="w-full h-[180px] md:h-[220px] object-cover"
-            />
-          ) : (
-            <div className="w-full h-[180px] md:h-[220px] bg-gradient-to-r from-lilac/30 via-mauve-100 to-cream-alt flex items-center justify-center border-b border-border/80">
-              <div className="flex items-center gap-2 text-xs font-semibold text-tan-dark/70">
-                <svg className="w-4 h-4 text-lilac" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                </svg>
-                <span>@{person.handle}</span>
-              </div>
-            </div>
-          )}
+          <ProfileHeaderMedia
+            name={person.name}
+            handle={person.handle}
+            coverImage={person.coverImage}
+            image={person.image}
+            isOwnProfile={isOwnProfile}
+            isFollowing={isFollowing}
+            targetUserId={person.id}
+            isLoggedIn={!!viewerId}
+          />
 
           <div className="px-6">
-            <div className="flex justify-between items-end -mt-11 mb-3">
-              {person.image ? (
-                // eslint-disable-next-line @next/next/no-img-element -- arbitrary user-provided avatar URL; not a site asset next/image can optimize
-                <img
-                  src={person.image}
-                  alt={`${person.name} avatar`}
-                  className="w-28 h-28 rounded-full object-cover border-4 border-cream bg-mauve-100"
-                />
-              ) : (
-                <div className="w-28 h-28 rounded-full border-4 border-cream bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold text-3xl shadow-xs">
-                  {person.name?.charAt(0)?.toUpperCase() || "U"}
-                </div>
-              )}
-              {isOwnProfile && (
-                <div className="mt-13">
-                  <Link
-                    href={`/community/${person.handle}/edit`}
-                    className="inline-block border-[1.5px] border-rose text-rose hover:bg-rose hover:text-white px-4 py-2 rounded-full text-xs font-bold transition-all"
-                  >
-                    Edit Profile
-                  </Link>
-                </div>
-              )}
-            </div>
-
             <h1 className="font-heading text-xl font-bold text-rose">{person.name}</h1>
             <div className="text-sm text-tan mb-3">@{person.handle}</div>
             {person.bio && <p className="text-[15px] leading-relaxed text-ink mb-3 max-w-[480px]">{person.bio}</p>}
-            <div className="text-[13.5px] text-tan mb-4" suppressHydrationWarning>
-              Joined {person.createdAt.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+            
+            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-tan mb-4" suppressHydrationWarning>
+              <div>
+                <strong className="text-purple-deep">{followCounts.followersCount}</strong> Followers
+              </div>
+              <div>
+                <strong className="text-purple-deep">{followCounts.followingCount}</strong> Following
+              </div>
+              <span>•</span>
+              <div>
+                <strong className="text-purple-deep">{postCount}</strong> {postCount === 1 ? "Post" : "Posts"}
+              </div>
+              <span>•</span>
+              <span>Joined {person.createdAt.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
             </div>
 
             <div className="flex gap-8 border-b border-border text-[14.5px] font-semibold">
@@ -216,15 +191,18 @@ export default async function CommunityProfilePage({
             </>
           ) : (
             <>
-              {feedPosts.map((p) => (
-                <PostCard
-                  key={p.id}
-                  post={p}
-                  isLiked={likedIds.has(p.id)}
-                  isReposted={repostedIds.has(p.id)}
-                  isLoggedIn={!!viewerId}
-                />
-              ))}
+              {feedPosts.map((p) => {
+                const targetId = p.repostOfId && !p.body.trim() ? p.repostOfId : p.id;
+                return (
+                  <PostCard
+                    key={p.id}
+                    post={p}
+                    isLiked={likedIds.has(targetId)}
+                    isReposted={repostedIds.has(targetId)}
+                    isLoggedIn={!!viewerId}
+                  />
+                );
+              })}
               {feedPosts.length === 0 && (
                 <p className="text-sm text-tan px-6 py-8">
                   {activeTab === "Media" ? "No photos yet." : activeTab === "Likes" ? "No liked posts yet." : "No posts yet."}

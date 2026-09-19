@@ -7,8 +7,9 @@ import ImageSlot from "@/components/ImageSlot";
 import JsonLd from "@/components/JsonLd";
 import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
-import CommentForm from "@/components/community/CommentForm";
+import CommentSection from "@/components/community/CommentSection";
 import ArticleEmbedCard from "@/components/community/ArticleEmbedCard";
+import PostImageMedia from "@/components/community/PostImageMedia";
 import { auth } from "@/lib/auth";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import { getPostById, getCommentsForPost, hasUserLikedPost, hasUserRepostedPost, relativeTime } from "@/db/queries";
@@ -67,11 +68,14 @@ export default async function CommunityPostPage({
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id;
 
+  const isBarePost = !!post.repostOfId && !post.body.trim();
+  const effectivePostId = isBarePost && post.repostOfId ? post.repostOfId : post.id;
+
   const [postComments, originalPost, liked, reposted] = await Promise.all([
     getCommentsForPost(post.id),
     post.repostOfId ? getPostById(post.repostOfId) : Promise.resolve(null),
-    userId ? hasUserLikedPost(post.id, userId) : Promise.resolve(false),
-    userId ? hasUserRepostedPost(post.id, userId) : Promise.resolve(false),
+    userId ? hasUserLikedPost(effectivePostId, userId) : Promise.resolve(false),
+    userId ? hasUserRepostedPost(effectivePostId, userId) : Promise.resolve(false),
   ]);
 
   return (
@@ -158,16 +162,12 @@ export default async function CommunityPostPage({
                 <Link href={`/community/post/${originalPost.id}`} className="block">
                   <p className="text-sm text-tan-dark leading-relaxed">{originalPost.body}</p>
                   {originalPost.hasImage && (
-                    originalPost.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={originalPost.imageUrl}
-                        alt={originalPost.imageLabel || "Reposted image"}
-                        className="w-full max-h-[300px] object-cover rounded-xl border border-border bg-mauve-50 mt-2"
-                      />
-                    ) : originalPost.imageLabel ? (
-                      <ImageSlot label={originalPost.imageLabel} className="w-full h-[220px] mt-2" shape="rounded" radius={12} tone="mauve" />
-                    ) : null
+                    <PostImageMedia
+                      imageUrl={originalPost.imageUrl}
+                      imageLabel={originalPost.imageLabel || "Reposted image"}
+                      maxHeight="max-h-[420px]"
+                      className="mt-2"
+                    />
                   )}
                 </Link>
 
@@ -189,16 +189,12 @@ export default async function CommunityPostPage({
 
             <p className="text-[17px] leading-relaxed mb-4">{post.body}</p>
             {post.hasImage && (
-              post.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={post.imageUrl}
-                  alt={post.imageLabel || "Post image"}
-                  className="w-full max-h-[500px] object-cover rounded-2xl border border-border bg-mauve-50 mb-4"
-                />
-              ) : post.imageLabel ? (
-                <ImageSlot label={post.imageLabel} className="w-full h-[320px] mb-4" shape="rounded" radius={16} tone="mauve" />
-              ) : null
+              <PostImageMedia
+                imageUrl={post.imageUrl}
+                imageLabel={post.imageLabel || "Post image"}
+                maxHeight="max-h-[600px]"
+                className="mb-4"
+              />
             )}
 
             {/* Attached Shared Article with Opinion */}
@@ -239,35 +235,28 @@ export default async function CommunityPostPage({
                 </svg>
                 <span className="text-[13.5px] tabular-nums tracking-tight transition-colors duration-200">{post.commentCount}</span>
               </a>
-              <RepostButton postId={post.id} initialReposted={reposted} initialCount={post.repostCount} isLoggedIn={!!userId} />
-              <LikeButton postId={post.id} initialLiked={liked} initialCount={post.likeCount} isLoggedIn={!!userId} />
+              <RepostButton
+                postId={effectivePostId}
+                initialReposted={reposted}
+                initialCount={post.repostCount}
+                isLoggedIn={!!userId}
+                postAuthorName={isBarePost && (originalPost?.authorName || post.originalAuthorName) ? (originalPost?.authorName || post.originalAuthorName) : post.authorName}
+                postAuthorHandle={isBarePost && (originalPost?.authorHandle || post.originalAuthorHandle) ? (originalPost?.authorHandle || post.originalAuthorHandle) : post.authorHandle}
+                postAuthorImage={isBarePost ? (originalPost?.authorImage ?? post.originalAuthorImage ?? post.authorImage) : post.authorImage}
+                postBody={isBarePost ? (originalPost?.body || post.originalBody || "") : post.body}
+                postImageUrl={isBarePost ? (originalPost?.imageUrl ?? post.originalImageUrl ?? post.imageUrl) : post.imageUrl}
+              />
+              <LikeButton postId={effectivePostId} initialLiked={liked} initialCount={post.likeCount} isLoggedIn={!!userId} />
             </div>
           </article>
 
-          <CommentForm postId={post.id} isLoggedIn={!!userId} />
-
-          <section id="comments" className="mt-6 scroll-mt-6">
-            <h2 className="font-heading text-lg text-purple-deep mb-4">
-              {postComments.length} {postComments.length === 1 ? "Comment" : "Comments"}
-            </h2>
-            {postComments.map((c) => (
-              <div key={c.id} className="flex gap-3 py-3.5 border-b border-border">
-                <div className="w-9 h-9 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-bold text-xs shrink-0 border border-lilac/40">
-                  {c.authorName?.charAt(0)?.toUpperCase() || "U"}
-                </div>
-                <div>
-                  <div className="text-sm">
-                    <Link href={`/community/${c.authorHandle}`} className="font-semibold text-purple-deep">
-                      {c.authorName}
-                    </Link>{" "}
-                    <span className="text-tan text-xs" suppressHydrationWarning>{relativeTime(c.createdAt)} ago</span>
-                  </div>
-                  <p className="text-[14.5px] mt-1">{c.body}</p>
-                </div>
-              </div>
-            ))}
-            {postComments.length === 0 && <p className="text-sm text-tan">No comments yet.</p>}
-          </section>
+          <CommentSection
+            postId={post.id}
+            postAuthorHandle={post.authorHandle}
+            comments={postComments}
+            currentUserId={userId}
+            isLoggedIn={!!userId}
+          />
         </div>
       </main>
     </>

@@ -119,129 +119,37 @@ export default async function BlogPage() {
       <SiteHeader />
 
       <main className="bg-[#fbf6f0] text-purple-deep min-h-screen font-sans pt-6">
-        {/* Annual Wrapped Feature */}
+        {/* Annual Wrapped Discovery Banner (Compact & Refined) */}
         {(!yearlyWrap || yearlyWrap.isActive) && (
-          <section className="px-6 md:px-12 pt-4 pb-14 max-w-[1100px] mx-auto">
-            <div className="border-2 border-purple-deep p-8 md:p-14 bg-[#fffdfb]">
-              <h2 className="font-heading text-4xl md:text-[64px] font-black text-center text-purple-deep tracking-tight">
-                {yearlyWrap?.title || "The Yearly Wrap"}
-              </h2>
-              <div className="text-center text-[13px] tracking-[0.2em] uppercase text-rose font-bold my-1.5 mb-6">
-                {yearlyWrap?.subtitle || "2026 Shopping Wrapped"}
-              </div>
-              <div className="border-t-2 border-b border-purple-deep h-[3px] mb-6" />
-
-              {/* Top 3 Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_1.3fr_1fr] border-t border-b border-purple-deep">
-                {/* 1. Reviewer Age */}
-                <div className="p-7 md:border-r border-purple-deep text-center">
-                  <div className="text-[11px] tracking-wider uppercase font-bold underline mb-2.5">
-                    {yearlyWrap?.reviewerAgeLabel || "My Reviewer Age"}
-                  </div>
-                  <div className="font-heading text-[76px] font-black text-purple-deep leading-none">
-                    {yearlyWrap?.reviewerAge || "3"}
-                  </div>
-                  <p className="text-xs leading-relaxed text-tan-dark mt-2.5">
-                    {yearlyWrap?.reviewerAgeText || "Three years testing products so readers don&apos;t have to guess."}
-                  </p>
+          <div className="px-6 md:px-12 pt-2 pb-6 max-w-[1200px] mx-auto">
+            <Link
+              href="/blog/wrapped"
+              className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4.5 px-6 rounded-2xl bg-gradient-to-r from-mauve-100/90 via-pink-50/80 to-mauve-50/90 border border-border/80 hover:border-rose/60 hover:shadow-xs transition-all group"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-deep text-white flex items-center justify-center font-heading font-black text-sm shadow-2xs shrink-0 group-hover:scale-105 transition-transform">
+                  ★
                 </div>
-
-                {/* 2. Most Reviewed Product */}
-                <div className="p-7 md:border-r border-purple-deep text-center">
-                  <Link href={mostReviewedHref} className="group block text-purple-deep">
-                    <div className="text-sm font-semibold text-purple-deep mb-3 group-hover:text-rose transition-colors">
-                      {yearlyWrap?.mostReviewedTitle || "Most Reviewed Product"}
-                    </div>
-                    <ImageSlot
-                      label={
-                        yearlyWrap?.mostReviewedImageLabel ||
-                        "Garment steamer — most reviewed product"
-                      }
-                      imageUrl={
-                        yearlyWrap?.mostReviewedImageUrl || topPickProduct?.imageUrl || null
-                      }
-                      className="w-full h-[260px] rounded-lg group-hover:opacity-90 transition-opacity"
-                      tone="mauve"
-                    />
-                    <p className="text-xs leading-relaxed text-tan-dark mt-2.5 group-hover:text-purple-deep transition-colors">
-                      {yearlyWrap?.mostReviewedText ||
-                        (topPickProduct
-                          ? `${topPickProduct.name} topped reader clicks all year, reviewed and updated four times.`
-                          : "The garment steamer topped reader clicks all year, reviewed and updated four times.")}
-                    </p>
-                  </Link>
-                </div>
-
-                {/* 3. Listening Report */}
-                <div className="p-7 text-center">
-                  <div className="text-[11px] tracking-wider uppercase font-bold underline mb-2.5">
-                    {yearlyWrap?.listeningReportLabel || "Listening Report"}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-rose">
+                      Annual Editorial Report
+                    </span>
+                    <span className="text-[11px] text-tan">•</span>
+                    <span className="text-xs font-semibold text-purple-deep">
+                      {yearlyWrap?.subtitle || "2026 Shopping Wrapped"}
+                    </span>
                   </div>
-                  <p className="text-xs leading-relaxed text-tan-dark mb-3">
-                    {yearlyWrap?.listeningReportText ||
-                      "Readers spent the most time this year on care guides, followed by top-10 lists and jewelry storage."}
-                  </p>
-                  <div className="font-heading text-sm font-bold text-purple-deep">
-                    {yearlyWrap?.listeningReportDate || "Aug 2, 2026"}
-                  </div>
+                  <h2 className="font-heading text-sm sm:text-[15px] font-bold text-purple-deep group-hover:text-rose transition-colors">
+                    {yearlyWrap?.title || "The Yearly Wrap"} — Discover our top reviewed products & picks
+                  </h2>
                 </div>
               </div>
-
-              {/* Bottom 2 Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 border-b border-purple-deep">
-                {/* 4. Top Pick */}
-                <div className="p-7 md:border-r border-purple-deep flex gap-5 items-center">
-                  <Link
-                    href={topPickHref}
-                    className="w-[70px] h-[70px] rounded-full bg-purple-deep shrink-0 overflow-hidden flex items-center justify-center text-white font-bold hover:opacity-90 transition-opacity"
-                  >
-                    {yearlyWrap?.topPickImageUrl || topPickProduct?.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={yearlyWrap?.topPickImageUrl || topPickProduct?.imageUrl || ""}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-xs font-bold uppercase">Top</span>
-                    )}
-                  </Link>
-                  <div>
-                    <div className="text-[11px] tracking-wider uppercase font-bold mb-1">
-                      {yearlyWrap?.topPickLabel || "Top Pick 2026"}
-                    </div>
-                    <Link
-                      href={topPickHref}
-                      className="font-heading text-[15px] font-bold text-purple-deep hover:text-rose transition-colors block"
-                    >
-                      {yearlyWrap?.topPickTitle || topPickProduct?.name || "Steamfast SF-717"}
-                    </Link>
-                    <div className="text-[11.5px] text-tan mt-0.5">
-                      {yearlyWrap?.topPickClicks || "4,120 clicks"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 5. Top Categories */}
-                <div className="p-7">
-                  <div className="text-[11px] tracking-wider uppercase font-bold underline mb-2.5">
-                    {yearlyWrap?.topCategoriesLabel || "Top Categories This Year"}
-                  </div>
-                  <div className="font-heading text-[15px] font-bold text-purple-deep leading-relaxed tracking-wide flex flex-col gap-1">
-                    {yearlyCategories.map((cat, idx) => (
-                      <Link
-                        key={idx}
-                        href={getCategoryHref(cat)}
-                        className="hover:text-rose transition-colors block py-0.5 underline-offset-4 hover:underline"
-                      >
-                        {cat}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-rose shrink-0 group-hover:translate-x-0.5 transition-transform">
+                Explore Wrapped Report →
+              </span>
+            </Link>
+          </div>
         )}
 
         {/* Minimal Editorial Spread */}

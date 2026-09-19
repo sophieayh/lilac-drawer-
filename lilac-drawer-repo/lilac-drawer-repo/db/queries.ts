@@ -1,8 +1,8 @@
 import "server-only";
-import { desc, eq, asc, and, or, isNull, isNotNull, gt, ne, sql } from "drizzle-orm";
+import { desc, eq, asc, and, or, isNull, isNotNull, gt, ne, sql, inArray, ilike } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "./index";
-import { products, posts, siteCategories, communityPosts, trends, user, comments, likes, banners, yearlyWrap } from "./schema";
+import { products, posts, siteCategories, communityPosts, trends, user, comments, likes, follows, banners, yearlyWrap } from "./schema";
 import { slugify } from "@/lib/slugify";
 
 // ---------- formatting helpers ----------
@@ -571,6 +571,7 @@ const postWithAuthor = {
   originalHasImage: originalPosts.hasImage,
   originalImageUrl: originalPosts.imageUrl,
   originalPostedAt: originalPosts.postedAt,
+  originalRepostOfId: originalPosts.repostOfId,
   // Attached Article Details
   articleTitle: posts.title,
   articleSlug: posts.slug,
@@ -590,8 +591,109 @@ const postWithAuthor = {
   originalArticleAuthor: originalArticle.author,
 };
 
+/**
+ * Resolves any nested / bare reposts in the result set so that if a post
+ * quotes or reposts another bare repost, it automatically inherits and displays
+ * the root original post's author, text, image, and article instead of being empty.
+ */
+async function resolveRepostChains<T extends {
+  repostOfId: number | null;
+  originalRepostOfId?: number | null;
+  originalBody?: string | null;
+  originalHasImage?: boolean | null;
+  originalImageUrl?: string | null;
+  originalImageLabel?: string | null;
+  originalAuthorName?: string | null;
+  originalAuthorHandle?: string | null;
+  originalAuthorImage?: string | null;
+  originalPostedAt?: Date | null;
+  originalArticleId?: number | null;
+  originalArticleTitle?: string | null;
+  originalArticleSlug?: string | null;
+  originalArticleExcerpt?: string | null;
+  originalArticleImageUrl?: string | null;
+  originalArticleImageLabel?: string | null;
+  originalArticleCategory?: string | null;
+  originalArticleAuthor?: string | null;
+}>(items: T[]): Promise<T[]> {
+  const needsResolution = items.filter(
+    (item) => item.repostOfId && item.originalRepostOfId && (!item.originalBody || !item.originalBody.trim()) && !item.originalHasImage && !item.originalArticleTitle
+  );
+
+  if (needsResolution.length === 0) return items;
+
+  let pending = [...needsResolution];
+  let depth = 0;
+
+  while (pending.length > 0 && depth < 5) {
+    depth++;
+    const targetIds = Array.from(new Set(pending.map((p) => p.originalRepostOfId!).filter(Boolean)));
+    if (targetIds.length === 0) break;
+
+    const rootRows = await db
+      .select({
+        id: communityPosts.id,
+        body: communityPosts.body,
+        imageLabel: communityPosts.imageLabel,
+        hasImage: communityPosts.hasImage,
+        imageUrl: communityPosts.imageUrl,
+        repostOfId: communityPosts.repostOfId,
+        postedAt: communityPosts.postedAt,
+        authorName: user.name,
+        authorHandle: user.handle,
+        authorImage: user.image,
+        articleId: posts.id,
+        articleTitle: posts.title,
+        articleSlug: posts.slug,
+        articleExcerpt: posts.excerpt,
+        articleImageUrl: posts.imageUrl,
+        articleImageLabel: posts.imageLabel,
+        articleCategory: posts.category,
+        articleAuthor: posts.author,
+      })
+      .from(communityPosts)
+      .innerJoin(user, eq(communityPosts.userId, user.id))
+      .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+      .where(inArray(communityPosts.id, targetIds));
+
+    const rootMap = new Map(rootRows.map((r) => [r.id, r]));
+    const nextPending: typeof pending = [];
+
+    for (const item of pending) {
+      const root = item.originalRepostOfId ? rootMap.get(item.originalRepostOfId) : undefined;
+      if (root) {
+        item.repostOfId = root.id;
+        item.originalAuthorName = root.authorName;
+        item.originalAuthorHandle = root.authorHandle;
+        item.originalAuthorImage = root.authorImage;
+        item.originalBody = root.body;
+        item.originalHasImage = root.hasImage;
+        item.originalImageUrl = root.imageUrl;
+        item.originalImageLabel = root.imageLabel;
+        item.originalPostedAt = root.postedAt;
+        item.originalArticleId = root.articleId;
+        item.originalArticleTitle = root.articleTitle;
+        item.originalArticleSlug = root.articleSlug;
+        item.originalArticleExcerpt = root.articleExcerpt;
+        item.originalArticleImageUrl = root.articleImageUrl;
+        item.originalArticleImageLabel = root.articleImageLabel;
+        item.originalArticleCategory = root.articleCategory;
+        item.originalArticleAuthor = root.articleAuthor;
+        item.originalRepostOfId = root.repostOfId;
+
+        if (root.repostOfId && (!root.body || !root.body.trim()) && !root.hasImage && !root.articleTitle) {
+          nextPending.push(item);
+        }
+      }
+    }
+    pending = nextPending;
+  }
+
+  return items;
+}
+
 export async function getCommunityFeed(limit = 10) {
-  return db
+  const rows = await db
     .select(postWithAuthor)
     .from(communityPosts)
     .innerJoin(user, eq(communityPosts.userId, user.id))
@@ -601,10 +703,30 @@ export async function getCommunityFeed(limit = 10) {
     .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
+  return resolveRepostChains(rows);
+}
+
+/**
+ * Returns community posts with non-empty commentary/opinion,
+ * filtering out bare reposts without thoughts or commentary.
+ */
+export async function getCommunityBuzzPosts(limit = 3) {
+  const rows = await db
+    .select(postWithAuthor)
+    .from(communityPosts)
+    .innerJoin(user, eq(communityPosts.userId, user.id))
+    .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
+    .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
+    .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+    .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
+    .where(and(ne(communityPosts.body, ""), sql`trim(${communityPosts.body}) != ''`))
+    .orderBy(desc(communityPosts.postedAt))
+    .limit(limit);
+  return resolveRepostChains(rows);
 }
 
 export async function getPostsByHandle(handle: string, limit = 10) {
-  return db
+  const rows = await db
     .select(postWithAuthor)
     .from(communityPosts)
     .innerJoin(user, eq(communityPosts.userId, user.id))
@@ -615,6 +737,7 @@ export async function getPostsByHandle(handle: string, limit = 10) {
     .where(eq(user.handle, handle))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
+  return resolveRepostChains(rows);
 }
 
 export async function getPostById(id: number) {
@@ -628,7 +751,8 @@ export async function getPostById(id: number) {
     .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
     .where(eq(communityPosts.id, id))
     .limit(1);
-  return rows[0] ?? null;
+  const resolved = await resolveRepostChains(rows);
+  return resolved[0] ?? null;
 }
 
 export async function getUserByHandle(handle: string) {
@@ -642,8 +766,11 @@ export async function getCommentsForPost(postId: number) {
       id: comments.id,
       body: comments.body,
       createdAt: comments.createdAt,
+      parentId: comments.parentId,
+      userId: comments.userId,
       authorName: user.name,
       authorHandle: user.handle,
+      authorImage: user.image,
     })
     .from(comments)
     .innerJoin(user, eq(comments.userId, user.id))
@@ -676,6 +803,27 @@ export async function getLikedPostIds(postIds: number[], userId: string): Promis
   return new Set(rows.map((r) => r.postId).filter((id) => idSet.has(id)));
 }
 
+export async function isUserFollowing(followerId?: string | null, followingId?: string | null): Promise<boolean> {
+  if (!followerId || !followingId || followerId === followingId) return false;
+  const rows = await db
+    .select({ id: follows.id })
+    .from(follows)
+    .where(and(eq(follows.followerId, followerId), eq(follows.followingId, followingId)))
+    .limit(1);
+  return rows.length > 0;
+}
+
+export async function getFollowCounts(userId: string): Promise<{ followersCount: number; followingCount: number }> {
+  const [followersRow, followingRow] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(follows).where(eq(follows.followingId, userId)),
+    db.select({ count: sql<number>`count(*)::int` }).from(follows).where(eq(follows.followerId, userId)),
+  ]);
+  return {
+    followersCount: followersRow[0]?.count ?? 0,
+    followingCount: followingRow[0]?.count ?? 0,
+  };
+}
+
 export async function getRepostedPostIds(userId: string): Promise<Set<number>> {
   const rows = await db
     .select({ repostOfId: communityPosts.repostOfId })
@@ -690,7 +838,7 @@ export async function getPeopleSuggestions(excludeUserId?: string, limit = 3) {
 }
 
 export async function getMediaPostsByHandle(handle: string, limit = 20) {
-  return db
+  const rows = await db
     .select(postWithAuthor)
     .from(communityPosts)
     .innerJoin(user, eq(communityPosts.userId, user.id))
@@ -701,11 +849,12 @@ export async function getMediaPostsByHandle(handle: string, limit = 20) {
     .where(and(eq(user.handle, handle), eq(communityPosts.hasImage, true)))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
+  return resolveRepostChains(rows);
 }
 
 /** Posts a given user has liked — shows the post's actual author, not the liker. */
 export async function getLikedPostsByUserId(userId: string, limit = 20) {
-  return db
+  const rows = await db
     .select(postWithAuthor)
     .from(likes)
     .innerJoin(communityPosts, eq(likes.postId, communityPosts.id))
@@ -717,6 +866,7 @@ export async function getLikedPostsByUserId(userId: string, limit = 20) {
     .where(eq(likes.userId, userId))
     .orderBy(desc(likes.createdAt))
     .limit(limit);
+  return resolveRepostChains(rows);
 }
 
 /** Comments a given user has left on (anyone's) posts, with enough of the
@@ -780,4 +930,70 @@ export async function getYearlyWrapSettings() {
   const rows = await db.select().from(yearlyWrap).limit(1);
   return rows[0] ?? null;
 }
+
+// ---------- search & suggestions ----------
+export async function searchSuggestions(rawQuery: string) {
+  const query = (rawQuery || "").trim();
+  if (!query) {
+    return {
+      products: [],
+      posts: [],
+      totalCount: 0,
+    };
+  }
+
+  const qPattern = `%${query}%`;
+
+  const [matchingProducts, matchingPosts] = await Promise.all([
+    db
+      .select()
+      .from(products)
+      .where(
+        or(
+          ilike(products.name, qPattern),
+          ilike(products.subtitle, qPattern),
+          ilike(products.category, qPattern),
+          ilike(products.badge, qPattern),
+          ilike(products.imageLabel, qPattern)
+        )
+      )
+      .orderBy(desc(products.isFeaturedHome), desc(products.isBestSeller), desc(products.createdAt))
+      .limit(6),
+    db
+      .select()
+      .from(posts)
+      .where(
+        or(
+          ilike(posts.title, qPattern),
+          ilike(posts.excerpt, qPattern),
+          ilike(posts.category, qPattern),
+          ilike(posts.topicLabel, qPattern),
+          ilike(posts.author, qPattern)
+        )
+      )
+      .orderBy(desc(posts.publishedAt))
+      .limit(6),
+  ]);
+
+  return {
+    products: matchingProducts,
+    posts: matchingPosts,
+    totalCount: matchingProducts.length + matchingPosts.length,
+  };
+}
+
+export async function getAllProductsForSearch() {
+  return db
+    .select()
+    .from(products)
+    .orderBy(desc(products.isFeaturedHome), desc(products.isBestSeller), desc(products.createdAt));
+}
+
+export async function getAllPostsForSearch() {
+  return db
+    .select()
+    .from(posts)
+    .orderBy(desc(posts.publishedAt));
+}
+
 

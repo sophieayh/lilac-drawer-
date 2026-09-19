@@ -82,7 +82,7 @@ export default function CommunityAdBanner({ banners }: { banners: BannerItem[] }
 
   return (
     <div
-      className="py-4 border-b border-border select-none"
+      className="w-full select-none"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
