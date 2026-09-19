@@ -840,7 +840,7 @@ export default function EmailSandboxBuilder({
 
                         {/* Visual Rendered Block Preview */}
                         <div
-                          className="p-4 select-none"
+                          className="px-8 py-4 select-none"
                           dir={blockDir}
                           style={{
                             direction: blockDir,

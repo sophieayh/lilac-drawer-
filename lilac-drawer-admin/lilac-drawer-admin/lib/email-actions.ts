@@ -297,8 +297,8 @@ export async function sendEmailCampaign(
   const senderEmail = settings?.senderEmail || settings?.smtpUser || "newsletter@lilacdrawer.com";
   const fromHeader = `"${senderName}" <${senderEmail}>`;
 
-  // Ensure HTML is fresh
-  const html = campaign.htmlContent || generateEmailHtml(campaign.blocks as EmailBlock[], {
+  // Always generate fresh HTML from blocks using latest generator layout
+  const html = generateEmailHtml((campaign.blocks || []) as EmailBlock[], {
     subject: campaign.subject,
     previewText: campaign.previewText || "",
     siteUrl: process.env.PUBLIC_SITE_URL || "https://lilacdrawer.com",
