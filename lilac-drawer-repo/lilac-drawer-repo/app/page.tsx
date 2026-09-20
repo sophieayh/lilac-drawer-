@@ -71,14 +71,14 @@ export default async function HomePage() {
         {/* monochrome editorial spread */}
         {spreadPosts.length > 0 && (
           <Reveal delay={0}>
-            <section className="px-6 md:px-12 py-8 max-w-[1200px] mx-auto bg-mauve-50 rounded-2xl border border-border-mauve">
+            <section className="px-4 sm:px-6 md:px-12 py-6 sm:py-8 max-w-[1200px] mx-auto bg-mauve-50 rounded-2xl border border-border-mauve">
               <div className="border-t-[3px] border-b-[3px] border-double border-lilac h-1.5 mb-6" />
 
               {topSpread && (
-                <div className="grid md:grid-cols-2 gap-8 mb-6 items-center">
+                <div className="grid md:grid-cols-2 gap-6 md:gap-8 mb-6 items-center">
                   <div>
                     <Link href={`/blog/${topSpread.slug}`} className="block group">
-                      <p className="font-heading italic text-[30px] md:text-[32px] font-bold mb-3.5 text-purple group-hover:text-rose transition-colors uppercase leading-tight">
+                      <p className="font-heading italic text-[24px] sm:text-[28px] md:text-[32px] font-bold mb-3 text-purple group-hover:text-rose transition-colors uppercase leading-tight">
                         {topSpread.title}
                       </p>
                     </Link>
@@ -93,7 +93,7 @@ export default async function HomePage() {
                     <ImageSlot
                       label={topSpread.imageLabel}
                       imageUrl={topSpread.imageUrl}
-                      className="w-full h-[260px]"
+                      className="w-full h-[200px] sm:h-[260px]"
                       shape="rounded"
                       radius={16}
                       tone="pink"
@@ -103,12 +103,12 @@ export default async function HomePage() {
               )}
 
               {bottomSpread && (
-                <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="grid md:grid-cols-2 gap-6 md:gap-8 items-center">
                   <Link href={`/blog/${bottomSpread.slug}`} className="block order-2 md:order-1">
                     <ImageSlot
                       label={bottomSpread.imageLabel}
                       imageUrl={bottomSpread.imageUrl}
-                      className="w-full h-[220px]"
+                      className="w-full h-[180px] sm:h-[220px]"
                       shape="rounded"
                       radius={16}
                       tone="mauve"
@@ -116,7 +116,7 @@ export default async function HomePage() {
                   </Link>
                   <div className="order-1 md:order-2">
                     <Link href={`/blog/${bottomSpread.slug}`} className="block group">
-                      <p className="font-heading italic text-[20px] md:text-[22px] font-bold mb-3 text-purple group-hover:text-rose transition-colors uppercase leading-snug">
+                      <p className="font-heading italic text-[18px] sm:text-[20px] md:text-[22px] font-bold mb-2.5 sm:mb-3 text-purple group-hover:text-rose transition-colors uppercase leading-snug">
                         {bottomSpread.title}
                       </p>
                     </Link>
@@ -131,9 +131,11 @@ export default async function HomePage() {
               )}
 
               <div className="mt-6 border-2 border-lilac p-1 rounded-2xl">
-                <div className="border border-lilac rounded-[11px] flex justify-between items-center px-6 py-3 bg-rose text-white font-heading text-sm font-bold tracking-wide uppercase">
+                <div className="border border-lilac rounded-[11px] flex flex-wrap justify-center sm:justify-between items-center px-3 sm:px-6 py-2.5 sm:py-3 bg-rose text-white font-heading text-xs sm:text-sm font-bold tracking-wide uppercase gap-2 text-center">
                   <span>Cool Vibes</span>
+                  <span className="hidden xs:inline">•</span>
                   <span>Lilac Drawer</span>
+                  <span className="hidden xs:inline">•</span>
                   <span>Aesthetic</span>
                 </div>
               </div>
@@ -143,31 +145,31 @@ export default async function HomePage() {
 
         {/* main 3-column */}
         <Reveal delay={100}>
-          <section className="grid lg:grid-cols-[2fr_1fr] gap-10 px-6 md:px-12 py-16 max-w-[1400px] mx-auto">
+          <section className="grid lg:grid-cols-[2fr_1fr] gap-8 lg:gap-10 px-4 sm:px-6 md:px-12 py-8 sm:py-16 max-w-[1400px] mx-auto">
             {heroPost && (
               <article>
                 <Link href={`/blog/${heroPost.slug}`} className="block group">
                   <ImageSlot
                     label={heroPost.imageLabel || heroPost.title}
                     imageUrl={heroPost.imageUrl}
-                    className="w-full h-[380px] shadow-[0_12px_32px_rgba(46,37,54,0.1)] group-hover:opacity-95 transition-opacity"
+                    className="w-full h-[220px] sm:h-[300px] md:h-[380px] shadow-[0_12px_32px_rgba(46,37,54,0.1)] group-hover:opacity-95 transition-opacity"
                     shape="rounded"
                     radius={20}
                     tone="mauve"
                   />
                 </Link>
-                <span className="inline-block bg-pink-100 text-rose text-xs font-semibold tracking-wide uppercase px-3 py-1.5 rounded-full my-5">
+                <span className="inline-block bg-pink-100 text-rose text-xs font-semibold tracking-wide uppercase px-3 py-1.5 rounded-full my-4 sm:my-5">
                   {heroPost.topicLabel || heroPost.category || "Editor's Pick"}
                 </span>
                 <Link href={`/blog/${heroPost.slug}`} className="block group">
-                  <h1 className="font-heading text-[32px] md:text-[42px] leading-tight mb-2.5 font-bold text-purple-deep tracking-tight group-hover:text-rose transition-colors">
+                  <h1 className="font-heading text-[26px] sm:text-[32px] md:text-[42px] leading-tight mb-2.5 font-bold text-purple-deep tracking-tight group-hover:text-rose transition-colors">
                     {heroPost.title}
                   </h1>
                 </Link>
                 <div className="text-[13px] text-tan mb-4">
                   by {heroPost.author} · updated {formatDate(heroPost.updatedAt || heroPost.publishedAt)}
                 </div>
-                <p className="text-base leading-relaxed text-tan-dark">
+                <p className="text-sm sm:text-base leading-relaxed text-tan-dark">
                   {heroPost.excerpt}{" "}
                   <Link
                     href={`/blog/${heroPost.slug}`}
@@ -240,9 +242,9 @@ export default async function HomePage() {
 
         {/* top picks */}
         <Reveal delay={100}>
-          <section id="top-picks" className="px-6 md:px-12 pb-20 max-w-[1400px] mx-auto">
+          <section id="top-picks" className="px-4 sm:px-6 md:px-12 pb-12 sm:pb-20 max-w-[1400px] mx-auto">
             <div className="flex justify-between items-baseline mb-6 border-b-2 border-lilac pb-3.5">
-              <h2 className="font-heading text-[26px] text-purple m-0">Top 10 Lint Removers, Ranked</h2>
+              <h2 className="font-heading text-xl sm:text-[26px] text-purple m-0">Top 10 Lint Removers, Ranked</h2>
               <Link
                 href="/deals/best-sellers"
                 className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors inline-flex items-center gap-1 group"
@@ -255,17 +257,17 @@ export default async function HomePage() {
               <Link
                 key={pick.id}
                 href={`/deals/${pick.slug}`}
-                className="flex items-center gap-5 px-4.5 py-4 mb-2.5 rounded-2xl bg-white border border-border/80 card-hover group block shadow-2xs"
+                className="flex items-center gap-3 sm:gap-5 px-3.5 sm:px-4.5 py-3 sm:py-4 mb-2.5 rounded-2xl bg-white border border-border/80 card-hover group block shadow-2xs"
               >
-                <span className="font-heading text-[28px] text-lilac font-bold w-11">
+                <span className="font-heading text-xl sm:text-[28px] text-lilac font-bold w-8 sm:w-11 shrink-0">
                   {pick.rank != null ? String(pick.rank).padStart(2, "0") : "–"}
                 </span>
-                <ImageSlot label={pick.imageLabel} imageUrl={pick.imageUrl} className="w-20 h-20 shrink-0" shape="rounded" radius={14} tone="pink" />
-                <div className="flex-1">
-                  <div className="font-semibold text-[15px] group-hover:text-rose transition-colors">{pick.name}</div>
-                  <div className="text-[13px] text-tan mt-1">{pick.rankNote}</div>
+                <ImageSlot label={pick.imageLabel} imageUrl={pick.imageUrl} className="w-14 h-14 sm:w-20 sm:h-20 shrink-0" shape="rounded" radius={12} tone="pink" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-xs sm:text-[15px] group-hover:text-rose transition-colors truncate sm:whitespace-normal">{pick.name}</div>
+                  <div className="text-[11px] sm:text-[13px] text-tan mt-0.5 sm:mt-1 line-clamp-1">{pick.rankNote}</div>
                 </div>
-                <div className="font-heading font-bold text-[17px] text-rose">{formatPrice(pick.priceCents)}</div>
+                <div className="font-heading font-bold text-sm sm:text-[17px] text-rose shrink-0">{formatPrice(pick.priceCents)}</div>
               </Link>
             ))}
           </section>
@@ -273,9 +275,9 @@ export default async function HomePage() {
 
         {/* latest reviews */}
         <Reveal delay={100}>
-          <section id="reviews" className="px-6 md:px-12 pb-20 max-w-[1400px] mx-auto">
+          <section id="reviews" className="px-4 sm:px-6 md:px-12 pb-12 sm:pb-20 max-w-[1400px] mx-auto">
             <div className="flex justify-between items-baseline mb-6 border-b-2 border-border-mauve pb-3.5">
-              <h2 className="font-heading text-[26px] text-purple-deep m-0">Latest Reviews</h2>
+              <h2 className="font-heading text-xl sm:text-[26px] text-purple-deep m-0">Latest Reviews</h2>
               <Link
                 href="/blog/reviews"
                 className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors inline-flex items-center gap-1 group"
@@ -284,13 +286,13 @@ export default async function HomePage() {
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             </div>
-            <div className="grid md:grid-cols-3 gap-7">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-7">
               {homeReviews.map((r) => (
                 <Link key={r.id} href={`/blog/${r.slug}`} className="block text-purple-deep card-hover">
                   <ImageSlot
                     label={r.imageLabel}
                     imageUrl={r.imageUrl}
-                    className="w-full h-[200px] mb-3.5 shadow-[0_6px_18px_rgba(46,37,54,0.08)]"
+                    className="w-full h-[180px] sm:h-[200px] mb-3.5 shadow-[0_6px_18px_rgba(46,37,54,0.08)]"
                     shape="rounded"
                     radius={16}
                     tone="mauve"
@@ -298,10 +300,10 @@ export default async function HomePage() {
                   <span className="text-xs font-semibold text-rose uppercase tracking-wide">
                     {r.topicLabel ?? r.category}
                   </span>
-                  <h3 className="font-heading text-[19px] my-2 leading-snug text-purple-deep">
+                  <h3 className="font-heading text-base sm:text-[19px] my-1.5 sm:my-2 leading-snug text-purple-deep">
                     {r.title}
                   </h3>
-                  <p className="text-sm text-tan-dark leading-relaxed">{r.excerpt}</p>
+                  <p className="text-xs sm:text-sm text-tan-dark leading-relaxed line-clamp-3">{r.excerpt}</p>
                 </Link>
               ))}
             </div>
@@ -311,33 +313,33 @@ export default async function HomePage() {
         {/* buying guide banner */}
         {homeGuidePost && (
           <Reveal delay={100}>
-            <section id="guides" className="bg-mauve-100 py-22 px-6 md:px-12">
-              <div className="grid md:grid-cols-2 gap-12 items-center max-w-[1400px] mx-auto">
+            <section id="guides" className="bg-mauve-100 py-12 sm:py-22 px-4 sm:px-6 md:px-12">
+              <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center max-w-[1400px] mx-auto">
                 <Link href={`/blog/${homeGuidePost.slug}`} className="block">
                   <ImageSlot
                     label={homeGuidePost.imageLabel || homeGuidePost.title}
                     imageUrl={homeGuidePost.imageUrl}
-                    className="w-full h-[340px] shadow-[0_12px_32px_rgba(46,37,54,0.12)]"
+                    className="w-full h-[220px] sm:h-[340px] shadow-[0_12px_32px_rgba(46,37,54,0.12)]"
                     shape="rounded"
                     radius={20}
                     tone="purple"
                   />
                 </Link>
                 <div>
-                  <span className="inline-block bg-lilac text-white text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full mb-4.5">
+                  <span className="inline-block bg-lilac text-white text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full mb-3 sm:mb-4.5">
                     {homeGuidePost.topicLabel || homeGuidePost.category || "Buying Guide"}
                   </span>
                   <Link href={`/blog/${homeGuidePost.slug}`} className="block group">
-                    <h2 className="font-heading text-[30px] leading-tight mb-4 text-purple-deep group-hover:text-rose transition-colors">
+                    <h2 className="font-heading text-2xl sm:text-[30px] leading-tight mb-3 sm:mb-4 text-purple-deep group-hover:text-rose transition-colors">
                       {homeGuidePost.title}
                     </h2>
                   </Link>
-                  <p className="text-[15px] leading-relaxed text-tan-dark mb-5.5 max-w-[460px]">
+                  <p className="text-sm sm:text-[15px] leading-relaxed text-tan-dark mb-5 max-w-[460px]">
                     {homeGuidePost.excerpt}
                   </p>
                   <Link
                     href={`/blog/${homeGuidePost.slug}`}
-                    className="inline-block bg-purple-deep text-white px-6.5 py-3 rounded-xl font-semibold text-sm shadow-[0_4px_14px_rgba(46,37,54,0.2)] hover:bg-purple-deep/90 transition-colors"
+                    className="inline-block bg-purple-deep text-white px-5 sm:px-6.5 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm shadow-[0_4px_14px_rgba(46,37,54,0.2)] hover:bg-purple-deep/90 transition-colors"
                   >
                     Read the Guide →
                   </Link>
@@ -349,9 +351,9 @@ export default async function HomePage() {
 
         {/* blog */}
         <Reveal delay={100}>
-          <section id="blog" className="px-6 md:px-12 py-20 max-w-[1400px] mx-auto">
+          <section id="blog" className="px-4 sm:px-6 md:px-12 py-12 sm:py-20 max-w-[1400px] mx-auto">
             <div className="flex justify-between items-baseline mb-6 border-b-2 border-border-mauve pb-3.5">
-              <h2 className="font-heading text-[26px] text-purple-deep m-0">From the Blog</h2>
+              <h2 className="font-heading text-xl sm:text-[26px] text-purple-deep m-0">From the Blog</h2>
               <Link
                 href="/blog/all"
                 className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors inline-flex items-center gap-1 group"
@@ -360,13 +362,13 @@ export default async function HomePage() {
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             </div>
-            <div className="grid md:grid-cols-3 gap-7">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-7">
               {homeBlogPreview.map((p) => (
                 <Link key={p.id} href={`/blog/${p.slug}`} className="flex gap-3.5 text-purple-deep card-hover">
-                  <ImageSlot label={p.imageLabel} imageUrl={p.imageUrl} className="w-[100px] h-[100px] shrink-0" shape="rounded" radius={12} tone="mauve" />
-                  <div>
-                    <div className="text-xs text-tan mb-1.5">{formatDate(p.publishedAt)}</div>
-                    <h3 className="font-heading text-base leading-snug text-purple-deep">{p.title}</h3>
+                  <ImageSlot label={p.imageLabel} imageUrl={p.imageUrl} className="w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] shrink-0" shape="rounded" radius={12} tone="mauve" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] sm:text-xs text-tan mb-1">{formatDate(p.publishedAt)}</div>
+                    <h3 className="font-heading text-sm sm:text-base leading-snug text-purple-deep line-clamp-2">{p.title}</h3>
                   </div>
                 </Link>
               ))}
@@ -376,11 +378,11 @@ export default async function HomePage() {
 
         {/* newsletter */}
         <Reveal delay={100}>
-          <section id="subscribe" className="bg-pink-100 py-22 px-6 text-center">
-            <h2 className="font-heading text-[30px] mb-3 text-plum">
+          <section id="subscribe" className="bg-pink-100 py-12 sm:py-22 px-4 sm:px-6 text-center">
+            <h2 className="font-heading text-2xl sm:text-[30px] mb-2 sm:mb-3 text-plum">
               Get the weekly pick in your inbox
             </h2>
-            <p className="text-[15px] text-plum/80 mb-6">
+            <p className="text-xs sm:text-[15px] text-plum/80 mb-5 sm:mb-6">
               One product, tested and worth it. Every Thursday.
             </p>
             <InlineNewsletterForm />

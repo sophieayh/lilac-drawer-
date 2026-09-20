@@ -6,6 +6,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { likes, comments, communityPosts, follows, user } from "@/db/schema";
+import { createNotification } from "@/lib/notification-actions";
 
 async function requireUserId(): Promise<string> {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -64,6 +65,27 @@ export async function toggleLike(postId: number): Promise<{ liked: boolean; like
     .set({ likeCount: sql`${communityPosts.likeCount} + 1` })
     .where(eq(communityPosts.id, targetPostId))
     .returning();
+
+  // Notify post author if not liking own post
+  if (row && row.userId !== userId) {
+    db.select({ name: user.name })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+      .then(([actor]) => {
+        const actorName = actor?.name || "A user";
+        createNotification({
+          userId: row.userId,
+          actorId: userId,
+          type: "post_like",
+          title: `${actorName} liked your post`,
+          message: null,
+          targetUrl: `/community/post/${targetPostId}`,
+        }).catch(() => {});
+      })
+      .catch(() => {});
+  }
+
   revalidatePath("/community");
   revalidatePath(`/community/post/${targetPostId}`);
   if (targetPostId !== postId) revalidatePath(`/community/post/${postId}`);
@@ -125,6 +147,27 @@ export async function toggleRepost(
     .set({ repostCount: sql`${communityPosts.repostCount} + 1` })
     .where(eq(communityPosts.id, targetPostId))
     .returning();
+
+  // Notify original post author if not reposting own post
+  if (row && row.userId !== userId) {
+    db.select({ name: user.name })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+      .then(([actor]) => {
+        const actorName = actor?.name || "A user";
+        createNotification({
+          userId: row.userId,
+          actorId: userId,
+          type: "post_repost",
+          title: `${actorName} reposted your post`,
+          message: trimmedQuote || null,
+          targetUrl: `/community/post/${targetPostId}`,
+        }).catch(() => {});
+      })
+      .catch(() => {});
+  }
+
   revalidatePath("/community");
   revalidatePath(`/community/post/${targetPostId}`);
   if (targetPostId !== postId) revalidatePath(`/community/post/${postId}`);
@@ -143,15 +186,17 @@ export async function createComment(
   if (!trimmed) throw new Error("Comment can't be empty.");
   if (trimmed.length > 1000) throw new Error("Comment is too long (max 1000 characters).");
 
+  let parentUserId: string | null = null;
   if (parentId) {
     const [parent] = await db
-      .select({ id: comments.id, postId: comments.postId })
+      .select({ id: comments.id, postId: comments.postId, userId: comments.userId })
       .from(comments)
       .where(eq(comments.id, parentId))
       .limit(1);
     if (!parent || parent.postId !== postId) {
       throw new Error("Parent comment not found for this post.");
     }
+    parentUserId = parent.userId;
   }
 
   const [row] = await db
@@ -168,6 +213,47 @@ export async function createComment(
     .update(communityPosts)
     .set({ commentCount: sql`${communityPosts.commentCount} + 1` })
     .where(eq(communityPosts.id, postId));
+
+  // Send notifications for comment reply / post reply
+  db.select({ name: user.name })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1)
+    .then(async ([actor]) => {
+      const actorName = actor?.name || "A user";
+      const snippet = trimmed.length > 80 ? trimmed.slice(0, 80) + "…" : trimmed;
+
+      // If replying to a comment, notify that comment's author
+      if (parentUserId && parentUserId !== userId) {
+        await createNotification({
+          userId: parentUserId,
+          actorId: userId,
+          type: "comment_reply",
+          title: `${actorName} replied to your comment`,
+          message: snippet,
+          targetUrl: `/community/post/${postId}`,
+        }).catch(() => {});
+      }
+
+      // Notify post author (if not self and not already notified as parent author)
+      const [post] = await db
+        .select({ userId: communityPosts.userId })
+        .from(communityPosts)
+        .where(eq(communityPosts.id, postId))
+        .limit(1);
+
+      if (post && post.userId !== userId && post.userId !== parentUserId) {
+        await createNotification({
+          userId: post.userId,
+          actorId: userId,
+          type: "post_reply",
+          title: `${actorName} commented on your post`,
+          message: snippet,
+          targetUrl: `/community/post/${postId}`,
+        }).catch(() => {});
+      }
+    })
+    .catch(() => {});
 
   revalidatePath(`/community/post/${postId}`);
   revalidatePath("/community");
@@ -282,6 +368,26 @@ export async function toggleFollow(targetUserId: string): Promise<{ following: b
   }
 
   await db.insert(follows).values({ followerId: userId, followingId: targetUserId });
+
+  // Send notification to the followed user
+  db.select({ name: user.name, handle: user.handle })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1)
+    .then(([actor]) => {
+      const actorName = actor?.name || "A user";
+      const actorHandle = actor?.handle || "me";
+      createNotification({
+        userId: targetUserId,
+        actorId: userId,
+        type: "new_follower",
+        title: `${actorName} started following you`,
+        message: "is now following your posts and updates in the community",
+        targetUrl: `/community/${actorHandle}`,
+      }).catch(() => {});
+    })
+    .catch(() => {});
+
   revalidatePath("/community");
   const [target] = await db.select({ handle: user.handle }).from(user).where(eq(user.id, targetUserId)).limit(1);
   if (target) revalidatePath(`/community/${target.handle}`);

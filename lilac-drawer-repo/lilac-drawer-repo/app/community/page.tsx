@@ -55,12 +55,12 @@ export default async function CommunityPage() {
     <>
       <SiteHeader />
       <div className="bg-cream text-ink min-h-screen">
-        <div className="px-6 md:px-12 py-6 max-w-[1400px] mx-auto space-y-6">
+        <div className="px-3 sm:px-6 md:px-12 py-4 sm:py-6 max-w-[1400px] mx-auto space-y-4 sm:space-y-6">
           {/* Dynamic Full-Width Community Advertisement Banner */}
           <CommunityAdBanner banners={communityBanners} />
 
           {/* 2-Column Grid (Main Feed on left, Must-Read Guides & Sidebar on right) */}
-          <div className="grid lg:grid-cols-[1fr_360px] gap-8">
+          <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-8">
             {/* Main Community Feed Column */}
             <main className="min-w-0 border-r-0 lg:border-r border-border lg:pr-8">
               {/* Post Composer */}

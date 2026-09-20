@@ -2,7 +2,7 @@ import "server-only";
 import { desc, eq, asc, and, or, isNull, isNotNull, gt, ne, sql, inArray, ilike } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "./index";
-import { products, posts, siteCategories, communityPosts, trends, user, comments, likes, follows, banners, yearlyWrap } from "./schema";
+import { products, posts, siteCategories, communityPosts, trends, user, comments, likes, follows, banners, notifications } from "./schema";
 import { slugify } from "@/lib/slugify";
 
 // ---------- formatting helpers ----------
@@ -925,11 +925,7 @@ export async function getActiveBanners(placement = "community_banner") {
     .orderBy(asc(banners.sortOrder), asc(banners.id));
 }
 
-// ---------- yearly wrap settings ----------
-export async function getYearlyWrapSettings() {
-  const rows = await db.select().from(yearlyWrap).limit(1);
-  return rows[0] ?? null;
-}
+
 
 // ---------- search & suggestions ----------
 export async function searchSuggestions(rawQuery: string) {
@@ -995,5 +991,86 @@ export async function getAllPostsForSearch() {
     .from(posts)
     .orderBy(desc(posts.publishedAt));
 }
+
+// ---------- notifications ----------
+
+export interface NotificationItem {
+  id: number;
+  userId: string;
+  actorId: string | null;
+  actorName: string | null;
+  actorHandle: string | null;
+  actorImage: string | null;
+  type: string;
+  title: string;
+  message: string | null;
+  targetUrl: string;
+  imageUrl: string | null;
+  entityId: number | null;
+  isRead: boolean;
+  createdAt: Date;
+}
+
+export async function getNotificationsForUser(
+  userId: string,
+  options?: { limit?: number; offset?: number; unreadOnly?: boolean; typeFilter?: string }
+): Promise<NotificationItem[]> {
+  const limit = options?.limit ?? 20;
+  const offset = options?.offset ?? 0;
+
+  const conditions = [eq(notifications.userId, userId)];
+
+  if (options?.unreadOnly) {
+    conditions.push(eq(notifications.isRead, false));
+  }
+
+  if (options?.typeFilter === "social") {
+    conditions.push(
+      inArray(notifications.type, ["post_reply", "comment_reply", "new_follower", "post_like", "post_repost"])
+    );
+  } else if (options?.typeFilter === "system") {
+    conditions.push(
+      inArray(notifications.type, ["site_article", "site_deal", "site_banner", "system"])
+    );
+  } else if (options?.typeFilter && options.typeFilter !== "all") {
+    conditions.push(eq(notifications.type, options.typeFilter as any));
+  }
+
+  const rows = await db
+    .select({
+      id: notifications.id,
+      userId: notifications.userId,
+      actorId: notifications.actorId,
+      actorName: user.name,
+      actorHandle: user.handle,
+      actorImage: user.image,
+      type: notifications.type,
+      title: notifications.title,
+      message: notifications.message,
+      targetUrl: notifications.targetUrl,
+      imageUrl: notifications.imageUrl,
+      entityId: notifications.entityId,
+      isRead: notifications.isRead,
+      createdAt: notifications.createdAt,
+    })
+    .from(notifications)
+    .leftJoin(user, eq(notifications.actorId, user.id))
+    .where(and(...conditions))
+    .orderBy(desc(notifications.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  return rows;
+}
+
+export async function getUnreadNotificationCount(userId: string): Promise<number> {
+  const [res] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+
+  return res?.count ?? 0;
+}
+
 
 

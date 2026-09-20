@@ -194,10 +194,10 @@ export default function DealsProductExplorer({
   return (
     <div className="flex flex-col gap-8">
       {/* Hero Banner & Collection Switcher */}
-      <div className="bg-mauve-50/80 border border-border rounded-3xl p-6 md:p-10 shadow-xs relative overflow-hidden">
+      <div className="bg-mauve-50/80 border border-border rounded-2xl sm:rounded-3xl p-4.5 sm:p-8 md:p-10 shadow-xs relative overflow-hidden">
         <div className="relative z-10 max-w-[780px]">
           {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs text-tan mb-3">
+          <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs text-tan mb-2.5 sm:mb-3 overflow-x-auto no-scrollbar whitespace-nowrap">
             <Link href="/" className="hover:text-purple-deep">
               Home
             </Link>
@@ -209,27 +209,27 @@ export default function DealsProductExplorer({
             <span className="text-purple-deep font-semibold">{title}</span>
           </nav>
 
-          <div className="inline-flex items-center gap-2 bg-rose text-white text-xs font-bold px-3 py-1 rounded-full mb-3 shadow-xs">
+          <div className="inline-flex items-center gap-2 bg-rose text-white text-[11px] sm:text-xs font-bold px-3 py-1 rounded-full mb-2.5 sm:mb-3 shadow-xs">
             <span>{badge}</span>
           </div>
 
-          <h1 className="font-heading text-3xl md:text-5xl font-bold text-purple-deep leading-tight mb-3">
+          <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-bold text-purple-deep leading-tight mb-2.5 sm:mb-3">
             {title}
           </h1>
 
-          <p className="text-sm md:text-base text-tan-dark leading-relaxed mb-6">
+          <p className="text-xs sm:text-sm md:text-base text-tan-dark leading-relaxed mb-4 sm:mb-6">
             {subtitle}
           </p>
 
           {/* Quick Collection Switcher Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
             {collectionTabs.map((tab) => {
               const isActive = collectionType === tab.key;
               return (
                 <Link
                   key={tab.key}
                   href={tab.href}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                     isActive
                       ? "bg-purple-deep text-white shadow-sm"
                       : "bg-white border border-border text-tan-dark hover:text-purple-deep hover:bg-mauve-100"
@@ -560,7 +560,7 @@ export default function DealsProductExplorer({
 
           {/* GRID VIEW */}
           {viewMode === "grid" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
               {filteredProducts.map((p) => {
                 const discount =
                   p.discountPercent ?? calculateDiscountPercent(p.priceCents, p.compareAtPriceCents);
@@ -574,12 +574,12 @@ export default function DealsProductExplorer({
                 return (
                   <div
                     key={p.id}
-                    className="bg-white rounded-3xl border border-border overflow-hidden shadow-[var(--shadow-card)] hover:shadow-md transition-all flex flex-col justify-between group p-5"
+                    className="bg-white rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-[var(--shadow-card)] hover:shadow-md transition-all flex flex-col justify-between group p-3 sm:p-5"
                   >
                     <div>
                       {/* Image Container with Badges */}
-                      <Link href={`/deals/${p.slug}`} className="block relative mb-4">
-                        <div className="rounded-2xl overflow-hidden bg-mauve-50/60 aspect-[4/3] flex items-center justify-center border border-border/60">
+                      <Link href={`/deals/${p.slug}`} className="block relative mb-2.5 sm:mb-4">
+                        <div className="rounded-xl sm:rounded-2xl overflow-hidden bg-mauve-50/60 aspect-[4/3] flex items-center justify-center border border-border/60">
                           <ImageSlot
                             imageUrl={p.imageUrl}
                             label={p.imageLabel || p.name}
@@ -591,33 +591,33 @@ export default function DealsProductExplorer({
                         </div>
 
                         {/* Top Badges */}
-                        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+                        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 sm:gap-1.5 z-10">
                           {discount ? (
-                            <span className="bg-rose text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-xs">
+                            <span className="bg-rose text-white text-[9.5px] sm:text-[11px] font-bold px-1.5 sm:px-2.5 py-0.5 rounded-full shadow-xs">
                               -{discount}% OFF
                             </span>
                           ) : null}
                           {p.rank != null && (
-                            <span className="bg-purple-deep text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                            <span className="bg-purple-deep text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs">
                               #{p.rank} Top Pick
                             </span>
                           )}
                         </div>
 
                         {p.badge && (
-                          <span className="absolute top-3 right-3 bg-pink-100 text-purple-deep text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs">
+                          <span className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-pink-100 text-purple-deep text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 rounded-full shadow-xs">
                             {p.badge}
                           </span>
                         )}
                       </Link>
 
                       {/* Category & Title */}
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-rose">
+                      <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-1 sm:mb-1.5">
+                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose">
                           {p.category}
                         </span>
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${
                             p.inStock ? "bg-sage/15 text-sage" : "bg-red-100 text-red-600"
                           }`}
                         >
@@ -625,28 +625,28 @@ export default function DealsProductExplorer({
                         </span>
                       </div>
 
-                      <Link href={`/deals/${p.slug}`} className="block group/title mb-1.5">
-                        <h3 className="font-heading text-base font-bold text-purple-deep group-hover/title:text-rose transition-colors line-clamp-2 leading-snug">
+                      <Link href={`/deals/${p.slug}`} className="block group/title mb-1 sm:mb-1.5">
+                        <h3 className="font-heading text-xs sm:text-base font-bold text-purple-deep group-hover/title:text-rose transition-colors line-clamp-2 leading-snug">
                           {p.name}
                         </h3>
                       </Link>
 
                       {p.subtitle && (
-                        <p className="text-xs text-tan-dark line-clamp-1 mb-3">{p.subtitle}</p>
+                        <p className="text-[11px] sm:text-xs text-tan-dark line-clamp-1 mb-2 sm:mb-3">{p.subtitle}</p>
                       )}
 
                       {/* Pricing & Savings */}
-                      <div className="flex items-baseline gap-2.5 my-3 p-3 rounded-xl bg-mauve-50/50 border border-border/60">
-                        <span className="font-heading font-bold text-xl text-rose">
+                      <div className="flex items-baseline gap-1.5 sm:gap-2.5 my-2 sm:my-3 p-2 sm:p-3 rounded-xl bg-mauve-50/50 border border-border/60">
+                        <span className="font-heading font-bold text-sm sm:text-xl text-rose">
                           {formatPrice(p.priceCents)}
                         </span>
                         {p.compareAtPriceCents ? (
-                          <span className="text-xs text-tan line-through">
+                          <span className="text-[11px] sm:text-xs text-tan line-through">
                             {formatPriceFixed(p.compareAtPriceCents)}
                           </span>
                         ) : null}
                         {savedCents > 0 && (
-                          <span className="ml-auto text-[10.5px] font-bold text-sage bg-sage/15 px-2 py-0.5 rounded-md">
+                          <span className="hidden sm:inline-block ml-auto text-[10.5px] font-bold text-sage bg-sage/15 px-2 py-0.5 rounded-md">
                             Save {formatPriceFixed(savedCents)}
                           </span>
                         )}
@@ -654,14 +654,14 @@ export default function DealsProductExplorer({
 
                       {/* Store availability badges */}
                       {stores.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {stores.slice(0, 3).map((st, idx) => (
+                        <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-2.5 sm:mb-4">
+                          {stores.slice(0, 2).map((st, idx) => (
                             <a
                               key={st.id || idx}
                               href={st.url}
                               target="_blank"
                               rel="noopener noreferrer sponsored"
-                              className="text-[10.5px] font-medium bg-mauve-100 hover:bg-mauve-200 text-purple-deep px-2 py-0.5 rounded-md transition-colors inline-flex items-center gap-1"
+                              className="text-[9.5px] sm:text-[10.5px] font-medium bg-mauve-100 hover:bg-mauve-200 text-purple-deep px-1.5 sm:px-2 py-0.5 rounded-md transition-colors inline-flex items-center gap-1"
                             >
                               <span>{st.storeName}</span>
                               {st.price && <span className="font-bold">{st.price}</span>}
@@ -673,19 +673,19 @@ export default function DealsProductExplorer({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-border">
+                    <div className="flex items-center gap-1.5 sm:gap-2 pt-2 border-t border-border">
                       <Link
                         href={`/deals/${p.slug}`}
-                        className="flex-1 text-center py-2.5 px-4 rounded-xl bg-purple-deep hover:bg-purple-deep/90 text-white text-xs font-bold transition-all shadow-xs"
+                        className="flex-1 text-center py-1.5 sm:py-2.5 px-2 sm:px-4 rounded-xl bg-purple-deep hover:bg-purple-deep/90 text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs"
                       >
-                        View Review & Deals
+                        Details
                       </Link>
                       {p.affiliateUrl && (
                         <a
                           href={p.affiliateUrl}
                           target="_blank"
                           rel="noopener noreferrer sponsored"
-                          className="py-2.5 px-3 rounded-xl bg-rose hover:bg-rose-dark text-white text-xs font-bold transition-all shadow-xs"
+                          className="py-1.5 sm:py-2.5 px-2.5 sm:px-3 rounded-xl bg-rose hover:bg-rose-dark text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs"
                           title="Direct Retailer Deal"
                         >
                           Buy ↗

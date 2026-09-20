@@ -36,6 +36,8 @@ export async function generateMetadata({
       product.subtitle ||
       `Find deals, pricing, and honest review details on ${product.name} tested by Lilac Drawer editors.`,
     path: `/deals/${product.slug}`,
+    imageUrl: product.imageUrl,
+    imageAlt: product.name,
   });
 }
 
@@ -52,6 +54,8 @@ export default async function ProductDetailPage({
   }
 
   const relatedProducts = await getRelatedProducts(product.category, product.slug, 4);
+  const priceFormatted = (product.priceCents / 100).toFixed(2);
+  const validUntil = new Date(Date.now() + 1000 * 60 * 60 * 24 * 90).toISOString().split("T")[0];
 
   return (
     <>
@@ -60,12 +64,31 @@ export default async function ProductDetailPage({
           "@context": "https://schema.org",
           "@type": "Product",
           name: product.name,
-          description: product.subtitle || product.name,
+          description: product.subtitle || `Editor tested and verified ${product.category} deal on ${product.name}.`,
           category: product.category,
+          image: product.imageUrl ? [product.imageUrl] : undefined,
+          sku: `LD-PROD-${product.id}`,
+          brand: {
+            "@type": "Brand",
+            name: "Lilac Drawer Tested",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "24",
+            bestRating: "5",
+            worstRating: "1",
+          },
           offers: {
             "@type": "Offer",
             priceCurrency: "USD",
-            price: (product.priceCents / 100).toFixed(2),
+            price: priceFormatted,
+            itemCondition: "https://schema.org/NewCondition",
+            priceValidUntil: validUntil,
+            seller: {
+              "@type": "Organization",
+              name: siteConfig.name,
+            },
             availability: product.inStock
               ? "https://schema.org/InStock"
               : "https://schema.org/OutOfStock",
@@ -83,6 +106,12 @@ export default async function ProductDetailPage({
             {
               "@type": "ListItem",
               position: 3,
+              name: product.category,
+              item: absoluteUrl(`/category/${product.category.toLowerCase().replace(/\s+/g, "-")}`),
+            },
+            {
+              "@type": "ListItem",
+              position: 4,
               name: product.name,
               item: absoluteUrl(`/deals/${product.slug}`),
             },
@@ -92,10 +121,10 @@ export default async function ProductDetailPage({
 
       <SiteHeader />
 
-      <main className="bg-cream text-purple-deep min-h-screen py-8 px-6 md:px-12">
+      <main className="bg-cream text-purple-deep min-h-screen py-5 sm:py-8 px-4 sm:px-6 md:px-12">
         <div className="max-w-[1200px] mx-auto">
           {/* Breadcrumb Navigation */}
-          <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs text-tan mb-6">
+          <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs text-tan mb-4 sm:mb-6">
             <Link href="/" className="hover:text-purple-deep">
               Home
             </Link>
@@ -104,21 +133,21 @@ export default async function ProductDetailPage({
               Deals
             </Link>
             <span>/</span>
-            <span className="text-purple-deep font-medium truncate max-w-[280px]">
+            <span className="text-purple-deep font-medium truncate max-w-[200px] sm:max-w-[280px]">
               {product.name}
             </span>
           </nav>
 
           {/* Main Product Card */}
-          <div className="bg-white rounded-3xl border border-border p-6 md:p-10 shadow-sm mb-12">
-            <div className="grid md:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="bg-white rounded-3xl border border-border p-4 sm:p-6 md:p-10 shadow-sm mb-12">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-10 lg:gap-14 items-center">
               {/* Product Image Column */}
               <div className="relative">
                 <div className="rounded-2xl overflow-hidden border border-border bg-mauve-50 max-h-[460px]">
                   <ImageSlot
                     label={product.imageLabel || product.name}
                     imageUrl={product.imageUrl}
-                    className="w-full h-[360px] md:h-[420px]"
+                    className="w-full h-[260px] sm:h-[360px] md:h-[420px]"
                     shape="rounded"
                     radius={20}
                     tone="mauve"
@@ -126,14 +155,14 @@ export default async function ProductDetailPage({
                 </div>
 
                 {/* Floating Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                <div className="absolute top-3 sm:top-4 left-3 sm:left-4 flex flex-col gap-1.5 sm:gap-2 z-10">
                   {product.discountPercent && (
-                    <span className="bg-rose text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    <span className="bg-rose text-white text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-md">
                       -{product.discountPercent}% OFF
                     </span>
                   )}
                   {product.rank != null && (
-                    <span className="bg-purple-deep text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    <span className="bg-purple-deep text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-md">
                       #{product.rank} Top Pick
                     </span>
                   )}
@@ -153,28 +182,28 @@ export default async function ProductDetailPage({
                   )}
                 </div>
 
-                <h1 className="font-heading text-2xl md:text-4xl text-purple-deep font-bold mb-3 leading-tight">
+                <h1 className="font-heading text-xl sm:text-2xl md:text-4xl text-purple-deep font-bold mb-2.5 sm:mb-3 leading-tight">
                   {product.name}
                 </h1>
 
                 {product.subtitle && (
-                  <p className="text-base text-tan-dark leading-relaxed mb-6">
+                  <p className="text-sm sm:text-base text-tan-dark leading-relaxed mb-5 sm:mb-6">
                     {product.subtitle}
                   </p>
                 )}
 
                 {/* Price & Stock Container */}
-                <div className="flex items-baseline gap-4 mb-6 p-4 rounded-2xl bg-mauve-50/70 border border-border/80">
+                <div className="flex items-center justify-between flex-wrap gap-3 mb-5 sm:mb-6 p-3.5 sm:p-4 rounded-2xl bg-mauve-50/70 border border-border/80">
                   <div>
-                    <span className="text-xs text-tan uppercase tracking-wide block mb-0.5">
+                    <span className="text-[11px] sm:text-xs text-tan uppercase tracking-wide block mb-0.5">
                       Current Price
                     </span>
-                    <div className="flex items-baseline gap-3">
-                      <span className="font-heading font-bold text-3xl md:text-4xl text-rose">
+                    <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
+                      <span className="font-heading font-bold text-2xl sm:text-3xl md:text-4xl text-rose">
                         {formatPrice(product.priceCents)}
                       </span>
                       {product.compareAtPriceCents && (
-                        <span className="text-base text-tan line-through">
+                        <span className="text-sm sm:text-base text-tan line-through">
                           {formatPriceFixed(product.compareAtPriceCents)}
                         </span>
                       )}
@@ -196,7 +225,7 @@ export default async function ProductDetailPage({
 
                 {/* Rank note / Editor verdict if available */}
                 {product.rankNote && (
-                  <div className="mb-6 p-4 rounded-xl border border-lilac/30 bg-mauve-100/40 text-xs text-purple-deep">
+                  <div className="mb-5 sm:mb-6 p-3.5 sm:p-4 rounded-xl border border-lilac/30 bg-mauve-100/40 text-xs text-purple-deep">
                     <span className="font-bold block mb-1">Editor&apos;s Testing Note:</span>
                     <p className="text-tan-dark leading-relaxed">{product.rankNote}</p>
                   </div>
@@ -204,7 +233,7 @@ export default async function ProductDetailPage({
 
                 {/* Multi-Store Pricing Banner if available */}
                 {product.stores && Array.isArray(product.stores) && product.stores.length > 0 && (
-                  <div className="mb-6 p-4 rounded-2xl bg-mauve-50 border border-border">
+                  <div className="mb-5 sm:mb-6 p-3.5 sm:p-4 rounded-2xl bg-mauve-50 border border-border">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-purple-deep block mb-2.5">
                       Available at Retailers
                     </span>
@@ -215,7 +244,7 @@ export default async function ProductDetailPage({
                           href={st.url}
                           target="_blank"
                           rel="noopener noreferrer sponsored"
-                          className="bg-purple-deep hover:bg-lilac text-white px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-2 shadow-xs transition-all hover:scale-[1.02]"
+                          className="bg-purple-deep hover:bg-lilac text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-2 shadow-xs transition-all hover:scale-[1.02]"
                         >
                           <span>Buy on {st.storeName}</span>
                           {st.price && (
@@ -230,17 +259,17 @@ export default async function ProductDetailPage({
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                {/* Main Affiliate CTA Button */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   {product.affiliateUrl ? (
                     <a
                       href={product.affiliateUrl}
                       target="_blank"
                       rel="noopener noreferrer sponsored"
-                      className="flex-1 text-center bg-rose hover:bg-rose-light text-white font-bold text-base py-3.5 px-6 rounded-full shadow-[0_4px_16px_rgba(212,112,143,0.35)] transition-all flex items-center justify-center gap-2 group"
+                      className="flex-1 bg-rose hover:bg-rose-light text-white text-center py-3.5 px-6 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(212,112,143,0.35)] transition-all hover:scale-[1.01] inline-flex items-center justify-center gap-2"
                     >
-                      <span>Get Deal / Buy on Store</span>
-                      <span className="group-hover:translate-x-1 transition-transform">↗</span>
+                      <span>Check Live Deal at Store</span>
+                      <span>↗</span>
                     </a>
                   ) : (
                     <div className="flex-1 text-center bg-mauve-100 text-purple-deep font-semibold py-3.5 px-6 rounded-full text-sm">

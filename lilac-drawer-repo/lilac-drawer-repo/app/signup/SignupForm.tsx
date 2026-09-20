@@ -75,7 +75,7 @@ export default function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-[420px] mx-auto bg-white/85 backdrop-blur-md p-6 md:p-8 rounded-3xl border border-border shadow-[0_12px_36px_rgba(90,47,69,0.08)]">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-[420px] mx-auto bg-white/85 backdrop-blur-md p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-border shadow-[0_12px_36px_rgba(90,47,69,0.08)]">
       <div>
         <label htmlFor="name" className="block text-xs font-bold text-purple-deep uppercase tracking-wider mb-1.5">
           Full Name

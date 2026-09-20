@@ -297,13 +297,13 @@ export default function SearchClient({
 
       {/* Filter Toolbar & Tab Switchers */}
       <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md rounded-2xl border border-border p-4 md:p-5 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
           {/* Main Type Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-mauve-50/80 rounded-xl border border-border/60">
+          <div className="flex items-center gap-1.5 p-1 bg-mauve-50/80 rounded-xl border border-border/60 overflow-x-auto no-scrollbar max-w-full">
             <button
               type="button"
               onClick={() => handleTypeChange("all")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeType === "all"
                   ? "bg-purple-deep text-white shadow-xs"
                   : "text-tan-dark hover:text-purple-deep hover:bg-white"
@@ -314,7 +314,7 @@ export default function SearchClient({
             <button
               type="button"
               onClick={() => handleTypeChange("products")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeType === "products"
                   ? "bg-purple-deep text-white shadow-xs"
                   : "text-tan-dark hover:text-purple-deep hover:bg-white"
@@ -325,7 +325,7 @@ export default function SearchClient({
             <button
               type="button"
               onClick={() => handleTypeChange("posts")}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeType === "posts"
                   ? "bg-purple-deep text-white shadow-xs"
                   : "text-tan-dark hover:text-purple-deep hover:bg-white"

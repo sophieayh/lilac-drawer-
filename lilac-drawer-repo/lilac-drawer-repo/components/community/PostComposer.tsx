@@ -47,9 +47,9 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   if (!isLoggedIn) {
     return (
-      <div className="flex items-center justify-between gap-4 px-6 py-5 bg-mauve-50/50 border-b border-border">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 bg-mauve-50/50 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep text-sm font-bold">
+          <div className="w-10 h-10 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep text-sm font-bold shrink-0">
             <svg className="w-5 h-5 text-purple-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -61,7 +61,7 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
         <a
           href="/login?redirect=/community"
-          className="shrink-0 bg-purple-deep text-white px-5 py-2 rounded-full text-xs font-semibold hover:bg-lilac transition-all"
+          className="w-full sm:w-auto text-center shrink-0 bg-purple-deep text-white px-5 py-2 rounded-full text-xs font-semibold hover:bg-lilac transition-all"
         >
           Sign In
         </a>
@@ -98,8 +98,9 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
         await createPost(
           body.trim(),
           undefined,
-          uploadedUrl,
-          imageName
+          uploadedUrl || null,
+          imageName || (uploadedUrl ? "Attached photo" : null),
+          undefined
         );
 
         setBody("");
@@ -110,13 +111,13 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
         }
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong.");
+        setError(err instanceof Error ? err.message : "Failed to publish post. Please try again.");
       }
     });
   }
 
   return (
-    <form id="composer" onSubmit={handleSubmit} className="flex gap-3.5 px-6 py-5 border-b border-border">
+    <form onSubmit={handleSubmit} className="flex gap-3 px-3.5 sm:px-6 py-4 sm:py-4.5 border-b border-border bg-white">
       <div className="w-11 h-11 shrink-0 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold" aria-hidden="true">
         <svg className="w-5 h-5 text-purple-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

@@ -3,6 +3,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ImageSlot from "@/components/ImageSlot";
+import JsonLd from "@/components/JsonLd";
 import ExploreProductSection from "@/components/explore/ExploreProductSection";
 import {
   getAllProducts,
@@ -16,7 +17,7 @@ import {
 } from "@/db/queries";
 import { calculateDiscountPercent } from "@/lib/format";
 import { slugify } from "@/lib/slugify";
-import { buildMetadata } from "@/lib/site";
+import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 
 export const revalidate = 60;
 
@@ -102,16 +103,35 @@ export default async function ExplorePage() {
 
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Explore Products & Verified Deals",
+          description: "Curated catalog of tested products and verified deals.",
+          url: absoluteUrl("/explore"),
+        }}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+            { "@type": "ListItem", position: 2, name: "Explore", item: absoluteUrl("/explore") },
+          ],
+        }}
+      />
       <SiteHeader />
       <div className="bg-cream text-purple-deep min-h-screen">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8">
+        <div className="max-w-[1440px] mx-auto px-3.5 sm:px-6 md:px-8 py-5 sm:py-8 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6 sm:gap-8">
           {/* Main Feed Column */}
-          <main className="flex flex-col gap-10 min-w-0">
+          <main className="flex flex-col gap-8 sm:gap-10 min-w-0">
             {/* 1. HERO DISCOVERY BANNER */}
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-mauve-100 via-mauve-50 to-pink-50 border border-border p-6 md:p-10 shadow-xs">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-8 items-center relative z-10">
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-mauve-100 via-mauve-50 to-pink-50 border border-border p-4.5 sm:p-8 md:p-10 shadow-xs">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-6 sm:gap-8 items-center relative z-10">
                 <div>
-                  <div className="inline-flex items-center gap-2 bg-white/90 border border-border/80 text-rose text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4 shadow-xs">
+                  <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-white/90 border border-border/80 text-rose text-[11px] sm:text-xs font-bold uppercase tracking-wider px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full mb-3 sm:mb-4 shadow-xs">
                     <svg className="w-3.5 h-3.5 text-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
@@ -120,34 +140,34 @@ export default async function ExplorePage() {
                     <span>{allProducts.length}+ Tested Items</span>
                   </div>
 
-                  <h1 className="font-heading text-3xl md:text-4xl lg:text-[42px] leading-tight text-purple-deep font-bold mb-3">
+                  <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-[42px] leading-tight text-purple-deep font-bold mb-2.5 sm:mb-3">
                     Explore Tested Picks &amp; Verified Deals
                   </h1>
 
-                  <p className="text-sm md:text-base text-tan-dark max-w-[540px] mb-6 leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base text-tan-dark max-w-[540px] mb-4 sm:mb-6 leading-relaxed">
                     Compare real retailer prices, read honest editorial reviews, and uncover tested favorites across beauty, care, tech, and lifestyle.
                   </p>
 
                   {/* Quick Jump Keyword Pills */}
-                  <div className="flex items-center gap-2 flex-wrap mb-6">
-                    <span className="text-xs font-bold uppercase tracking-wider text-tan-dark">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-5 sm:mb-6">
+                    <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-tan-dark">
                       Popular:
                     </span>
                     {["Beauty & Makeup", "Care", "PC", "Top Picks", "Deals"].map((tag) => (
                       <a
                         key={tag}
                         href="#explore-catalog"
-                        className="text-xs font-semibold bg-white/80 hover:bg-white text-purple-deep px-3 py-1 rounded-lg border border-border/80 transition-colors shadow-xs"
+                        className="text-[11px] sm:text-xs font-semibold bg-white/80 hover:bg-white text-purple-deep px-2.5 sm:px-3 py-1 rounded-lg border border-border/80 transition-colors shadow-xs"
                       >
                         {tag}
                       </a>
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
                     <a
                       href="#explore-catalog"
-                      className="inline-flex items-center gap-2 bg-purple-deep text-white text-xs md:text-sm font-bold px-6 py-3 rounded-full hover:bg-purple-deep/90 transition-all shadow-sm"
+                      className="inline-flex items-center justify-center gap-2 bg-purple-deep text-white text-xs md:text-sm font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full hover:bg-purple-deep/90 transition-all shadow-sm"
                     >
                       <span>Browse Complete Catalog ({allProducts.length})</span>
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -156,7 +176,7 @@ export default async function ExplorePage() {
                     </a>
                     <Link
                       href="/deals"
-                      className="inline-flex items-center gap-1.5 bg-white border border-border text-purple-deep text-xs md:text-sm font-bold px-5 py-3 rounded-full hover:bg-mauve-50 transition-all shadow-xs"
+                      className="inline-flex items-center justify-center gap-1.5 bg-white border border-border text-purple-deep text-xs md:text-sm font-bold px-4 sm:px-5 py-2.5 sm:py-3 rounded-full hover:bg-mauve-50 transition-all shadow-xs"
                     >
                       <span>All Deals Hub</span>
                       <span>→</span>
@@ -231,9 +251,9 @@ export default async function ExplorePage() {
 
             {/* 2. BROWSE BY CATEGORY */}
             <section>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3.5 sm:mb-4">
                 <div>
-                  <h2 className="font-heading text-xl md:text-2xl text-purple-deep font-bold">
+                  <h2 className="font-heading text-lg sm:text-xl md:text-2xl text-purple-deep font-bold">
                     Explore by Category
                   </h2>
                   <p className="text-xs text-tan-dark mt-0.5">
@@ -242,21 +262,21 @@ export default async function ExplorePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 sm:gap-3.5">
                 {exploreCategories.map((c) => (
                   <Link
                     key={c.id}
                     href={`/category/${c.slug || slugify(c.label)}`}
-                    className="flex flex-col items-center gap-2.5 bg-white border border-border rounded-2xl py-4 px-3 hover:bg-mauve-50 hover:border-lilac/60 transition-all shadow-xs group"
+                    className="flex flex-col items-center gap-2 sm:gap-2.5 bg-white border border-border rounded-2xl py-3.5 sm:py-4 px-2.5 sm:px-3 hover:bg-mauve-50 hover:border-lilac/60 transition-all shadow-xs group"
                   >
                     <span
-                      className="w-12 h-12 rounded-full flex items-center justify-center text-purple-deep shadow-2xs group-hover:scale-110 transition-transform"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-purple-deep shadow-2xs group-hover:scale-110 transition-transform"
                       style={{ background: c.colorHex ?? "#f4ebf8" }}
                       aria-hidden="true"
                     >
                       {renderCategoryIcon(c.label, c.slug)}
                     </span>
-                    <span className="text-xs font-bold text-purple-deep text-center group-hover:text-rose transition-colors">
+                    <span className="text-[11px] sm:text-xs font-bold text-purple-deep text-center group-hover:text-rose transition-colors line-clamp-1">
                       {c.label}
                     </span>
                   </Link>
@@ -266,8 +286,8 @@ export default async function ExplorePage() {
 
             {/* 3. HOT FLASH DEALS & PRICE DROPS */}
             {exploreDeals.length > 0 && (
-              <section className="bg-cream-alt border border-border rounded-3xl p-6 md:p-7 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-5">
+              <section className="bg-cream-alt border border-border rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-7 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-4 sm:mb-5">
                   <div>
                     <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-rose mb-1">
                       <svg className="w-3.5 h-3.5 text-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -275,7 +295,7 @@ export default async function ExplorePage() {
                       </svg>
                       <span>Verified Price Drops</span>
                     </div>
-                    <h2 className="font-heading text-2xl text-purple-deep font-bold">
+                    <h2 className="font-heading text-xl sm:text-2xl text-purple-deep font-bold">
                       Top Deals for You Today
                     </h2>
                   </div>
@@ -288,7 +308,7 @@ export default async function ExplorePage() {
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   {exploreDeals.map((d) => {
                     const discount =
                       d.discountPercent ?? calculateDiscountPercent(d.priceCents, d.compareAtPriceCents);
@@ -300,10 +320,10 @@ export default async function ExplorePage() {
                     return (
                       <div
                         key={d.id}
-                        className="bg-white border border-border rounded-2xl p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                        className="bg-white border border-border rounded-2xl p-3 sm:p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
                       >
                         <div>
-                          <Link href={`/deals/${d.slug}`} className="block relative mb-3">
+                          <Link href={`/deals/${d.slug}`} className="block relative mb-2.5 sm:mb-3">
                             <div className="aspect-square rounded-xl overflow-hidden bg-mauve-50 flex items-center justify-center p-2 border border-border/60">
                               <ImageSlot
                                 label={d.imageLabel || d.name}
@@ -315,37 +335,37 @@ export default async function ExplorePage() {
                               />
                             </div>
                             {discount ? (
-                              <span className="absolute top-2 left-2 bg-rose text-white text-[10.5px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                              <span className="absolute top-2 left-2 bg-rose text-white text-[9.5px] sm:text-[10.5px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs">
                                 -{discount}% OFF
                               </span>
                             ) : null}
                           </Link>
 
-                          <div className="text-[11px] font-bold uppercase tracking-wider text-rose mb-1">
+                          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose mb-0.5 sm:mb-1">
                             {d.category}
                           </div>
 
                           <Link href={`/deals/${d.slug}`} className="block group/title mb-1">
-                            <h3 className="text-sm font-bold text-purple-deep group-hover/title:text-rose transition-colors line-clamp-1">
+                            <h3 className="text-xs sm:text-sm font-bold text-purple-deep group-hover/title:text-rose transition-colors line-clamp-1">
                               {d.name}
                             </h3>
                           </Link>
 
-                          <p className="text-xs text-tan-dark mb-2 line-clamp-1">{d.subtitle}</p>
+                          <p className="text-[11px] sm:text-xs text-tan-dark mb-1.5 sm:mb-2 line-clamp-1">{d.subtitle}</p>
 
-                          <div className="flex items-baseline gap-2 mb-2">
-                            <span className="font-heading font-bold text-base text-rose">
+                          <div className="flex items-baseline gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                            <span className="font-heading font-bold text-sm sm:text-base text-rose">
                               {formatPrice(d.priceCents)}
                             </span>
                             {d.compareAtPriceCents ? (
-                              <span className="text-xs text-tan line-through">
+                              <span className="text-[11px] sm:text-xs text-tan line-through">
                                 {formatPriceFixed(d.compareAtPriceCents)}
                               </span>
                             ) : null}
                           </div>
 
                           {savedCents > 0 && (
-                            <div className="text-[10.5px] font-semibold text-sage mb-3">
+                            <div className="text-[9.5px] sm:text-[10.5px] font-semibold text-sage mb-2.5 sm:mb-3">
                               Save {formatPriceFixed(savedCents)}
                             </div>
                           )}
@@ -353,7 +373,7 @@ export default async function ExplorePage() {
 
                         <Link
                           href={`/deals/${d.slug}`}
-                          className="w-full text-center py-2 px-3 rounded-xl bg-purple-deep hover:bg-purple-deep/90 text-white text-xs font-bold transition-all shadow-xs"
+                          className="w-full text-center py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-xl bg-purple-deep hover:bg-purple-deep/90 text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs"
                         >
                           Explore Deal →
                         </Link>

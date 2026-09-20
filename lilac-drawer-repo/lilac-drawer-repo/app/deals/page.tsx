@@ -85,7 +85,7 @@ export default async function DealsPage() {
       />
       <SiteHeader />
       <main className="bg-cream text-purple min-h-screen">
-        <div className="grid lg:grid-cols-[230px_1fr] gap-6 px-6 md:px-10 py-8 max-w-[1400px] mx-auto">
+        <div className="grid lg:grid-cols-[230px_1fr] gap-6 px-4 sm:px-6 md:px-10 py-5 sm:py-8 max-w-[1400px] mx-auto">
           {/* sidebar */}
           <aside className="hidden lg:block">
             <div className="bg-rose-light text-white px-5 py-4 font-heading text-[15px] font-bold rounded-t-[10px]">
@@ -152,13 +152,13 @@ export default async function DealsPage() {
           <div>
             {/* hero banner: dynamic featured deal article */}
             {heroPost ? (
-              <div className="bg-mauve-50 rounded-2xl p-6 md:p-8 mb-6 border border-border flex flex-col md:flex-row items-center gap-6 justify-between">
-                <div className="flex-1 min-w-[240px]">
+              <div className="bg-mauve-50 rounded-2xl p-4 sm:p-6 md:p-8 mb-6 border border-border flex flex-col md:flex-row items-center gap-6 justify-between">
+                <div className="flex-1 min-w-0">
                   <div className="inline-flex items-center gap-1.5 bg-rose-light/15 text-rose-light text-[11px] font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
                     <span>Featured Deal Guide</span>
                   </div>
                   <Link href={`/blog/${heroPost.slug}`} className="group block">
-                    <h1 className="font-heading text-2xl md:text-3xl text-purple-deep font-bold mb-2.5 leading-snug group-hover:text-rose-light transition-colors">
+                    <h1 className="font-heading text-xl sm:text-2xl md:text-3xl text-purple-deep font-bold mb-2.5 leading-snug group-hover:text-rose-light transition-colors">
                       {heroPost.title}
                     </h1>
                   </Link>
@@ -168,7 +168,7 @@ export default async function DealsPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <Link
                       href={`/blog/${heroPost.slug}`}
-                      className="bg-purple hover:bg-purple-deep text-white px-5 py-2.5 rounded-full text-[13px] font-semibold transition-colors inline-flex items-center gap-1.5 shadow-xs"
+                      className="bg-purple hover:bg-purple-deep text-white px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-[13px] font-semibold transition-colors inline-flex items-center gap-1.5 shadow-xs"
                     >
                       <span>Read Guide & Shop Deals</span>
                       <span>→</span>
@@ -189,7 +189,7 @@ export default async function DealsPage() {
             ) : null}
 
             {/* feature category strip: categories with real active discounts */}
-            <div className="grid sm:grid-cols-3 gap-4 mb-7">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-7">
               {[
                 {
                   label: "Makeup & Complexion",
@@ -224,21 +224,21 @@ export default async function DealsPage() {
                   href={cat.href}
                   className="relative rounded-xl overflow-hidden group block border border-border shadow-xs hover:border-rose-light transition-colors"
                 >
-                  <div className="relative h-[130px] w-full overflow-hidden">
+                  <div className="relative h-[120px] sm:h-[130px] w-full overflow-hidden">
                     <ImageSlot
                       label={cat.imageLabel}
                       imageUrl={cat.imageUrl}
                       className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                       tone={cat.tone}
                     />
-                    <div className="absolute inset-0 bg-purple-deep/45 group-hover:bg-purple-deep/35 transition-colors flex flex-col justify-end p-3.5">
+                    <div className="absolute inset-0 bg-purple-deep/45 group-hover:bg-purple-deep/35 transition-colors flex flex-col justify-end p-3 sm:p-3.5">
                       <span className="inline-block bg-rose-light text-white text-[10px] font-bold px-2 py-0.5 rounded w-fit mb-1 shadow-xs">
                         {cat.discount}
                       </span>
-                      <span className="text-white font-heading text-[14px] font-bold tracking-wide">
+                      <span className="text-white font-heading text-[13px] sm:text-[14px] font-bold tracking-wide">
                         {cat.label}
                       </span>
-                      <span className="text-white/80 text-[11px] truncate">
+                      <span className="text-white/80 text-[10.5px] sm:text-[11px] truncate">
                         {cat.sublabel}
                       </span>
                     </div>
@@ -248,9 +248,9 @@ export default async function DealsPage() {
             </div>
 
             {/* today's deals */}
-            <div id="today-deals" className="border-[1.5px] border-rose-light rounded-2xl p-6 mb-7 scroll-mt-6">
-              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-                <h2 className="font-heading text-xl text-purple">Today Deals</h2>
+            <div id="today-deals" className="border-[1.5px] border-rose-light rounded-2xl p-4 sm:p-6 mb-7 scroll-mt-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-5 flex-wrap gap-2">
+                <h2 className="font-heading text-lg sm:text-xl text-purple">Today Deals</h2>
                 <Link
                   href="/deals/today-deals"
                   className="text-xs sm:text-sm font-bold text-rose hover:text-rose-light transition-colors inline-flex items-center gap-1 group"
@@ -259,7 +259,7 @@ export default async function DealsPage() {
                   <span className="group-hover:translate-x-1 transition-transform">→</span>
                 </Link>
               </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4.5">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4.5">
                 {todayDeals.map((t) => {
                   const discount = t.discountPercent ?? calculateDiscountPercent(t.priceCents, t.compareAtPriceCents);
                   const savedCents = t.compareAtPriceCents && t.compareAtPriceCents > t.priceCents ? t.compareAtPriceCents - t.priceCents : 0;
@@ -267,21 +267,21 @@ export default async function DealsPage() {
                     <Link key={t.id} href={`/deals/${t.slug}`} className="card-hover block group">
                       <div className="relative">
                         {discount ? (
-                          <span className="absolute top-2 left-2 bg-rose-light text-white text-[11px] font-bold px-2.5 py-0.5 rounded-md z-10 shadow-xs">
+                          <span className="absolute top-2 left-2 bg-rose-light text-white text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-md z-10 shadow-xs">
                             -{discount}% OFF
                           </span>
                         ) : null}
-                        <ImageSlot label={t.imageLabel} imageUrl={t.imageUrl} className="w-full h-[120px]" shape="rounded" radius={10} tone="mauve" />
+                        <ImageSlot label={t.imageLabel} imageUrl={t.imageUrl} className="w-full h-[110px] sm:h-[120px]" shape="rounded" radius={10} tone="mauve" />
                       </div>
-                      <div className="text-[12.5px] font-semibold mt-2.5 leading-snug line-clamp-2 group-hover:text-rose-light transition-colors">{t.name}</div>
-                      <div className="text-[12.5px] mt-1.5 flex items-baseline gap-1.5">
+                      <div className="text-xs sm:text-[12.5px] font-semibold mt-2 sm:mt-2.5 leading-snug line-clamp-2 group-hover:text-rose-light transition-colors">{t.name}</div>
+                      <div className="text-xs sm:text-[12.5px] mt-1 sm:mt-1.5 flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
                         <span className="text-rose-light font-bold">{formatPriceFixed(t.priceCents)}</span>
                         {t.compareAtPriceCents ? (
-                          <span className="text-lilac/50 line-through text-xs">{formatPriceFixed(t.compareAtPriceCents)}</span>
+                          <span className="text-lilac/50 line-through text-[11px] sm:text-xs">{formatPriceFixed(t.compareAtPriceCents)}</span>
                         ) : null}
                       </div>
                       {savedCents > 0 ? (
-                        <div className="text-[11px] text-sage font-medium mt-0.5">
+                        <div className="text-[10px] sm:text-[11px] text-sage font-medium mt-0.5">
                           Save {formatPriceFixed(savedCents)}
                         </div>
                       ) : null}
@@ -293,7 +293,7 @@ export default async function DealsPage() {
 
             {/* new arrivals */}
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-              <h2 className="font-heading text-xl text-purple">New Arrivals</h2>
+              <h2 className="font-heading text-lg sm:text-xl text-purple">New Arrivals</h2>
               <Link
                 href="/deals/new-arrivals"
                 className="text-xs sm:text-sm font-bold text-rose hover:text-rose-light transition-colors inline-flex items-center gap-1 group"
@@ -302,12 +302,12 @@ export default async function DealsPage() {
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-7 items-stretch">
-              <div className="relative rounded-xl overflow-hidden bg-[#fae8ee] border border-pink-200 flex flex-col justify-center items-center p-5 text-center">
-                <div className="text-rose-light font-script text-[26px] leading-tight mb-1">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-7 items-stretch">
+              <div className="relative rounded-xl overflow-hidden bg-[#fae8ee] border border-pink-200 flex flex-col justify-center items-center p-3 sm:p-5 text-center col-span-2 sm:col-span-1">
+                <div className="text-rose-light font-script text-[22px] sm:text-[26px] leading-tight mb-1">
                   Save up to 21%
                 </div>
-                <div className="text-xs text-tan-dark font-medium">Authentic Deals</div>
+                <div className="text-[11px] sm:text-xs text-tan-dark font-medium">Authentic Deals</div>
               </div>
               {newArrivals.map((a) => {
                 const discount = a.discountPercent ?? calculateDiscountPercent(a.priceCents, a.compareAtPriceCents);
@@ -316,31 +316,31 @@ export default async function DealsPage() {
                   <Link key={a.id} href={`/deals/${a.slug}`} className="card-hover block group">
                     <div className="relative">
                       {discount ? (
-                        <span className="absolute top-2 left-2 bg-rose-light text-white text-[11px] font-bold px-2.5 py-0.5 rounded-md z-10 shadow-xs">
+                        <span className="absolute top-2 left-2 bg-rose-light text-white text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-md z-10 shadow-xs">
                           -{discount}% OFF
                         </span>
                       ) : null}
-                      <ImageSlot label={a.imageLabel} imageUrl={a.imageUrl} className="w-full h-[130px]" shape="rounded" radius={10} tone="mauve" />
+                      <ImageSlot label={a.imageLabel} imageUrl={a.imageUrl} className="w-full h-[110px] sm:h-[130px]" shape="rounded" radius={10} tone="mauve" />
                     </div>
-                    <div className="text-[12.5px] font-semibold mt-2 line-clamp-2 group-hover:text-rose-light transition-colors">{a.name}</div>
-                    <div className="text-[12.5px] mt-1.5 flex items-baseline gap-1.5">
+                    <div className="text-xs sm:text-[12.5px] font-semibold mt-2 line-clamp-2 group-hover:text-rose-light transition-colors">{a.name}</div>
+                    <div className="text-xs sm:text-[12.5px] mt-1.5 flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
                       <span className="text-rose-light font-bold">{formatPriceFixed(a.priceCents)}</span>
                       {a.compareAtPriceCents ? (
-                        <span className="text-lilac/50 line-through text-xs">{formatPriceFixed(a.compareAtPriceCents)}</span>
+                        <span className="text-lilac/50 line-through text-[11px] sm:text-xs">{formatPriceFixed(a.compareAtPriceCents)}</span>
                       ) : null}
                     </div>
                     {savedCents > 0 ? (
-                      <div className="text-[11px] text-sage font-medium mt-0.5">
+                      <div className="text-[10px] sm:text-[11px] text-sage font-medium mt-0.5">
                         Save {formatPriceFixed(savedCents)}
                       </div>
                     ) : null}
                   </Link>
                 );
               })}
-              <div className="bg-purple-deep rounded-xl flex flex-col items-center justify-center text-center p-5 text-white">
-                <div className="font-heading text-[16px] font-bold mb-1">Editor Curated</div>
-                <div className="text-xs text-white/80 mb-3.5">Tested and ranked by our beauty team</div>
-                <Link href="/deals/new-arrivals" className="bg-white text-purple hover:bg-cream px-4.5 py-2 rounded-full text-[12.5px] font-bold transition-colors">
+              <div className="bg-purple-deep rounded-xl flex flex-col items-center justify-center text-center p-4 sm:p-5 text-white col-span-2 sm:col-span-1">
+                <div className="font-heading text-sm sm:text-[16px] font-bold mb-1">Editor Curated</div>
+                <div className="text-[11px] sm:text-xs text-white/80 mb-3">Tested & ranked</div>
+                <Link href="/deals/new-arrivals" className="bg-white text-purple hover:bg-cream px-4 py-1.5 sm:px-4.5 sm:py-2 rounded-full text-xs sm:text-[12.5px] font-bold transition-colors">
                   Shop Deals
                 </Link>
               </div>
@@ -348,7 +348,7 @@ export default async function DealsPage() {
 
             {/* best sellers */}
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-              <h2 className="font-heading text-xl text-purple">Best Sellers</h2>
+              <h2 className="font-heading text-lg sm:text-xl text-purple">Best Sellers</h2>
               <Link
                 href="/deals/best-sellers"
                 className="text-xs sm:text-sm font-bold text-rose hover:text-rose-light transition-colors inline-flex items-center gap-1 group"
@@ -357,10 +357,10 @@ export default async function DealsPage() {
                 <span className="group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#eef4ea] border border-[#c9dbb8] rounded-xl flex flex-col items-center justify-center text-center p-5">
-                <div className="font-script text-[26px] text-sage mb-1">Top Rated Deals</div>
-                <div className="text-xs text-[#4a6a3a] font-medium">Save up to 21% • From $8.00</div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="bg-[#eef4ea] border border-[#c9dbb8] rounded-xl flex flex-col items-center justify-center text-center p-4 sm:p-5 col-span-2 sm:col-span-1">
+                <div className="font-script text-[22px] sm:text-[26px] text-sage mb-1">Top Rated Deals</div>
+                <div className="text-[11px] sm:text-xs text-[#4a6a3a] font-medium">Save up to 21% • From $8.00</div>
               </div>
               {bestSellers.map((b) => {
                 const discount = b.discountPercent ?? calculateDiscountPercent(b.priceCents, b.compareAtPriceCents);
@@ -369,21 +369,21 @@ export default async function DealsPage() {
                   <Link key={b.id} href={`/deals/${b.slug}`} className="card-hover block group">
                     <div className="relative">
                       {discount ? (
-                        <span className="absolute top-2 left-2 bg-rose-light text-white text-[11px] font-bold px-2.5 py-0.5 rounded-md z-10 shadow-xs">
+                        <span className="absolute top-2 left-2 bg-rose-light text-white text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-md z-10 shadow-xs">
                           -{discount}% OFF
                         </span>
                       ) : null}
-                      <ImageSlot label={b.imageLabel} imageUrl={b.imageUrl} className="w-full h-[130px]" shape="rounded" radius={10} tone="mauve" />
+                      <ImageSlot label={b.imageLabel} imageUrl={b.imageUrl} className="w-full h-[110px] sm:h-[130px]" shape="rounded" radius={10} tone="mauve" />
                     </div>
-                    <div className="text-[12.5px] font-semibold mt-2 line-clamp-2 group-hover:text-rose-light transition-colors">{b.name}</div>
-                    <div className="text-[12.5px] mt-1.5 flex items-baseline gap-1.5">
+                    <div className="text-xs sm:text-[12.5px] font-semibold mt-2 line-clamp-2 group-hover:text-rose-light transition-colors">{b.name}</div>
+                    <div className="text-xs sm:text-[12.5px] mt-1.5 flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
                       <span className="text-rose-light font-bold">{formatPriceFixed(b.priceCents)}</span>
                       {b.compareAtPriceCents ? (
-                        <span className="text-lilac/50 line-through text-xs">{formatPriceFixed(b.compareAtPriceCents)}</span>
+                        <span className="text-lilac/50 line-through text-[11px] sm:text-xs">{formatPriceFixed(b.compareAtPriceCents)}</span>
                       ) : null}
                     </div>
                     {savedCents > 0 ? (
-                      <div className="text-[11px] text-sage font-medium mt-0.5">
+                      <div className="text-[10px] sm:text-[11px] text-sage font-medium mt-0.5">
                         Save {formatPriceFixed(savedCents)}
                       </div>
                     ) : null}

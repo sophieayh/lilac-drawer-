@@ -252,7 +252,7 @@ export default function ExploreProductSection({ initialProducts }: Props) {
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-1 border-t border-border/70">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-1 border-t border-border/70 -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             onClick={() => setSelectedCategory("all")}
             className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -392,7 +392,7 @@ export default function ExploreProductSection({ initialProducts }: Props) {
 
       {/* GRID VIEW */}
       {viewMode === "grid" && filteredProducts.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5">
           {filteredProducts.map((p) => {
             const discount =
               p.discountPercent ?? calculateDiscountPercent(p.priceCents, p.compareAtPriceCents);
@@ -407,12 +407,12 @@ export default function ExploreProductSection({ initialProducts }: Props) {
             return (
               <div
                 key={p.id}
-                className="bg-white rounded-3xl border border-border overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group p-5"
+                className="bg-white rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group p-3.5 sm:p-5"
               >
                 <div>
                   {/* Image Container with Badges */}
-                  <Link href={`/deals/${p.slug}`} className="block relative mb-4">
-                    <div className="rounded-2xl overflow-hidden bg-mauve-50/60 aspect-[4/3] flex items-center justify-center border border-border/60">
+                  <Link href={`/deals/${p.slug}`} className="block relative mb-3 sm:mb-4">
+                    <div className="rounded-xl sm:rounded-2xl overflow-hidden bg-mauve-50/60 aspect-[4/3] flex items-center justify-center border border-border/60">
                       <ImageSlot
                         imageUrl={p.imageUrl}
                         label={p.imageLabel || p.name}

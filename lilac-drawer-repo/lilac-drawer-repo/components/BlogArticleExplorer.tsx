@@ -98,10 +98,10 @@ export default function BlogArticleExplorer({
   return (
     <div className="flex flex-col gap-8">
       {/* Hero Banner & Collection Switcher */}
-      <div className="bg-mauve-50/80 border border-border rounded-3xl p-6 md:p-10 shadow-xs relative overflow-hidden">
+      <div className="bg-mauve-50/80 border border-border rounded-2xl sm:rounded-3xl p-4.5 sm:p-8 md:p-10 shadow-xs relative overflow-hidden">
         <div className="relative z-10 max-w-[780px]">
           {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs text-tan mb-3">
+          <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs text-tan mb-2.5 sm:mb-3 overflow-x-auto no-scrollbar whitespace-nowrap">
             <Link href="/" className="hover:text-purple-deep">
               Home
             </Link>
@@ -113,27 +113,27 @@ export default function BlogArticleExplorer({
             <span className="text-purple-deep font-semibold">{title}</span>
           </nav>
 
-          <div className="inline-flex items-center gap-2 bg-rose text-white text-xs font-bold px-3 py-1 rounded-full mb-3 shadow-xs">
+          <div className="inline-flex items-center gap-2 bg-rose text-white text-[11px] sm:text-xs font-bold px-3 py-1 rounded-full mb-2.5 sm:mb-3 shadow-xs">
             <span>{badge}</span>
           </div>
 
-          <h1 className="font-heading text-3xl md:text-5xl font-bold text-purple-deep leading-tight mb-3">
+          <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-bold text-purple-deep leading-tight mb-2.5 sm:mb-3">
             {title}
           </h1>
 
-          <p className="text-sm md:text-base text-tan-dark leading-relaxed mb-6">
+          <p className="text-xs sm:text-sm md:text-base text-tan-dark leading-relaxed mb-4 sm:mb-6">
             {subtitle}
           </p>
 
           {/* Quick Collection Switcher Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
             {collectionTabs.map((tab) => {
               const isActive = collectionType === tab.key;
               return (
                 <Link
                   key={tab.key}
                   href={tab.href}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                     isActive
                       ? "bg-purple-deep text-white shadow-sm"
                       : "bg-white border border-border text-tan-dark hover:text-purple-deep hover:bg-mauve-100"
@@ -183,10 +183,10 @@ export default function BlogArticleExplorer({
         <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto flex-wrap">
           {/* Categories */}
           {categories.length > 1 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full no-scrollbar">
               <button
                 onClick={() => setSelectedCategory("all")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedCategory === "all"
                     ? "bg-purple-deep text-white font-bold"
                     : "bg-mauve-50 text-purple-deep hover:bg-mauve-100"
@@ -285,12 +285,12 @@ export default function BlogArticleExplorer({
 
       {/* GRID VIEW */}
       {viewMode === "grid" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredPosts.map((post) => (
             <Link
               key={post.id}
               href={`/blog/${post.slug}`}
-              className="bg-white rounded-3xl border border-border overflow-hidden shadow-[var(--shadow-card)] hover:shadow-md transition-all flex flex-col justify-between group"
+              className="bg-white rounded-2xl sm:rounded-3xl border border-border overflow-hidden shadow-[var(--shadow-card)] hover:shadow-md transition-all flex flex-col justify-between group"
             >
               <div>
                 {/* Image Banner */}
@@ -303,29 +303,29 @@ export default function BlogArticleExplorer({
                     radius={0}
                     tone="mauve"
                   />
-                  <span className="absolute top-3 left-3 bg-purple-deep text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-xs">
+                  <span className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 bg-purple-deep text-white text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-xs">
                     {post.topicLabel || post.category}
                   </span>
                 </div>
 
                 {/* Content */}
-                <div className="p-6">
-                  <div className="text-[11px] text-gold font-semibold mb-2">
+                <div className="p-4 sm:p-6">
+                  <div className="text-[10.5px] sm:text-[11px] text-gold font-semibold mb-1.5 sm:mb-2">
                     {formatDate(post.publishedAt)} • By {post.author}
                   </div>
 
-                  <h3 className="font-heading text-lg font-bold text-purple-deep group-hover:text-rose transition-colors leading-snug mb-2.5 line-clamp-2">
+                  <h3 className="font-heading text-base sm:text-lg font-bold text-purple-deep group-hover:text-rose transition-colors leading-snug mb-2 sm:mb-2.5 line-clamp-2">
                     {post.title}
                   </h3>
 
-                  <p className="text-xs md:text-sm text-tan-dark line-clamp-3 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-tan-dark line-clamp-3 leading-relaxed">
                     {post.excerpt}
                   </p>
                 </div>
               </div>
 
               {/* Read button */}
-              <div className="p-6 pt-0">
+              <div className="p-4 sm:p-6 pt-0">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose group-hover:text-purple-deep transition-colors">
                   <span>Read Full Article</span>
                   <span className="group-hover:translate-x-1 transition-transform">→</span>

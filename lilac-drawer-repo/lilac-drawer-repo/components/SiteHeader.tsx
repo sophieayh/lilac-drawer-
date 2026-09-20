@@ -8,6 +8,7 @@ import type { SubCategoryItem } from "@/db/schema";
 import { useSession, signOut } from "@/lib/auth-client";
 import SubscribeModal from "@/components/SubscribeModal";
 import HeaderSearchBar from "@/components/HeaderSearchBar";
+import NotificationBell from "@/components/NotificationBell";
 import { checkIsSubscribed } from "@/lib/newsletter-actions";
 
 interface CategoryNavData {
@@ -294,11 +295,11 @@ export default function SiteHeader() {
   return (
     <>
       <header className="border-b border-border/60 bg-cream-alt">
-        <div className="flex items-center justify-between gap-6 px-6 md:px-12 py-4.5 max-w-[1400px] mx-auto">
+        <div className="flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 md:px-12 py-3.5 sm:py-4.5 max-w-[1400px] mx-auto">
           {/* Logo */}
           <Link
             href="/"
-            className="font-heading text-[28px] md:text-[32px] text-lilac tracking-tight shrink-0"
+            className="font-heading text-[24px] sm:text-[28px] md:text-[32px] text-lilac tracking-tight shrink-0"
           >
             Lilac <span className="text-gold">Drawer</span>
           </Link>
@@ -311,86 +312,101 @@ export default function SiteHeader() {
             {isAuthPending ? (
               <div className="w-24 h-9 bg-mauve-100/60 rounded-full animate-pulse" />
             ) : currentUser ? (
-              /* Authenticated User Menu Dropdown */
-              <div ref={userDropdownRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setUserDropdownOpen((open) => !open)}
-                  className="flex items-center gap-2.5 py-1.5 pl-2 pr-3.5 rounded-full bg-mauve-50 hover:bg-mauve-100 border border-border transition-all text-purple-deep group"
-                  aria-expanded={userDropdownOpen}
-                  aria-label="User account menu"
-                >
-                  {currentUser.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={currentUser.image}
-                      alt={currentUser.name}
-                      className="w-7 h-7 rounded-full object-cover border border-lilac"
-                    />
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-lilac/30 text-purple-deep flex items-center justify-center font-bold text-xs">
-                      {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
-                    </div>
-                  )}
-                  <span className="text-xs font-semibold text-purple-deep max-w-[110px] truncate">
-                    {currentUser.name}
-                  </span>
-                  <svg
-                    className={`w-3.5 h-3.5 text-tan-dark transition-transform duration-200 ${
-                      userDropdownOpen ? "rotate-180 text-rose" : ""
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              <>
+                {/* Notification Bell */}
+                <NotificationBell />
+
+                {/* Authenticated User Menu Dropdown */}
+                <div ref={userDropdownRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setUserDropdownOpen((open) => !open)}
+                    className="flex items-center gap-2.5 py-1.5 pl-2 pr-3.5 rounded-full bg-mauve-50 hover:bg-mauve-100 border border-border transition-all text-purple-deep group"
+                    aria-expanded={userDropdownOpen}
+                    aria-label="User account menu"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {/* Dropdown Menu */}
-                {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white/95 backdrop-blur-md border border-border shadow-[0_12px_32px_rgba(90,47,69,0.12)] p-2 z-50 animate-fade-in">
-                    {/* User Card */}
-                    <div className="px-3 py-2.5 border-b border-mauve-100 mb-1.5">
-                      <div className="text-xs font-bold text-purple-deep truncate">{currentUser.name}</div>
-                      <div className="text-[11px] text-tan truncate">@{userHandle}</div>
-                      <div className="text-[10.5px] text-tan-dark truncate mt-0.5">{currentUser.email}</div>
-                    </div>
-
-                    {/* Nav Links */}
-                    <Link
-                      href={`/community/${userHandle}`}
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-deep hover:bg-mauve-50 hover:text-rose transition-colors"
+                    {currentUser.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={currentUser.image}
+                        alt={currentUser.name}
+                        className="w-7 h-7 rounded-full object-cover border border-lilac"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-lilac/30 text-purple-deep flex items-center justify-center font-bold text-xs">
+                        {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+                      </div>
+                    )}
+                    <span className="text-xs font-semibold text-purple-deep max-w-[110px] truncate">
+                      {currentUser.name}
+                    </span>
+                    <svg
+                      className={`w-3.5 h-3.5 text-tan-dark transition-transform duration-200 ${
+                        userDropdownOpen ? "rotate-180 text-rose" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
-                      <svg className="w-4 h-4 text-purple-deep/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                      </svg>
-                      <span>My Profile</span>
-                    </Link>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
 
-                    <Link
-                      href={`/community/${userHandle}/edit`}
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-deep hover:bg-mauve-50 hover:text-rose transition-colors"
-                    >
-                      <svg className="w-4 h-4 text-purple-deep/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.27.1.06-.12l-.773.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.27-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>Edit Profile</span>
-                    </Link>
+                  {/* Dropdown Menu */}
+                  {userDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white/95 backdrop-blur-md border border-border shadow-[0_12px_32px_rgba(90,47,69,0.12)] p-2 z-50 animate-fade-in">
+                      {/* User Card */}
+                      <div className="px-3 py-2.5 border-b border-mauve-100 mb-1.5">
+                        <div className="text-xs font-bold text-purple-deep truncate">{currentUser.name}</div>
+                        <div className="text-[11px] text-tan truncate">@{userHandle}</div>
+                        <div className="text-[10.5px] text-tan-dark truncate mt-0.5">{currentUser.email}</div>
+                      </div>
 
-                    <Link
-                      href="/community"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-deep hover:bg-mauve-50 hover:text-rose transition-colors"
-                    >
-                      <svg className="w-4 h-4 text-purple-deep/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.81-.973l.634-1.898A8.04 8.04 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-                      </svg>
-                      <span>Community Feed</span>
-                    </Link>
+                      {/* Nav Links */}
+                      <Link
+                        href={`/community/${userHandle}`}
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-deep hover:bg-mauve-50 hover:text-rose transition-colors"
+                      >
+                        <svg className="w-4 h-4 text-purple-deep/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                        <span>My Profile</span>
+                      </Link>
+
+                      <Link
+                        href="/notifications"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-deep hover:bg-mauve-50 hover:text-rose transition-colors"
+                      >
+                        <svg className="w-4 h-4 text-purple-deep/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                        </svg>
+                        <span>Notifications</span>
+                      </Link>
+
+                      <Link
+                        href={`/community/${userHandle}/edit`}
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-deep hover:bg-mauve-50 hover:text-rose transition-colors"
+                      >
+                        <svg className="w-4 h-4 text-purple-deep/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.27.1.06-.12l-.773.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.27-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Edit Profile</span>
+                      </Link>
+
+                      <Link
+                        href="/community"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-purple-deep hover:bg-mauve-50 hover:text-rose transition-colors"
+                      >
+                        <svg className="w-4 h-4 text-purple-deep/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.81-.973l.634-1.898A8.04 8.04 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                        </svg>
+                        <span>Community Feed</span>
+                      </Link>
 
                     {/* Sign Out Button */}
                     <div className="pt-1.5 mt-1.5 border-t border-mauve-100">
@@ -409,6 +425,7 @@ export default function SiteHeader() {
                   </div>
                 )}
               </div>
+              </>
             ) : (
               /* Guest Auth Buttons */
               <div className="flex items-center gap-2">
@@ -439,25 +456,29 @@ export default function SiteHeader() {
             )}
           </div>
 
-          {/* Mobile Hamburger Button */}
-          <button
-            type="button"
-            className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-mauve-50 text-purple-deep shrink-0"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-nav"
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            {menuOpen ? (
-              <svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
-                <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
-                <path d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z" />
-              </svg>
-            )}
-          </button>
+          {/* Mobile Right Controls: Notification Bell + Hamburger */}
+          <div className="md:hidden flex items-center gap-2 shrink-0">
+            {currentUser && <NotificationBell />}
+
+            <button
+              type="button"
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-mauve-50 text-purple-deep shrink-0"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-nav"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {menuOpen ? (
+                <svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+                  <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+                  <path d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Nav Drawer */}
@@ -486,18 +507,25 @@ export default function SiteHeader() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/60">
+                  <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-border/60">
                     <Link
                       href={`/community/${userHandle}`}
                       onClick={() => setMenuOpen(false)}
-                      className="text-center py-1.5 px-2 bg-mauve-50 hover:bg-mauve-100 rounded-lg text-xs font-semibold text-purple-deep transition-colors"
+                      className="text-center py-1.5 px-1 bg-mauve-50 hover:bg-mauve-100 rounded-lg text-xs font-semibold text-purple-deep transition-colors"
                     >
                       Profile
                     </Link>
                     <Link
+                      href="/notifications"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-center py-1.5 px-1 bg-mauve-50 hover:bg-mauve-100 rounded-lg text-xs font-semibold text-purple-deep transition-colors"
+                    >
+                      Alerts
+                    </Link>
+                    <Link
                       href={`/community/${userHandle}/edit`}
                       onClick={() => setMenuOpen(false)}
-                      className="text-center py-1.5 px-2 bg-mauve-50 hover:bg-mauve-100 rounded-lg text-xs font-semibold text-purple-deep transition-colors"
+                      className="text-center py-1.5 px-1 bg-mauve-50 hover:bg-mauve-100 rounded-lg text-xs font-semibold text-purple-deep transition-colors"
                     >
                       Settings
                     </Link>
@@ -649,7 +677,7 @@ export default function SiteHeader() {
 
       {/* Sticky Translucent Categories Bar */}
       <div className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md border-b border-border/80 shadow-[0_2px_12px_rgba(90,47,69,0.05)] transition-colors">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
           {/* Dynamic Desktop Categories Bar with Hover Dropdown Menus */}
           <nav
             aria-label="Categories"
@@ -749,7 +777,7 @@ export default function SiteHeader() {
           </nav>
 
           {/* Mobile & Tablet Compact Horizontal Scroll Categories */}
-          <div className="lg:hidden flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar">
+          <div className="lg:hidden flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar -mx-4 px-4 sm:-mx-6 sm:px-6">
             {categories.map((cat) => {
               const catSlug = cat.slug || slugify(cat.label);
               return (

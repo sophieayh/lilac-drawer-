@@ -17,6 +17,7 @@ import "@fontsource/poppins/700.css";
 import "./globals.css";
 import JsonLd from "@/components/JsonLd";
 import VisitTracker from "@/components/VisitTracker";
+import PushNotificationManager from "@/components/PushNotificationManager";
 import { siteConfig, absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -70,7 +71,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.svg",
+    apple: "/favicon.svg",
   },
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
@@ -93,12 +96,18 @@ export default function RootLayout({
             "@type": "Organization",
             name: siteConfig.name,
             url: siteConfig.url,
-            logo: absoluteUrl("/favicon.svg"),
+            logo: {
+              "@type": "ImageObject",
+              url: absoluteUrl("/favicon.svg"),
+              width: 512,
+              height: 512,
+            },
             description: siteConfig.description,
             founder: {
               "@type": "Person",
               name: siteConfig.founder,
             },
+            sameAs: [...siteConfig.sameAs],
           }}
         />
         <JsonLd
@@ -107,9 +116,19 @@ export default function RootLayout({
             "@type": "WebSite",
             name: siteConfig.name,
             url: siteConfig.url,
+            description: siteConfig.description,
+            potentialAction: {
+              "@type": "SearchAction",
+              target: {
+                "@type": "EntryPoint",
+                urlTemplate: `${siteConfig.url}/search?q={search_term_string}`,
+              },
+              "query-input": "required name=search_term_string",
+            },
           }}
         />
         <VisitTracker />
+        <PushNotificationManager />
         {children}
       </body>
     </html>

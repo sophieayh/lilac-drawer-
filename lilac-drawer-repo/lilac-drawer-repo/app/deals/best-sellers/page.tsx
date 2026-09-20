@@ -46,7 +46,7 @@ export default async function BestSellersPage() {
 
       <SiteHeader />
 
-      <main className="bg-cream text-purple-deep min-h-screen py-8 px-6 md:px-12">
+      <main className="bg-cream text-purple-deep min-h-screen py-6 sm:py-8 px-4 sm:px-6 md:px-12">
         <div className="max-w-[1400px] mx-auto">
           <DealsProductExplorer
             title="Best Sellers"

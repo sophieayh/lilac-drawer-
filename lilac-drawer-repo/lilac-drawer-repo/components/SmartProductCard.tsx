@@ -28,7 +28,7 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
     <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-[var(--shadow-card)] hover:shadow-md transition-all flex flex-col justify-between group">
       <div>
         {/* Product Image Box */}
-        <div className="relative aspect-[4/3] bg-mauve-50/50 p-5 overflow-hidden flex items-center justify-center">
+        <div className="relative aspect-[4/3] bg-mauve-50/50 p-3 sm:p-5 overflow-hidden flex items-center justify-center">
           {hasArticle ? (
             <Link href={mainTargetUrl} className="block w-full h-full">
               <ImageSlot
@@ -53,37 +53,37 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
           )}
 
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+          <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-col gap-1 sm:gap-1.5">
             {product.badge && (
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-gold/90 text-white shadow-sm">
+              <span className="text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-gold/90 text-white shadow-sm">
                 {product.badge}
               </span>
             )}
             {hasArticle && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lilac text-white shadow-sm flex items-center gap-1">
+              <span className="text-[9.5px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-lilac text-white shadow-sm flex items-center gap-1">
                 <span>Review Available</span>
               </span>
             )}
           </div>
 
           {product.discountPercent && product.discountPercent > 0 && (
-            <span className="absolute top-3 right-3 text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose text-white shadow-sm">
+            <span className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose text-white shadow-sm">
               -{product.discountPercent}%
             </span>
           )}
         </div>
 
         {/* Product Details */}
-        <div className="p-5 flex flex-col gap-2">
+        <div className="p-3.5 sm:p-5 flex flex-col gap-1.5 sm:gap-2">
           {product.category && (
-            <span className="text-[11px] font-bold uppercase tracking-wider text-tan-dark">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-tan-dark">
               {product.category}
             </span>
           )}
 
           {hasArticle ? (
             <Link href={mainTargetUrl} className="block">
-              <h3 className="font-heading text-base text-purple-deep group-hover:text-rose transition-colors line-clamp-2 leading-snug">
+              <h3 className="font-heading text-sm sm:text-base text-purple-deep group-hover:text-rose transition-colors line-clamp-2 leading-snug">
                 {product.name}
               </h3>
             </Link>
@@ -94,7 +94,7 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
               rel="noopener noreferrer"
               className="block"
             >
-              <h3 className="font-heading text-base text-purple-deep group-hover:text-rose transition-colors line-clamp-2 leading-snug">
+              <h3 className="font-heading text-sm sm:text-base text-purple-deep group-hover:text-rose transition-colors line-clamp-2 leading-snug">
                 {product.name}
               </h3>
             </a>
@@ -105,12 +105,12 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
           )}
 
           {/* Pricing */}
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="font-bold text-base text-purple-deep">
+          <div className="flex items-baseline gap-2 mt-0.5 sm:mt-1">
+            <span className="font-bold text-sm sm:text-base text-purple-deep">
               {formatPriceFixed(product.priceCents)}
             </span>
             {product.compareAtPriceCents && (
-              <span className="text-xs text-tan-dark line-through font-normal">
+              <span className="text-[11px] sm:text-xs text-tan-dark line-through font-normal">
                 {formatPriceFixed(product.compareAtPriceCents)}
               </span>
             )}
@@ -118,14 +118,14 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
 
           {/* Multi-Store Pills */}
           {stores.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-2">
+            <div className="flex flex-wrap gap-1 sm:gap-1.5 pt-1.5 sm:pt-2">
               {stores.slice(0, 3).map((st, idx) => (
                 <a
                   key={st.id || idx}
                   href={st.url || primaryAffiliateUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-medium bg-mauve-50 hover:bg-mauve-100 text-purple-deep px-2 py-0.5 rounded-md border border-border/80 transition-colors"
+                  className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium bg-mauve-50 hover:bg-mauve-100 text-purple-deep px-2 py-0.5 rounded-md border border-border/80 transition-colors"
                 >
                   <span>{st.storeName}:</span>
                   <span className="font-bold">{st.price || formatPriceFixed(product.priceCents)}</span>
@@ -138,12 +138,12 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
       </div>
 
       {/* Card Action Button */}
-      <div className="p-5 pt-0">
+      <div className="p-3.5 sm:p-5 pt-0">
         {hasArticle ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5 sm:gap-2">
             <Link
               href={mainTargetUrl}
-              className="w-full text-center py-2.5 px-4 rounded-xl bg-purple-deep text-white text-xs font-bold shadow-sm hover:bg-purple-deep/90 transition-all flex items-center justify-center gap-1.5"
+              className="w-full text-center py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl bg-purple-deep text-white text-xs font-bold shadow-sm hover:bg-purple-deep/90 transition-all flex items-center justify-center gap-1.5"
             >
               <span>Read Full Review</span>
               <span>→</span>
@@ -153,7 +153,7 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
                 href={primaryAffiliateUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full text-center py-1.5 px-3 rounded-lg text-[11px] font-semibold text-tan-dark hover:text-rose transition-colors"
+                className="w-full text-center py-1 sm:py-1.5 px-2.5 sm:px-3 rounded-lg text-[10.5px] sm:text-[11px] font-semibold text-tan-dark hover:text-rose transition-colors"
               >
                 Direct to {primaryStoreName} ↗
               </a>
@@ -164,7 +164,7 @@ export default function SmartProductCard({ product, relatedArticle }: Props) {
             href={mainTargetUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full text-center py-2.5 px-4 rounded-xl bg-lilac text-white text-xs font-bold shadow-sm hover:bg-lilac/90 transition-all flex items-center justify-center gap-1.5"
+            className="w-full text-center py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl bg-lilac text-white text-xs font-bold shadow-sm hover:bg-lilac/90 transition-all flex items-center justify-center gap-1.5"
           >
             <span>Buy on {primaryStoreName}</span>
             <span>↗</span>

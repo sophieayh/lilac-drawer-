@@ -885,12 +885,12 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
   return (
     <div className={`${bgClass} h-screen flex flex-col overflow-hidden font-sans select-none transition-colors duration-300`}>
       {/* 1. TOP NAVIGATION & ACTION BAR */}
-      <header className="h-16 border-b border-border bg-white/90 backdrop-blur-md px-4 md:px-6 flex items-center justify-between gap-4 z-30 shrink-0">
-        <div className="flex items-center gap-3 md:gap-5">
+      <header className="h-16 border-b border-border bg-white/90 backdrop-blur-md px-2.5 sm:px-4 md:px-6 flex items-center justify-between gap-2 sm:gap-4 z-30 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-5 min-w-0">
           {/* Toggle Drawer Button */}
           <button
             onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-            className="p-2 rounded-xl border border-border hover:bg-mauve-50 text-purple-deep transition-colors cursor-pointer"
+            className="p-2 rounded-xl border border-border hover:bg-mauve-50 text-purple-deep transition-colors cursor-pointer shrink-0"
             title={isDrawerOpen ? "Collapse Pieces Drawer" : "Expand Pieces Drawer"}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -902,7 +902,7 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
             </svg>
           </button>
 
-          <Link href="/" className="font-heading text-lg md:text-xl font-bold text-purple-deep hover:text-rose transition-colors">
+          <Link href="/" className="font-heading text-base sm:text-lg md:text-xl font-bold text-purple-deep hover:text-rose transition-colors truncate">
             Lilac Drawer
           </Link>
           <span className="hidden md:inline-block text-border font-light">|</span>
@@ -928,12 +928,12 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
         </div>
 
         {/* Right Actions: Undo, Redo, Clear, Export */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Undo Button */}
           <button
             onClick={handleUndo}
             disabled={historyIndex <= 0}
-            className="p-2 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
             title="Undo (Ctrl+Z)"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -945,7 +945,7 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
           <button
             onClick={handleRedo}
             disabled={historyIndex >= history.length - 1}
-            className="p-2 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
             title="Redo (Ctrl+Y)"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -953,13 +953,13 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
             </svg>
           </button>
 
-          <div className="w-px h-6 bg-border mx-1" />
+          <div className="w-px h-5 sm:h-6 bg-border mx-0.5 sm:mx-1" />
 
           {/* Clear Canvas */}
           <button
             onClick={clearCanvas}
             disabled={items.length === 0}
-            className="px-3 py-2 rounded-xl border border-border text-xs font-semibold text-tan-dark hover:text-rose hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-border text-xs font-semibold text-tan-dark hover:text-rose hover:bg-mauve-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
             title="Clear Sandbox"
           >
             Clear
@@ -968,7 +968,7 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
           {/* Export / Download Moodboard */}
           <button
             onClick={exportCanvasAsImage}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-deep text-white text-xs font-bold hover:bg-purple-deep/90 shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-purple-deep text-white text-xs font-bold hover:bg-purple-deep/90 shadow-xs transition-all cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -983,9 +983,23 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
         {/* LEFT PALETTE / PIECES & UPLOAD DRAWER */}
         <aside
           className={`border-r border-border bg-white flex flex-col transition-all duration-300 z-20 shrink-0 ${
-            isDrawerOpen ? "w-80 md:w-96 shadow-xl" : "w-0 -translate-x-full overflow-hidden border-none"
+            isDrawerOpen
+              ? "w-full sm:w-80 md:w-96 shadow-xl absolute inset-y-0 left-0 sm:relative"
+              : "w-0 -translate-x-full overflow-hidden border-none"
           }`}
         >
+          {/* Mobile Close Bar */}
+          <div className="sm:hidden flex items-center justify-between px-3.5 py-2 bg-mauve-100/70 border-b border-border">
+            <span className="text-xs font-bold text-purple-deep">Pieces &amp; Uploads</span>
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(false)}
+              className="px-2.5 py-1 bg-white rounded-lg text-xs font-bold text-purple-deep border border-border shadow-2xs"
+            >
+              Done / Close ✕
+            </button>
+          </div>
+
           {/* Drawer Tabs: Catalog vs Uploads vs Look Breakdown & Prices */}
           <div className="p-2.5 border-b border-border bg-mauve-50/50 grid grid-cols-3 gap-1.5">
             <button

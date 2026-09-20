@@ -118,7 +118,7 @@ export default async function CommunityProfilePage({
       />
       <SiteHeader />
       <div className="bg-cream text-ink min-h-screen">
-        <div className="grid lg:grid-cols-[1fr_340px] gap-8 px-6 md:px-12 py-6 max-w-[1400px] mx-auto">
+        <div className="grid lg:grid-cols-[1fr_340px] gap-8 px-3.5 sm:px-6 md:px-12 py-4 sm:py-6 max-w-[1400px] mx-auto">
           <main className="min-w-0 border-r-0 lg:border-r border-border lg:pr-8 min-h-screen">
           <ProfileHeaderMedia
             name={person.name}
@@ -131,12 +131,12 @@ export default async function CommunityProfilePage({
             isLoggedIn={!!viewerId}
           />
 
-          <div className="px-6">
-            <h1 className="font-heading text-xl font-bold text-rose">{person.name}</h1>
-            <div className="text-sm text-tan mb-3">@{person.handle}</div>
-            {person.bio && <p className="text-[15px] leading-relaxed text-ink mb-3 max-w-[480px]">{person.bio}</p>}
+          <div className="px-3.5 sm:px-6">
+            <h1 className="font-heading text-lg sm:text-xl font-bold text-rose">{person.name}</h1>
+            <div className="text-xs sm:text-sm text-tan mb-2.5 sm:mb-3">@{person.handle}</div>
+            {person.bio && <p className="text-sm sm:text-[15px] leading-relaxed text-ink mb-3 max-w-[480px]">{person.bio}</p>}
             
-            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-tan mb-4" suppressHydrationWarning>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-semibold text-tan mb-4" suppressHydrationWarning>
               <div>
                 <strong className="text-purple-deep">{followCounts.followersCount}</strong> Followers
               </div>
@@ -151,12 +151,12 @@ export default async function CommunityProfilePage({
               <span>Joined {person.createdAt.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
             </div>
 
-            <div className="flex gap-8 border-b border-border text-[14.5px] font-semibold">
+            <div className="flex gap-5 sm:gap-8 border-b border-border text-sm sm:text-[14.5px] font-semibold overflow-x-auto no-scrollbar whitespace-nowrap">
               {profileTabs.map((t) => (
                 <Link
                   key={t}
                   href={t === "Posts" ? `/community/${person.handle}` : `/community/${person.handle}?tab=${t}`}
-                  className={`py-3.5 border-b-[2.5px] ${
+                  className={`py-3 sm:py-3.5 border-b-[2.5px] ${
                     activeTab === t ? "text-rose border-rose" : "text-tan border-transparent hover:text-purple-deep"
                   }`}
                 >
@@ -178,7 +178,7 @@ export default async function CommunityProfilePage({
                 <Link
                   key={r.id}
                   href={`/community/post/${r.postId}`}
-                  className="block px-6 py-4.5 border-b border-border card-hover"
+                  className="block px-4 sm:px-6 py-4 sm:py-4.5 border-b border-border hover:bg-mauve-50/40 transition-colors"
                 >
                   <div className="text-xs text-tan mb-1.5">
                     Replying to <span className="text-purple-deep font-semibold">@{r.postAuthorHandle}</span>

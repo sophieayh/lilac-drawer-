@@ -8,6 +8,7 @@ import {
   varchar,
   jsonb,
   uniqueIndex,
+  index,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
@@ -386,3 +387,62 @@ export const emailSettings = pgTable("email_settings", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export type NotificationType =
+  | "post_reply"
+  | "comment_reply"
+  | "new_follower"
+  | "post_like"
+  | "post_repost"
+  | "site_article"
+  | "site_deal"
+  | "site_banner"
+  | "system";
+
+/**
+ * In-app notifications for community interactions and site publication updates.
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+    type: varchar("type", { length: 50 }).notNull().$type<NotificationType>(),
+    title: text("title").notNull(),
+    message: text("message"),
+    targetUrl: text("target_url").notNull(),
+    imageUrl: text("image_url"),
+    entityId: integer("entity_id"),
+    isRead: boolean("is_read").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("notifications_user_is_read_idx").on(table.userId, table.isRead),
+    index("notifications_user_created_at_idx").on(table.userId, table.createdAt),
+    index("notifications_type_entity_idx").on(table.type, table.entityId),
+  ],
+);
+
+/**
+ * Web Push notification subscriptions (VAPID / Web Push API).
+ * Stores endpoint and cryptokeys for delivering native device push notifications.
+ */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("push_subscriptions_endpoint_unique").on(table.endpoint),
+    index("push_subscriptions_user_idx").on(table.userId),
+  ],
+);

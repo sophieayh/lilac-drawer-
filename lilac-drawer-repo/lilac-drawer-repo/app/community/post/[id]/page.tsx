@@ -115,15 +115,15 @@ export default async function CommunityPostPage({
       />
       <SiteHeader />
       <main className="bg-cream text-ink min-h-screen">
-        <div className="max-w-[640px] mx-auto px-6 py-8">
-          <nav aria-label="Breadcrumb" className="text-xs text-tan mb-6">
+        <div className="max-w-[640px] mx-auto px-3.5 sm:px-6 py-4 sm:py-8">
+          <nav aria-label="Breadcrumb" className="text-xs text-tan mb-4 sm:mb-6">
             <Link href="/community" className="hover:text-rose">
               Community
             </Link>{" "}
             / <span className="text-tan-dark">Post</span>
           </nav>
 
-          <article className="border border-border rounded-2xl p-6">
+          <article className="border border-border rounded-2xl p-4 sm:p-6 bg-white/60">
             <h1 className="sr-only">
               {post.authorName}&apos;s post on {siteConfig.name}
             </h1>
@@ -159,17 +159,19 @@ export default async function CommunityPostPage({
                   </Link>
                   <span className="text-tan text-xs">@{originalPost.authorHandle}</span>
                 </div>
-                <Link href={`/community/post/${originalPost.id}`} className="block">
-                  <p className="text-sm text-tan-dark leading-relaxed">{originalPost.body}</p>
-                  {originalPost.hasImage && (
-                    <PostImageMedia
-                      imageUrl={originalPost.imageUrl}
-                      imageLabel={originalPost.imageLabel || "Reposted image"}
-                      maxHeight="max-h-[420px]"
-                      className="mt-2"
-                    />
-                  )}
-                </Link>
+                {originalPost.body && (
+                  <Link href={`/community/post/${originalPost.id}`} className="block group/reposttext">
+                    <p className="text-sm text-tan-dark leading-relaxed group-hover/reposttext:text-purple-deep transition-colors">{originalPost.body}</p>
+                  </Link>
+                )}
+                {originalPost.hasImage && (
+                  <PostImageMedia
+                    imageUrl={originalPost.imageUrl}
+                    imageLabel={originalPost.imageLabel || "Reposted image"}
+                    maxHeight="max-h-[420px]"
+                    className="mt-2"
+                  />
+                )}
 
                 {originalPost.articleTitle && originalPost.articleSlug && (
                   <ArticleEmbedCard

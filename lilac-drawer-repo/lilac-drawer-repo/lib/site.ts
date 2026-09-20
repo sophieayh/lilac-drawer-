@@ -1,22 +1,34 @@
 export const siteConfig = {
   name: "Lilac Drawer",
   shortName: "Lilac Drawer",
-  tagline: "Honest Reviews & Buying Guides",
+  tagline: "Honest Reviews, Care Guides & Verified Deals",
   description:
-    "Reader-supported reviews and buying guides for clothing care, accessories, wardrobe storage, and jewelry — tested by hand, ranked honestly, updated often.",
-  // TODO: replace with the real production domain before deploying.
+    "Reader-supported reviews, tested care routines, and curated buying guides for clothing care, wardrobe storage, beauty, and accessories — tested by hand, ranked honestly, updated often.",
   url: "https://www.lilacdrawer.com",
   locale: "en_US",
   founder: "Lilac Drawer Editorial Team",
   twitter: "@lilacdrawer",
+  sameAs: [
+    "https://twitter.com/lilacdrawer",
+    "https://instagram.com/lilacdrawer",
+    "https://pinterest.com/lilacdrawer",
+  ],
   keywords: [
     "clothing care reviews",
-    "affiliate shopping guide",
     "garment steamer reviews",
-    "wardrobe storage guide",
-    "jewelry box reviews",
-    "buying guides",
-    "product reviews blog",
+    "wardrobe storage ideas",
+    "jewelry organization",
+    "beauty product reviews",
+    "makeup buying guides",
+    "tested lifestyle picks",
+    "authentic deals and discounts",
+    "curated shopping guide",
+    "fabric care tips",
+    "Lilac Drawer",
+    "خزانة ليلك",
+    "دليل العناية بالملابس",
+    "مراجعات منتجات الجمال",
+    "عروض وتخفيضات موثوقة",
   ],
 } as const;
 
@@ -37,42 +49,61 @@ export function buildMetadata({
   description,
   path,
   type = "website",
+  imageUrl,
+  imageAlt,
+  noIndex = false,
 }: {
   title: string;
   description: string;
   path: string;
   type?: "website" | "article" | "profile";
+  imageUrl?: string | null;
+  imageAlt?: string | null;
+  noIndex?: boolean;
 }): Metadata {
-  const url = path;
-  // Article and profile pages generate their own per-page OG image via a
-  // co-located opengraph-image.tsx file — Next.js's file-convention image
-  // only applies when metadata doesn't explicitly set `images`, so we omit
-  // it here and let that file take over automatically.
-  const hasOwnOgImage = type === "article" || type === "profile";
-  const ogImage = hasOwnOgImage
-    ? undefined
-    : [
-        {
-          url: "/opengraph-image",
-          width: 1200,
-          height: 630,
-          alt: `${siteConfig.name} — ${siteConfig.tagline}`,
-        },
-      ];
+  const url = path.startsWith("http") ? path : absoluteUrl(path);
+
+  // Determine OG image
+  let ogImages: { url: string; width: number; height: number; alt: string }[] | undefined;
+  let twitterImages: string[] | undefined;
+
+  if (imageUrl) {
+    const fullImgUrl = imageUrl.startsWith("http") ? imageUrl : absoluteUrl(imageUrl);
+    ogImages = [
+      {
+        url: fullImgUrl,
+        width: 1200,
+        height: 630,
+        alt: imageAlt || title,
+      },
+    ];
+    twitterImages = [fullImgUrl];
+  } else if (type === "website") {
+    ogImages = [
+      {
+        url: absoluteUrl("/opengraph-image"),
+        width: 1200,
+        height: 630,
+        alt: `${siteConfig.name} — ${siteConfig.tagline}`,
+      },
+    ];
+    twitterImages = [absoluteUrl("/opengraph-image")];
+  }
+
   return {
     title,
     description,
-    alternates: { canonical: path },
+    alternates: {
+      canonical: path,
+    },
     openGraph: {
-      // OpenGraph doesn't have a "profile" type in Next.js's Metadata
-      // union — "website" is the correct fallback for a person page.
       type: type === "profile" ? "website" : type,
       url,
       title,
       description,
       siteName: siteConfig.name,
       locale: siteConfig.locale,
-      images: ogImage,
+      images: ogImages,
     },
     twitter: {
       card: "summary_large_image",
@@ -80,7 +111,20 @@ export function buildMetadata({
       creator: siteConfig.twitter,
       title,
       description,
-      images: hasOwnOgImage ? undefined : ["/opengraph-image"],
+      images: twitterImages,
     },
+    robots: noIndex
+      ? { index: false, follow: true }
+      : {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+            "max-video-preview": -1,
+          },
+        },
   };
 }

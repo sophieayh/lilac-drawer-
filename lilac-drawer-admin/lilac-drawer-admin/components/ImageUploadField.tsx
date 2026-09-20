@@ -21,7 +21,7 @@ export default function ImageUploadField({
   defaultValue?: string | null;
   value?: string;
   onChange?: (val: string) => void;
-  kind: "articles" | "products" | "banners" | "yearly_wrap";
+  kind: "articles" | "products" | "banners";
 }) {
   const [internalUrl, setInternalUrl] = useState(defaultValue ?? "");
   const [internalPreview, setInternalPreview] = useState(defaultValue ?? "");

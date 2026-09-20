@@ -67,14 +67,14 @@ export default function ProfileHeaderMedia({
       </div>
 
       {/* 2. Profile Avatar & Actions Bar */}
-      <div className="px-6">
-        <div className="flex justify-between items-end -mt-12 mb-3">
+      <div className="px-3.5 sm:px-6">
+        <div className="flex justify-between items-end -mt-10 sm:-mt-12 mb-3">
           {/* Avatar with click to enlarge */}
           <div className="relative group/avatar">
             {image ? (
               <div
                 onClick={() => setLightboxImage({ url: image, title: `${name}'s Profile Photo` })}
-                className="w-28 h-28 rounded-full overflow-hidden border-4 border-cream bg-mauve-100 shadow-sm cursor-pointer relative"
+                className="w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-cream bg-mauve-100 shadow-sm cursor-pointer relative"
                 title="Click to view avatar in full size"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -91,7 +91,7 @@ export default function ProfileHeaderMedia({
                 </div>
               </div>
             ) : (
-              <div className="w-28 h-28 rounded-full border-4 border-cream bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold text-3xl shadow-sm">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-cream bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold text-2xl sm:text-3xl shadow-sm">
                 {name?.charAt(0)?.toUpperCase() || "U"}
               </div>
             )}
@@ -99,16 +99,16 @@ export default function ProfileHeaderMedia({
 
           {/* Action Button: Edit Profile vs Follow */}
           {isOwnProfile ? (
-            <div className="mt-14">
+            <div className="mt-10 sm:mt-14">
               <Link
                 href={`/community/${handle}/edit`}
-                className="inline-block border-[1.5px] border-rose text-rose hover:bg-rose hover:text-white px-4 py-2 rounded-full text-xs font-bold transition-all shadow-xs"
+                className="inline-block border-[1.5px] border-rose text-rose hover:bg-rose hover:text-white px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold transition-all shadow-xs"
               >
                 Edit Profile
               </Link>
             </div>
           ) : (
-            <div className="mt-14">
+            <div className="mt-10 sm:mt-14">
               <FollowButton
                 targetUserId={targetUserId}
                 initialIsFollowing={isFollowing}

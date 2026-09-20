@@ -39,6 +39,8 @@ export async function generateMetadata({
     description: post.excerpt,
     path: `/blog/${post.slug}`,
     type: "article",
+    imageUrl: post.imageUrl,
+    imageAlt: post.title,
   });
 }
 
@@ -226,13 +228,28 @@ export default async function BlogPostPage({
           image: post.imageUrl ? [post.imageUrl] : undefined,
           datePublished: post.publishedAt.toISOString(),
           dateModified: post.updatedAt.toISOString(),
-          author: { "@type": "Organization", name: post.author },
+          articleSection: post.category,
+          inLanguage: "en-US",
+          wordCount: (post.body || "").split(/\s+/).filter(Boolean).length,
+          author: {
+            "@type": "Person",
+            name: post.author,
+            url: absoluteUrl("/blog"),
+          },
           publisher: {
             "@type": "Organization",
             name: siteConfig.name,
-            logo: { "@type": "ImageObject", url: absoluteUrl("/favicon.svg") },
+            logo: {
+              "@type": "ImageObject",
+              url: absoluteUrl("/favicon.svg"),
+              width: 512,
+              height: 512,
+            },
           },
-          mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/blog/${post.slug}`) },
+          mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": absoluteUrl(`/blog/${post.slug}`),
+          },
         }}
       />
       <JsonLd
@@ -242,7 +259,18 @@ export default async function BlogPostPage({
           itemListElement: [
             { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
             { "@type": "ListItem", position: 2, name: "Blog", item: absoluteUrl("/blog") },
-            { "@type": "ListItem", position: 3, name: post.title, item: absoluteUrl(`/blog/${post.slug}`) },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: post.category,
+              item: absoluteUrl(`/category/${post.category.toLowerCase().replace(/\s+/g, "-")}`),
+            },
+            {
+              "@type": "ListItem",
+              position: 4,
+              name: post.title,
+              item: absoluteUrl(`/blog/${post.slug}`),
+            },
           ],
         }}
       />
@@ -289,12 +317,12 @@ export default async function BlogPostPage({
 
       {/* Article sub-header */}
       <div className="border-b border-border bg-mauve-50">
-        <div className="max-w-[1100px] mx-auto px-6 md:px-12 py-2.5 flex items-center gap-5">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 md:px-12 py-2 flex items-center justify-between gap-3 sm:gap-5">
           <span className="text-[11px] font-semibold tracking-wide uppercase text-purple-deep shrink-0">
             {post.category}
           </span>
-          <span className="text-[13px] text-purple-deep/70 truncate">{post.title}</span>
-          <div className="ml-auto flex items-center gap-2">
+          <span className="text-[13px] text-purple-deep/70 truncate hidden sm:inline">{post.title}</span>
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             <ShareToCommunityModal
               articleId={post.id}
               articleTitle={post.title}
@@ -311,8 +339,8 @@ export default async function BlogPostPage({
       </div>
 
       <main className="bg-cream text-purple-deep">
-        <div className="max-w-[1100px] mx-auto px-6 md:px-12">
-          <nav aria-label="Breadcrumb" className="text-xs text-tan pt-6 mb-6">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 md:px-12">
+          <nav aria-label="Breadcrumb" className="text-xs text-tan pt-4 sm:pt-6 mb-4 sm:mb-6">
             <Link href="/" className="hover:text-rose">
               Home
             </Link>{" "}
@@ -320,38 +348,38 @@ export default async function BlogPostPage({
             <Link href="/blog" className="hover:text-rose">
               Blog
             </Link>{" "}
-            / <span className="text-tan-dark">{post.title}</span>
+            / <span className="text-tan-dark truncate max-w-[200px] inline-block align-bottom">{post.title}</span>
           </nav>
 
-          <div className="max-w-[760px] flex flex-col gap-4 pb-6">
+          <div className="max-w-[760px] flex flex-col gap-3.5 sm:gap-4 pb-5 sm:pb-6">
             <span className="text-xs font-semibold tracking-wide uppercase text-rose">
               {post.category}
               {post.topicLabel ? ` · ${post.topicLabel}` : ""}
             </span>
-            <h1 className="font-heading text-[34px] md:text-[50px] leading-[1.1] tracking-tight text-ink font-bold">
+            <h1 className="font-heading text-[26px] sm:text-[34px] md:text-[50px] leading-[1.15] sm:leading-[1.1] tracking-tight text-ink font-bold">
               {post.title}
             </h1>
-            <div className="flex items-center gap-3 text-[13.5px] text-tan-dark">
-              <span className="w-8 h-8 rounded-full bg-mauve-100 border border-border-mauve shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-[13.5px] text-tan-dark flex-wrap">
+              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-mauve-100 border border-border-mauve shrink-0" aria-hidden="true" />
               <span className="text-purple-deep font-medium">By {post.author}</span>
               <span>·</span>
               <span>{wasUpdated ? `Updated ${formatDate(post.updatedAt)}` : formatDate(post.publishedAt)}</span>
             </div>
             {post.excerpt && (
-              <p className="text-[17px] leading-relaxed text-purple-deep/90 font-serif italic pt-1 border-l-2 border-lilac pl-4">
+              <p className="text-sm sm:text-[17px] leading-relaxed text-purple-deep/90 font-serif italic pt-1 border-l-2 border-lilac pl-3 sm:pl-4">
                 {post.excerpt}
               </p>
             )}
           </div>
 
-          <figure className="mb-9 flex flex-col gap-2">
+          <figure className="mb-6 sm:mb-9 flex flex-col gap-2">
             <ImageSlot
               label={post.imageLabel}
               imageUrl={post.imageUrl}
-              className="w-full h-[280px] md:h-[440px]"
+              className="w-full h-[220px] sm:h-[320px] md:h-[440px]"
               shape="rounded"
-              radius={4}
-              tone="mauve"
+              radius={16}
+              tone="pink"
             />
             {post.imageLabel && <figcaption className="text-xs text-tan">{post.imageLabel}</figcaption>}
           </figure>

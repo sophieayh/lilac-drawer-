@@ -71,10 +71,10 @@ export default function PostCard({
   const effectiveImageUrl = isBareRepost ? (p.originalImageUrl ?? p.imageUrl) : p.imageUrl;
 
   return (
-    <article className="px-6 py-4.5 border-b border-border card-hover">
+    <article className="px-3.5 sm:px-6 py-4 sm:py-4.5 border-b border-border hover:bg-mauve-50/20 transition-colors">
       {/* If it's a bare repost, show a badge header indicating who reposted */}
       {isBareRepost && (
-        <div className="flex items-center gap-2 text-xs font-bold text-tan-dark mb-2.5 pl-12">
+        <div className="flex items-center gap-2 text-xs font-bold text-tan-dark mb-2.5 pl-9 sm:pl-12">
           <svg
             className="w-4 h-4 text-emerald-600 shrink-0"
             viewBox="0 0 24 24"
@@ -95,17 +95,17 @@ export default function PostCard({
         </div>
       )}
 
-      <div className="flex gap-3.5">
+      <div className="flex gap-2.5 sm:gap-3.5">
         <Link href={`/community/${p.authorHandle}`}>
           {p.authorImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={p.authorImage}
               alt={`${p.authorName} avatar`}
-              className="w-11 h-11 rounded-full object-cover shrink-0 border border-lilac/30 shadow-2xs"
+              className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover shrink-0 border border-lilac/30 shadow-2xs"
             />
           ) : (
-            <div className="w-11 h-11 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold text-base shrink-0 border border-lilac/40 shadow-2xs">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-mauve-100 flex items-center justify-center text-purple-deep font-heading font-bold text-xs sm:text-base shrink-0 border border-lilac/40 shadow-2xs">
               {p.authorName?.charAt(0)?.toUpperCase() || "U"}
             </div>
           )}
@@ -123,8 +123,8 @@ export default function PostCard({
 
           {/* User's commentary / post text (if not empty) */}
           {p.body.trim() && (
-            <Link href={`/community/post/${p.id}`} className="block">
-              <p className="my-1.5 mb-2.5 text-[15px] leading-relaxed text-ink">{p.body}</p>
+            <Link href={`/community/post/${p.id}`} className="block group/posttext">
+              <p className="my-1.5 mb-2.5 text-[15px] leading-relaxed text-ink group-hover/posttext:text-purple-deep transition-colors">{p.body}</p>
             </Link>
           )}
 
@@ -188,19 +188,19 @@ export default function PostCard({
                     </Link>
                   </div>
 
-                  <Link href={`/community/post/${p.repostOfId}`} className="block">
-                    {p.originalBody && (
-                      <p className="text-[14.5px] leading-relaxed text-ink mb-1.5">{p.originalBody}</p>
-                    )}
-                    {p.originalHasImage && (
-                      <PostImageMedia
-                        imageUrl={p.originalImageUrl}
-                        imageLabel={p.originalImageLabel || "Reposted image"}
-                        maxHeight="max-h-[400px]"
-                        className="mt-2"
-                      />
-                    )}
-                  </Link>
+                  {p.originalBody && (
+                    <Link href={`/community/post/${p.repostOfId}`} className="block group/reposttext">
+                      <p className="text-[14.5px] leading-relaxed text-ink mb-1.5 group-hover/reposttext:text-purple-deep transition-colors">{p.originalBody}</p>
+                    </Link>
+                  )}
+                  {p.originalHasImage && (
+                    <PostImageMedia
+                      imageUrl={p.originalImageUrl}
+                      imageLabel={p.originalImageLabel || "Reposted image"}
+                      maxHeight="max-h-[400px]"
+                      className="mt-2"
+                    />
+                  )}
 
                   {/* Attached Original Article inside Repost */}
                   {p.originalArticleTitle && p.originalArticleSlug && (

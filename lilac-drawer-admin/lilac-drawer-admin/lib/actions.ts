@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import { requireAdmin } from "@/lib/admin";
 import { slugify } from "@/lib/slugify";
 import { db } from "@/db";
-import { products, posts, user, siteCategories, banners, yearlyWrap } from "@/db/schema";
+import { products, posts, user, siteCategories, banners, notifications, type NotificationType } from "@/db/schema";
+import { sendPushToAll } from "@/lib/push-notifications";
 
 // ---------------------------------------------------------------------------
 // Products / affiliate links
@@ -71,13 +72,70 @@ function productValuesFromForm(formData: FormData) {
   };
 }
 
+async function broadcastNotification({
+  type,
+  title,
+  message,
+  targetUrl,
+  imageUrl,
+  entityId,
+}: {
+  type: NotificationType;
+  title: string;
+  message?: string | null;
+  targetUrl: string;
+  imageUrl?: string | null;
+  entityId?: number | null;
+}) {
+  try {
+    const allUsers = await db.select({ id: user.id }).from(user);
+    if (allUsers.length === 0) return;
+    const rows = allUsers.map((u) => ({
+      userId: u.id,
+      type,
+      title,
+      message: message ?? null,
+      targetUrl,
+      imageUrl: imageUrl ?? null,
+      entityId: entityId ?? null,
+      isRead: false,
+    }));
+    const chunkSize = 200;
+    for (let i = 0; i < rows.length; i += chunkSize) {
+      await db.insert(notifications).values(rows.slice(i, i + chunkSize));
+    }
+
+    // Also dispatch native Web Push to all subscribed devices
+    sendPushToAll({
+      title,
+      body: message ?? undefined,
+      url: targetUrl,
+      icon: imageUrl || "/favicon.svg",
+    }).catch((err) => {
+      console.error("Failed to broadcast push notification:", err);
+    });
+  } catch (err) {
+    console.error("Failed to broadcast notification:", err);
+  }
+}
+
 export async function createProduct(formData: FormData) {
   await requireAdmin();
   const values = productValuesFromForm(formData);
   if (!values.name) throw new Error("اسم المنتج مطلوب.");
   if (!values.slug) throw new Error("تعذر إنشاء رابط مخصص (Slug) — يرجى كتابته يدوياً.");
 
-  await db.insert(products).values(values);
+  const [inserted] = await db.insert(products).values(values).returning();
+
+  await broadcastNotification({
+    type: "site_deal",
+    title: `New Deal: ${values.name}`,
+    message: values.subtitle || "A new product deal has been added to Deals",
+    targetUrl: `/deals/${values.slug}`,
+    imageUrl: values.imageUrl,
+    entityId: inserted.id,
+  });
+
   revalidatePath("/products");
   redirect("/products");
 }
@@ -89,6 +147,18 @@ export async function updateProduct(id: number, formData: FormData) {
   if (!values.slug) throw new Error("تعذر إنشاء رابط مخصص (Slug) — يرجى كتابته يدوياً.");
 
   await db.update(products).set({ ...values, updatedAt: new Date() }).where(eq(products.id, id));
+
+  // Dynamically synchronize existing notifications for this deal
+  await db
+    .update(notifications)
+    .set({
+      title: `New Deal: ${values.name}`,
+      message: values.subtitle || "A new product deal has been added to Deals",
+      targetUrl: `/deals/${values.slug}`,
+      imageUrl: values.imageUrl,
+    })
+    .where(and(eq(notifications.type, "site_deal"), eq(notifications.entityId, id)));
+
   revalidatePath("/products");
   redirect("/products");
 }
@@ -96,6 +166,9 @@ export async function updateProduct(id: number, formData: FormData) {
 export async function deleteProduct(id: number) {
   await requireAdmin();
   await db.delete(products).where(eq(products.id, id));
+  await db
+    .delete(notifications)
+    .where(and(eq(notifications.type, "site_deal"), eq(notifications.entityId, id)));
   revalidatePath("/products");
 }
 
@@ -152,7 +225,19 @@ export async function createArticle(formData: FormData) {
   if (!values.excerpt) throw new Error("المقدمة أو المقتطف الموجز للمقال مطلوب.");
   if (!values.slug) throw new Error("تعذر إنشاء رابط مخصص (Slug) — يرجى كتابته يدوياً.");
 
-  await db.insert(posts).values(values);
+  const [inserted] = await db.insert(posts).values(values).returning();
+
+  if (values.isPublished) {
+    await broadcastNotification({
+      type: "site_article",
+      title: `New Article: ${values.title}`,
+      message: values.excerpt,
+      targetUrl: `/blog/${values.slug}`,
+      imageUrl: values.imageUrl,
+      entityId: inserted.id,
+    });
+  }
+
   revalidatePath("/articles");
   redirect("/articles");
 }
@@ -165,6 +250,18 @@ export async function updateArticle(id: number, formData: FormData) {
   if (!values.slug) throw new Error("تعذر إنشاء رابط مخصص (Slug) — يرجى كتابته يدوياً.");
 
   await db.update(posts).set(values).where(eq(posts.id, id));
+
+  // Dynamically synchronize existing notifications for this article
+  await db
+    .update(notifications)
+    .set({
+      title: `New Article: ${values.title}`,
+      message: values.excerpt,
+      targetUrl: `/blog/${values.slug}`,
+      imageUrl: values.imageUrl,
+    })
+    .where(and(eq(notifications.type, "site_article"), eq(notifications.entityId, id)));
+
   revalidatePath("/articles");
   redirect("/articles");
 }
@@ -172,12 +269,53 @@ export async function updateArticle(id: number, formData: FormData) {
 export async function deleteArticle(id: number) {
   await requireAdmin();
   await db.delete(posts).where(eq(posts.id, id));
+  await db
+    .delete(notifications)
+    .where(and(eq(notifications.type, "site_article"), eq(notifications.entityId, id)));
   revalidatePath("/articles");
 }
 
 export async function togglePublish(id: number, nextValue: boolean) {
   await requireAdmin();
   await db.update(posts).set({ isPublished: nextValue }).where(eq(posts.id, id));
+
+  if (nextValue) {
+    const [post] = await db
+      .select({ id: posts.id, title: posts.title, excerpt: posts.excerpt, slug: posts.slug, imageUrl: posts.imageUrl })
+      .from(posts)
+      .where(eq(posts.id, id))
+      .limit(1);
+
+    if (post) {
+      const existing = await db
+        .select({ id: notifications.id })
+        .from(notifications)
+        .where(and(eq(notifications.type, "site_article"), eq(notifications.entityId, id)))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .update(notifications)
+          .set({
+            title: `New Article: ${post.title}`,
+            message: post.excerpt,
+            targetUrl: `/blog/${post.slug}`,
+            imageUrl: post.imageUrl,
+          })
+          .where(and(eq(notifications.type, "site_article"), eq(notifications.entityId, id)));
+      } else {
+        await broadcastNotification({
+          type: "site_article",
+          title: `New Article: ${post.title}`,
+          message: post.excerpt,
+          targetUrl: `/blog/${post.slug}`,
+          imageUrl: post.imageUrl,
+          entityId: post.id,
+        });
+      }
+    }
+  }
+
   revalidatePath("/articles");
 }
 
@@ -396,7 +534,19 @@ export async function createBanner(formData: FormData) {
   if (!values.imageUrl) throw new Error("صورة البانر أو رابطها مطلوب.");
   if (!values.linkUrl) throw new Error("الرابط المستهدف مطلوب.");
 
-  await db.insert(banners).values(values);
+  const [inserted] = await db.insert(banners).values(values).returning();
+
+  if (values.isActive) {
+    await broadcastNotification({
+      type: "site_banner",
+      title: `Special Highlight: ${values.title}`,
+      message: "Check out this featured announcement on Lilac Drawer.",
+      targetUrl: values.linkUrl,
+      imageUrl: values.imageUrl,
+      entityId: inserted.id,
+    });
+  }
+
   revalidatePath("/banners");
   redirect("/banners");
 }
@@ -409,6 +559,17 @@ export async function updateBanner(id: number, formData: FormData) {
   if (!values.linkUrl) throw new Error("الرابط المستهدف مطلوب.");
 
   await db.update(banners).set({ ...values, updatedAt: new Date() }).where(eq(banners.id, id));
+
+  // Dynamically synchronize existing notifications for this banner with new title, target link, and image!
+  await db
+    .update(notifications)
+    .set({
+      title: `Special Highlight: ${values.title}`,
+      targetUrl: values.linkUrl,
+      imageUrl: values.imageUrl,
+    })
+    .where(and(eq(notifications.type, "site_banner"), eq(notifications.entityId, id)));
+
   revalidatePath("/banners");
   redirect("/banners");
 }
@@ -416,12 +577,52 @@ export async function updateBanner(id: number, formData: FormData) {
 export async function deleteBanner(id: number) {
   await requireAdmin();
   await db.delete(banners).where(eq(banners.id, id));
+  await db
+    .delete(notifications)
+    .where(and(eq(notifications.type, "site_banner"), eq(notifications.entityId, id)));
   revalidatePath("/banners");
 }
 
 export async function toggleBannerActive(id: number, nextValue: boolean) {
   await requireAdmin();
   await db.update(banners).set({ isActive: nextValue, updatedAt: new Date() }).where(eq(banners.id, id));
+
+  if (nextValue) {
+    const [banner] = await db
+      .select({ id: banners.id, title: banners.title, linkUrl: banners.linkUrl, imageUrl: banners.imageUrl })
+      .from(banners)
+      .where(eq(banners.id, id))
+      .limit(1);
+
+    if (banner) {
+      const existing = await db
+        .select({ id: notifications.id })
+        .from(notifications)
+        .where(and(eq(notifications.type, "site_banner"), eq(notifications.entityId, id)))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .update(notifications)
+          .set({
+            title: `Special Highlight: ${banner.title}`,
+            targetUrl: banner.linkUrl,
+            imageUrl: banner.imageUrl,
+          })
+          .where(and(eq(notifications.type, "site_banner"), eq(notifications.entityId, id)));
+      } else {
+        await broadcastNotification({
+          type: "site_banner",
+          title: `Special Highlight: ${banner.title}`,
+          message: "Check out this featured announcement on Lilac Drawer.",
+          targetUrl: banner.linkUrl,
+          imageUrl: banner.imageUrl,
+          entityId: banner.id,
+        });
+      }
+    }
+  }
+
   revalidatePath("/banners");
 }
 
@@ -449,84 +650,6 @@ export async function moveBanner(id: number, direction: "up" | "down") {
   revalidatePath("/banners");
 }
 
-// ---------------------------------------------------------------------------
-// Yearly Wrap (The Yearly Wrap section on the blog page)
-// ---------------------------------------------------------------------------
 
-export async function getYearlyWrap() {
-  const rows = await db.select().from(yearlyWrap).limit(1);
-  return rows[0] ?? null;
-}
-
-export async function updateYearlyWrap(formData: FormData) {
-  await requireAdmin();
-
-  const title = String(formData.get("title") ?? "The Yearly Wrap").trim();
-  const subtitle = String(formData.get("subtitle") ?? "2026 Shopping Wrapped").trim();
-  const isActive = formData.get("isActive") === "true" || formData.get("isActive") === "on";
-
-  // 1. Reviewer Age
-  const reviewerAge = String(formData.get("reviewerAge") ?? "3").trim();
-  const reviewerAgeLabel = String(formData.get("reviewerAgeLabel") ?? "MY REVIEWER AGE").trim();
-  const reviewerAgeText = String(formData.get("reviewerAgeText") ?? "").trim();
-
-  // 2. Most Reviewed Product
-  const mostReviewedTitle = String(formData.get("mostReviewedTitle") ?? "Most Reviewed Product").trim();
-  const mostReviewedImageUrl = String(formData.get("mostReviewedImageUrl") ?? "").trim() || null;
-  const mostReviewedImageLabel = String(formData.get("mostReviewedImageLabel") ?? "").trim() || null;
-  const mostReviewedText = String(formData.get("mostReviewedText") ?? "").trim();
-  const mostReviewedLinkUrl = String(formData.get("mostReviewedLinkUrl") ?? "").trim() || null;
-
-  // 3. Listening Report
-  const listeningReportLabel = String(formData.get("listeningReportLabel") ?? "LISTENING REPORT").trim();
-  const listeningReportText = String(formData.get("listeningReportText") ?? "").trim();
-  const listeningReportDate = String(formData.get("listeningReportDate") ?? "").trim();
-
-  // 4. Top Pick
-  const topPickLabel = String(formData.get("topPickLabel") ?? "TOP PICK 2026").trim();
-  const topPickTitle = String(formData.get("topPickTitle") ?? "").trim();
-  const topPickClicks = String(formData.get("topPickClicks") ?? "").trim();
-  const topPickImageUrl = String(formData.get("topPickImageUrl") ?? "").trim() || null;
-  const topPickLinkUrl = String(formData.get("topPickLinkUrl") ?? "").trim() || null;
-
-  // 5. Top Categories
-  const topCategoriesLabel = String(formData.get("topCategoriesLabel") ?? "TOP CATEGORIES THIS YEAR").trim();
-  const topCategories = String(formData.get("topCategories") ?? "").trim();
-
-  const data = {
-    title,
-    subtitle,
-    isActive,
-    reviewerAge,
-    reviewerAgeLabel,
-    reviewerAgeText,
-    mostReviewedTitle,
-    mostReviewedImageUrl,
-    mostReviewedImageLabel,
-    mostReviewedText,
-    mostReviewedLinkUrl,
-    listeningReportLabel,
-    listeningReportText,
-    listeningReportDate,
-    topPickLabel,
-    topPickTitle,
-    topPickClicks,
-    topPickImageUrl,
-    topPickLinkUrl,
-    topCategoriesLabel,
-    topCategories,
-    updatedAt: new Date(),
-  };
-
-  const existing = await db.select().from(yearlyWrap).limit(1);
-  if (existing[0]) {
-    await db.update(yearlyWrap).set(data).where(eq(yearlyWrap.id, existing[0].id));
-  } else {
-    await db.insert(yearlyWrap).values(data);
-  }
-
-  revalidatePath("/yearly-wrap");
-  revalidatePath("/blog");
-}
 
 
