@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { eq, and, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { likes, comments, communityPosts, follows, user } from "@/db/schema";
+import { likes, comments, commentReactions, communityPosts, follows, user } from "@/db/schema";
 import { createNotification } from "@/lib/notification-actions";
 
 async function requireUserId(): Promise<string> {
@@ -180,10 +180,11 @@ export async function createComment(
   postId: number,
   body: string,
   parentId?: number | null,
+  imageUrl?: string | null,
 ): Promise<{ id: number }> {
   const userId = await requireUserId();
   const trimmed = body.trim();
-  if (!trimmed) throw new Error("Comment can't be empty.");
+  if (!trimmed && !imageUrl) throw new Error("Comment can't be empty.");
   if (trimmed.length > 1000) throw new Error("Comment is too long (max 1000 characters).");
 
   let parentUserId: string | null = null;
@@ -206,6 +207,7 @@ export async function createComment(
       userId,
       parentId: parentId ?? null,
       body: trimmed,
+      imageUrl: imageUrl ?? null,
     })
     .returning();
 
@@ -289,10 +291,15 @@ export async function createPost(
   imageUrl?: string | null,
   imageLabel?: string | null,
   articleId?: number,
+  images?: string[] | null,
 ): Promise<{ id: number }> {
   const userId = await requireUserId();
   const trimmed = body.trim();
-  if (!trimmed && !imageUrl && !articleId) throw new Error("Post can't be empty.");
+  const effectiveImages = images && images.length > 0 ? images : (imageUrl ? [imageUrl] : null);
+  const effectiveImageUrl = effectiveImages ? effectiveImages[0] : (imageUrl ?? null);
+  const hasImage = !!effectiveImageUrl;
+
+  if (!trimmed && !hasImage && !articleId) throw new Error("Post can't be empty.");
   if (trimmed.length > 2000) throw new Error("Post is too long (max 2000 characters).");
 
   const [row] = await db
@@ -302,9 +309,10 @@ export async function createPost(
       body: trimmed,
       productId: productId ?? null,
       articleId: articleId ?? null,
-      hasImage: !!imageUrl,
-      imageUrl: imageUrl ?? null,
-      imageLabel: imageLabel ?? (imageUrl ? "Attached photo" : null),
+      hasImage,
+      imageUrl: effectiveImageUrl,
+      images: effectiveImages,
+      imageLabel: imageLabel ?? (hasImage ? "Attached photo" : null),
     })
     .returning();
 
@@ -312,6 +320,82 @@ export async function createPost(
   const [author] = await db.select({ handle: user.handle }).from(user).where(eq(user.id, userId)).limit(1);
   if (author) revalidatePath(`/community/${author.handle}`);
   return { id: row.id };
+}
+
+export async function toggleCommentReaction(
+  commentId: number,
+  type: "like" | "dislike",
+): Promise<{ userReaction: "like" | "dislike" | null; likeCount: number; dislikeCount: number }> {
+  const userId = await requireUserId();
+
+  const [comment] = await db
+    .select({ id: comments.id, postId: comments.postId, likeCount: comments.likeCount, dislikeCount: comments.dislikeCount })
+    .from(comments)
+    .where(eq(comments.id, commentId))
+    .limit(1);
+
+  if (!comment) throw new Error("Comment not found.");
+
+  const [existing] = await db
+    .select({ id: commentReactions.id, type: commentReactions.type })
+    .from(commentReactions)
+    .where(and(eq(commentReactions.commentId, commentId), eq(commentReactions.userId, userId)))
+    .limit(1);
+
+  let nextReaction: "like" | "dislike" | null = null;
+  let likeDelta = 0;
+  let dislikeDelta = 0;
+
+  if (existing) {
+    if (existing.type === type) {
+      // Same reaction clicked -> remove reaction
+      await db.delete(commentReactions).where(eq(commentReactions.id, existing.id));
+      nextReaction = null;
+      if (type === "like") likeDelta = -1;
+      else dislikeDelta = -1;
+    } else {
+      // Different reaction clicked -> switch
+      await db
+        .update(commentReactions)
+        .set({ type })
+        .where(eq(commentReactions.id, existing.id));
+      nextReaction = type;
+      if (type === "like") {
+        likeDelta = 1;
+        dislikeDelta = -1;
+      } else {
+        likeDelta = -1;
+        dislikeDelta = 1;
+      }
+    }
+  } else {
+    // New reaction
+    await db.insert(commentReactions).values({
+      commentId,
+      userId,
+      type,
+    });
+    nextReaction = type;
+    if (type === "like") likeDelta = 1;
+    else dislikeDelta = 1;
+  }
+
+  const [updated] = await db
+    .update(comments)
+    .set({
+      likeCount: sql`greatest(${comments.likeCount} + ${likeDelta}, 0)`,
+      dislikeCount: sql`greatest(${comments.dislikeCount} + ${dislikeDelta}, 0)`,
+    })
+    .where(eq(comments.id, commentId))
+    .returning();
+
+  revalidatePath(`/community/post/${comment.postId}`);
+
+  return {
+    userReaction: nextReaction,
+    likeCount: updated?.likeCount ?? 0,
+    dislikeCount: updated?.dislikeCount ?? 0,
+  };
 }
 
 export async function shareArticleToCommunity(

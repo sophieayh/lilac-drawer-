@@ -2,44 +2,70 @@
 
 import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createPost } from "@/lib/community-actions";
+import { compressImage } from "@/lib/image-utils";
+
+interface SelectedImage {
+  dataUrl: string;
+  name: string;
+}
 
 export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [body, setBody] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageName, setImageName] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (PNG, JPG, WebP, etc.).");
+    const remainingSlots = 3 - selectedImages.length;
+    if (remainingSlots <= 0) {
+      setError("Maximum 3 photos allowed per post.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image size is too large (max 5MB).");
-      return;
+    const filesToProcess = files.slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      setError(`Only ${remainingSlots} photo(s) added (maximum 3 allowed).`);
+    } else {
+      setError(null);
     }
 
-    setError(null);
-    setImageName(file.name);
+    for (const file of filesToProcess) {
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file (PNG, JPG, WebP, etc.).");
+        continue;
+      }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setImagePreview(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+      if (file.size > 15 * 1024 * 1024) {
+        setError(`"${file.name}" is too large (max 15MB).`);
+        continue;
+      }
+
+      // Automatically compress image before preview and upload to keep performance fast
+      compressImage(file, 1400, 0.82)
+        .then((compressedUrl) => {
+          setSelectedImages((prev) => {
+            if (prev.length >= 3) return prev;
+            return [...prev, { dataUrl: compressedUrl, name: file.name }];
+          });
+        })
+        .catch(() => {
+          setError(`Failed to process "${file.name}".`);
+        });
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }
 
-  function handleRemoveImage() {
-    setImagePreview(null);
-    setImageName(null);
+  function handleRemoveImage(index: number) {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -71,41 +97,51 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!body.trim() && !imagePreview) return;
+    if (!body.trim() && selectedImages.length === 0) return;
 
     setError(null);
 
     startTransition(async () => {
       try {
-        let uploadedUrl: string | undefined;
+        let uploadedUrls: string[] = [];
 
-        if (imagePreview) {
-          const res = await fetch("/api/community/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              dataUrl: imagePreview,
-              filename: imageName || "upload.jpg",
-            }),
-          });
-          const data = await res.json();
-          if (!res.ok || !data.url) {
-            throw new Error(data.error || "Failed to upload image");
-          }
-          uploadedUrl = data.url;
+        if (selectedImages.length > 0) {
+          uploadedUrls = await Promise.all(
+            selectedImages.map(async (img) => {
+              const res = await fetch("/api/community/upload", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  dataUrl: img.dataUrl,
+                  filename: img.name || "upload.jpg",
+                }),
+              });
+              const data = await res.json();
+              if (!res.ok || !data.url) {
+                throw new Error(data.error || "Failed to upload image");
+              }
+              return data.url as string;
+            })
+          );
         }
 
-        await createPost(
-          body.trim(),
-          undefined,
-          uploadedUrl || null,
-          imageName || (uploadedUrl ? "Attached photo" : null),
-          undefined
-        );
+        const postRes = await fetch("/api/community/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            body: body.trim(),
+            images: uploadedUrls.length > 0 ? uploadedUrls : null,
+            imageLabel: selectedImages[0]?.name || (uploadedUrls.length > 0 ? "Attached photo" : null),
+          }),
+        });
+
+        const postData = await postRes.json();
+        if (!postRes.ok) {
+          throw new Error(postData.error || "Failed to publish post. Please try again.");
+        }
 
         setBody("");
-        setImagePreview(null);
-        setImageName(null);
+        setSelectedImages([]);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -137,25 +173,42 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
           className="w-full border-none bg-transparent outline-none text-[17px] py-1.5 resize-none text-ink placeholder:text-tan"
         />
 
-        {/* Image Preview Box */}
-        {imagePreview && (
-          <div className="relative mt-2 mb-3 inline-block max-w-full">
-            <div className="relative rounded-2xl overflow-hidden border border-border bg-mauve-50 max-h-[300px] max-w-[420px]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imagePreview}
-                alt="Selected upload preview"
-                className="w-full h-auto max-h-[300px] object-cover"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleRemoveImage}
-              title="Remove image"
-              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-ink/75 hover:bg-ink text-white flex items-center justify-center shadow-md transition-colors cursor-pointer"
+        {/* Image Previews (Max 3) */}
+        {selectedImages.length > 0 && (
+          <div className="mt-2.5 mb-3">
+            <div
+              className={`grid gap-2 ${
+                selectedImages.length === 1
+                  ? "grid-cols-1 max-w-[420px]"
+                  : selectedImages.length === 2
+                  ? "grid-cols-2 max-w-[480px]"
+                  : "grid-cols-3 max-w-[540px]"
+              }`}
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+              {selectedImages.map((img, idx) => (
+                <div
+                  key={idx}
+                  className="relative rounded-2xl overflow-hidden border border-border bg-mauve-50 aspect-4/3 max-h-[260px] group/thumb"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.dataUrl}
+                    alt={`Selected upload preview ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(idx)}
+                    title="Remove image"
+                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-ink/75 hover:bg-ink text-white flex items-center justify-center shadow-md transition-colors cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -167,16 +220,19 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
             <input
               type="file"
               ref={fileInputRef}
+              multiple
               accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
               onChange={handleFileChange}
               className="hidden"
               id="composer-image-upload"
+              disabled={selectedImages.length >= 3}
             />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="group inline-flex items-center gap-1.5 text-purple-deep hover:text-rose text-sm font-semibold py-1 transition-colors duration-200 cursor-pointer select-none"
-              title="Attach Photo"
+              disabled={selectedImages.length >= 3}
+              className="group inline-flex items-center gap-1.5 text-purple-deep hover:text-rose text-sm font-semibold py-1 transition-colors duration-200 cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed"
+              title={selectedImages.length >= 3 ? "Maximum 3 photos reached" : "Attach Photos (up to 3)"}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -194,14 +250,16 @@ export default function PostComposer({ isLoggedIn }: { isLoggedIn: boolean }) {
                 <circle cx="9" cy="9" r="2" />
                 <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
               </svg>
-              <span className="transition-colors duration-200">Photo</span>
+              <span className="transition-colors duration-200">
+                Photo {selectedImages.length > 0 ? `(${selectedImages.length}/3)` : ""}
+              </span>
             </button>
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isPending || (!body.trim() && !imagePreview)}
+            disabled={isPending || (!body.trim() && selectedImages.length === 0)}
             className="bg-lilac hover:bg-purple-deep text-white rounded-full px-5 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_2px_8px_rgba(201,163,198,0.35)]"
           >
             {isPending ? "Posting…" : "Post"}

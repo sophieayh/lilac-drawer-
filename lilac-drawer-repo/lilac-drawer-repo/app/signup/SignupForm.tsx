@@ -18,7 +18,7 @@ export default function SignupForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/profile";
+  const redirectTo = searchParams.get("redirect") || "/community";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,7 +70,7 @@ export default function SignupForm() {
       }
     }
 
-    router.push(redirectTo !== "/profile" ? redirectTo : `/community/${cleanHandle}`);
+    router.push(redirectTo && redirectTo !== "/community" ? redirectTo : `/community/${cleanHandle}`);
     router.refresh();
   }
 
@@ -209,7 +209,7 @@ export default function SignupForm() {
       <p className="text-xs text-tan text-center mt-1">
         Already have an account?{" "}
         <Link
-          href={`/login${redirectTo !== "/profile" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
+          href={`/login${redirectTo && redirectTo !== "/community" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
           className="text-rose font-bold hover:underline"
         >
           Log In

@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient, signOut } from "@/lib/auth-client";
+import { parseCoverPosition, type CoverPositionData } from "@/lib/data";
 
 export default function EditProfileForm({
   handle,
@@ -11,20 +12,35 @@ export default function EditProfileForm({
   initialBio,
   initialImage,
   initialCoverImage,
+  initialCoverPosition = "50",
 }: {
   handle: string;
   initialName: string;
   initialBio: string;
   initialImage: string;
   initialCoverImage?: string;
+  initialCoverPosition?: string | number;
 }) {
   const [activeTab, setActiveTab] = useState<"profile" | "password" | "account">("profile");
+
+  const initialPos = parseCoverPosition(initialCoverPosition);
 
   // Profile state
   const [name, setName] = useState(initialName);
   const [bio, setBio] = useState(initialBio);
   const [image, setImage] = useState(initialImage);
   const [coverImage, setCoverImage] = useState(initialCoverImage || "");
+  const [coverX, setCoverX] = useState<number>(initialPos.x);
+  const [coverY, setCoverY] = useState<number>(initialPos.y);
+  const [coverZoom, setCoverZoom] = useState<number>(initialPos.z);
+  const [savedPos, setSavedPos] = useState<CoverPositionData>(initialPos);
+
+  const [isRepositioning, setIsRepositioning] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartCoords = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragStartPos = useRef<{ x: number; y: number }>({ x: initialPos.x, y: initialPos.y });
+  const coverContainerRef = useRef<HTMLDivElement>(null);
+
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -92,9 +108,105 @@ export default function EditProfileForm({
     reader.onload = (event) => {
       if (typeof event.target?.result === "string") {
         setCoverImage(event.target.result);
+        setCoverX(50);
+        setCoverY(50);
+        setCoverZoom(1);
+        setSavedPos({ x: 50, y: 50, z: 1 });
+        setIsRepositioning(true);
       }
     };
     reader.readAsDataURL(file);
+  }
+
+  const [isSavingCoverPos, setIsSavingCoverPos] = useState(false);
+
+  // Pointer events for dragging cover to reposition (X and Y based on zoom)
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isRepositioning) return;
+    // Don't drag if clicking buttons, inputs, links, or controls
+    if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) {
+      return;
+    }
+    setIsDragging(true);
+    dragStartCoords.current = { x: e.clientX, y: e.clientY };
+    dragStartPos.current = { x: coverX, y: coverY };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+  }
+
+  async function handleDoneReposition() {
+    setIsRepositioning(false);
+    setSavedPos({ x: coverX, y: coverY, z: coverZoom });
+    setIsSavingCoverPos(true);
+    setProfileSuccess("Cover position saved successfully!");
+
+    try {
+      const currentPosString = JSON.stringify({
+        x: Math.round(coverX),
+        y: Math.round(coverY),
+        z: parseFloat(coverZoom.toFixed(2)),
+      });
+
+      await authClient.updateUser({
+        name: name.trim(),
+        image: image.trim() || undefined,
+        // @ts-expect-error -- additionalFields in better-auth
+        bio: bio.trim(),
+        coverImage: coverImage.trim() || undefined,
+        coverPosition: currentPosString,
+      });
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to auto-save cover position:", err);
+    } finally {
+      setIsSavingCoverPos(false);
+      setTimeout(() => {
+        setProfileSuccess(null);
+      }, 3500);
+    }
+  }
+
+  function handleCancelReposition() {
+    setCoverX(savedPos.x);
+    setCoverY(savedPos.y);
+    setCoverZoom(savedPos.z);
+    setIsRepositioning(false);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging || !isRepositioning) return;
+    const container = coverContainerRef.current;
+    const containerWidth = container?.clientWidth || 600;
+    const containerHeight = container?.clientHeight || 200;
+
+    const deltaX = e.clientX - dragStartCoords.current.x;
+    const deltaY = e.clientY - dragStartCoords.current.y;
+
+    const deltaXPercent = (deltaX / containerWidth) * 100 / Math.max(1, coverZoom * 0.75);
+    const deltaYPercent = (deltaY / containerHeight) * 100 / Math.max(1, coverZoom * 0.75);
+
+    const newX = Math.min(100, Math.max(0, Math.round(dragStartPos.current.x - deltaXPercent)));
+    const newY = Math.min(100, Math.max(0, Math.round(dragStartPos.current.y - deltaYPercent)));
+
+    setCoverX(newX);
+    setCoverY(newY);
+  }
+
+  function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (isDragging) {
+      setIsDragging(false);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  }
+
+  function handleWheel(e: React.WheelEvent<HTMLDivElement>) {
+    if (!isRepositioning) return;
+    e.preventDefault();
+    const zoomStep = e.deltaY < 0 ? 0.1 : -0.1;
+    setCoverZoom((prev) => Math.min(3, Math.max(1, parseFloat((prev + zoomStep).toFixed(2)))));
   }
 
   async function handleProfileSubmit(e: React.FormEvent) {
@@ -104,12 +216,19 @@ export default function EditProfileForm({
     setProfileLoading(true);
 
     try {
+      const currentPosString = JSON.stringify({
+        x: Math.round(coverX),
+        y: Math.round(coverY),
+        z: parseFloat(coverZoom.toFixed(2)),
+      });
+
       const { error: updateError } = await authClient.updateUser({
         name: name.trim(),
         image: image.trim() || undefined,
         // @ts-expect-error -- additionalFields in better-auth
         bio: bio.trim(),
         coverImage: coverImage.trim() || undefined,
+        coverPosition: currentPosString,
       });
 
       setProfileLoading(false);
@@ -119,6 +238,8 @@ export default function EditProfileForm({
         return;
       }
 
+      setSavedPos({ x: coverX, y: coverY, z: coverZoom });
+      setIsRepositioning(false);
       setProfileSuccess("Profile updated successfully!");
       router.refresh();
     } catch (err) {
@@ -266,15 +387,38 @@ export default function EditProfileForm({
             {/* Live Profile Header Preview Container with direct on-image buttons */}
             <div>
               <label className={label}>Profile Photo & Cover</label>
-              <div className="rounded-3xl border border-border overflow-hidden bg-mauve-50/40 shadow-xs">
-                {/* Cover Banner with "Change Cover" overlay */}
-                <div className="relative h-40 sm:h-48 w-full bg-gradient-to-r from-lilac/30 via-mauve-100 to-cream-alt flex items-center justify-center overflow-hidden group/cover">
+              <div className="rounded-2xl border border-border overflow-hidden bg-mauve-50/40 shadow-xs">
+                {/* Cover Banner with "Change Cover" & "Reposition" controls */}
+                <div
+                  ref={coverContainerRef}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                  onWheel={handleWheel}
+                  style={{ touchAction: isRepositioning ? "none" : "auto" }}
+                  className={`relative h-[180px] md:h-[220px] w-full bg-gradient-to-r from-lilac/30 via-mauve-100 to-cream-alt flex items-center justify-center overflow-hidden group/cover select-none ${
+                    isRepositioning
+                      ? isDragging
+                        ? "cursor-grabbing ring-2 ring-rose ring-inset"
+                        : "cursor-grab ring-2 ring-rose/70 ring-inset"
+                      : ""
+                  }`}
+                >
                   {coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={coverImage}
                       alt="Cover preview"
-                      className="w-full h-full object-cover"
+                      draggable={false}
+                      style={{
+                        objectPosition: `${coverX}% ${coverY}%`,
+                        transform: `scale(${coverZoom})`,
+                        transformOrigin: `${coverX}% ${coverY}%`,
+                        userSelect: "none",
+                        pointerEvents: "none",
+                      }}
+                      className="w-full h-full object-cover select-none transition-none"
                     />
                   ) : (
                     <div className="text-center text-tan-dark/60 text-xs px-4">
@@ -283,31 +427,197 @@ export default function EditProfileForm({
                     </div>
                   )}
 
-                  {/* On-Image Change Cover Button */}
-                  <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-                    <button
-                      type="button"
-                      onClick={() => coverFileInputRef.current?.click()}
-                      className="px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-white text-purple-deep text-xs font-bold shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-xs transition-all cursor-pointer flex items-center gap-1.5 hover:scale-105"
+                  {/* Repositioning Overlay Bar (Active Mode) */}
+                  {isRepositioning && (
+                    <div
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="absolute top-3 left-3 right-3 flex items-center justify-between z-20 pointer-events-auto"
                     >
-                      <svg className="w-3.5 h-3.5 text-lilac" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                      </svg>
-                      <span>Change Cover</span>
-                    </button>
-                    {coverImage && (
+                      <div className="bg-purple-deep/90 text-white text-[11px] sm:text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-2 backdrop-blur-xs border border-white/10">
+                        <svg className="w-4 h-4 text-rose shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                        </svg>
+                        <span className="hidden sm:inline">Drag image in any direction (left, right, up, down)</span>
+                        <span className="sm:hidden">Drag in any direction</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={isSavingCoverPos}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDoneReposition();
+                          }}
+                          className="px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1 hover:scale-105 disabled:opacity-60"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span>{isSavingCoverPos ? "Saving…" : "Done"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelReposition();
+                          }}
+                          className="px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-white text-purple-deep text-xs font-bold shadow-md transition-all cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Standard On-Image Buttons (Normal Mode) */}
+                  {!isRepositioning && (
+                    <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                      {coverImage && (
+                        <button
+                          type="button"
+                          onClick={() => setIsRepositioning(true)}
+                          className="px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-white text-purple-deep text-xs font-bold shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-xs transition-all cursor-pointer flex items-center gap-1.5 hover:scale-105"
+                          title="Reposition cover photo (drag in any direction & zoom)"
+                        >
+                          <svg className="w-3.5 h-3.5 text-lilac" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                          </svg>
+                          <span>Reposition</span>
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => setCoverImage("")}
-                        className="px-2.5 py-1.5 rounded-full bg-rose/90 hover:bg-rose text-white text-xs font-bold shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-xs transition-all cursor-pointer"
-                        title="Remove cover photo"
+                        onClick={() => coverFileInputRef.current?.click()}
+                        className="px-3.5 py-1.5 rounded-full bg-white/95 hover:bg-white text-purple-deep text-xs font-bold shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-xs transition-all cursor-pointer flex items-center gap-1.5 hover:scale-105"
                       >
-                        ✕
+                        <svg className="w-3.5 h-3.5 text-lilac" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                        </svg>
+                        <span>Change Cover</span>
                       </button>
-                    )}
-                  </div>
+                      {coverImage && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCoverImage("");
+                            setCoverX(50);
+                            setCoverY(50);
+                            setCoverZoom(1);
+                            setSavedPos({ x: 50, y: 50, z: 1 });
+                            setIsRepositioning(false);
+                          }}
+                          className="px-2.5 py-1.5 rounded-full bg-rose/90 hover:bg-rose text-white text-xs font-bold shadow-[0_2px_8px_rgba(0,0,0,0.12)] backdrop-blur-xs transition-all cursor-pointer"
+                          title="Remove cover photo"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
+
+                {/* Zoom Slider / Progress Bar & Presets for Repositioning */}
+                {isRepositioning && (
+                  <div
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="bg-white/95 backdrop-blur-md px-4 py-2.5 sm:pl-36 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs animate-fade-in shadow-2xs"
+                  >
+                    {/* Zoom In - Zoom Out Slider Control */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-[420px]">
+                      {/* Zoom Out (-) Button */}
+                      <button
+                        type="button"
+                        onClick={() => setCoverZoom((prev) => Math.max(1, parseFloat((prev - 0.2).toFixed(2))))}
+                        className="p-1 rounded-md text-tan hover:text-purple-deep hover:bg-mauve-50 transition-colors cursor-pointer"
+                        title="Zoom Out"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
+                        </svg>
+                      </button>
+
+                      {/* The Zoom Slider */}
+                      <input
+                        type="range"
+                        min="1"
+                        max="3"
+                        step="0.05"
+                        value={coverZoom}
+                        onChange={(e) => setCoverZoom(parseFloat(e.target.value))}
+                        className="flex-1 accent-rose h-1.5 bg-mauve-100 rounded-lg cursor-pointer"
+                        title="Adjust Zoom (1.0x to 3.0x)"
+                      />
+
+                      {/* Zoom In (+) Button */}
+                      <button
+                        type="button"
+                        onClick={() => setCoverZoom((prev) => Math.min(3, parseFloat((prev + 0.2).toFixed(2))))}
+                        className="p-1 rounded-md text-tan hover:text-purple-deep hover:bg-mauve-50 transition-colors cursor-pointer"
+                        title="Zoom In"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                      </button>
+
+                      {/* Zoom Value Display */}
+                      <span className="font-mono text-xs text-rose bg-rose/10 px-2 py-0.5 rounded-full border border-rose/20 min-w-[40px] text-center font-bold shrink-0">
+                        {coverZoom.toFixed(1)}x
+                      </span>
+                    </div>
+
+                    {/* Quick Zoom Presets & Center Button */}
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setCoverZoom(1)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                          coverZoom === 1 ? "bg-rose text-white shadow-2xs" : "bg-mauve-50 hover:bg-mauve-100 text-purple-deep border border-border/70"
+                        }`}
+                        title="Fit image (1.0x)"
+                      >
+                        1x (Fit)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCoverZoom(1.5)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                          coverZoom === 1.5 ? "bg-rose text-white shadow-2xs" : "bg-mauve-50 hover:bg-mauve-100 text-purple-deep border border-border/70"
+                        }`}
+                      >
+                        1.5x
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCoverZoom(2)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                          coverZoom === 2 ? "bg-rose text-white shadow-2xs" : "bg-mauve-50 hover:bg-mauve-100 text-purple-deep border border-border/70"
+                        }`}
+                      >
+                        2x
+                      </button>
+                      <div className="h-4 w-px bg-border mx-1" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCoverX(50);
+                          setCoverY(50);
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-mauve-50 text-purple-deep border border-border/70 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                        title="Center photo (X & Y)"
+                      >
+                        <svg className="w-3 h-3 text-lilac" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <circle cx="12" cy="12" r="9" />
+                          <circle cx="12" cy="12" r="2" />
+                        </svg>
+                        <span>Center</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Avatar with "Change Avatar" controls */}
                 <div className="p-5 pt-0">

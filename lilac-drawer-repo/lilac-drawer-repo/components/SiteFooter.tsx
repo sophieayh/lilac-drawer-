@@ -7,7 +7,6 @@ const footerLinks = [
   { label: "Blog", href: "/blog" },
   { label: "Explore", href: "/explore" },
   { label: "Community", href: "/community" },
-  { label: "Profile", href: "/profile" },
   { label: "Fashion Collage", href: "/fashion-collage" },
   { label: "About", href: "/#about" },
 ];

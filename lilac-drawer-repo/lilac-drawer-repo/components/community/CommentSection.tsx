@@ -1,14 +1,20 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createComment, deleteComment } from "@/lib/community-actions";
+import { createComment, deleteComment, toggleCommentReaction } from "@/lib/community-actions";
 import { relativeTime } from "@/lib/format";
+import ImageLightboxModal from "@/components/ImageLightboxModal";
+import { compressImage } from "@/lib/image-utils";
 
 export interface CommentItem {
   id: number;
   body: string;
+  imageUrl?: string | null;
+  likeCount?: number;
+  dislikeCount?: number;
+  userReaction?: "like" | "dislike" | null;
   createdAt: Date | string;
   parentId: number | null;
   userId: string;
@@ -37,14 +43,39 @@ export default function CommentSection({
   isLoggedIn,
 }: CommentSectionProps) {
   const [rootBody, setRootBody] = useState("");
+  const [rootImagePreview, setRootImagePreview] = useState<string | null>(null);
+  const [rootImageName, setRootImageName] = useState<string | null>(null);
+  const rootFileInputRef = useRef<HTMLInputElement>(null);
+
   const [activeReplyId, setActiveReplyId] = useState<number | null>(null);
   const [replyBody, setReplyBody] = useState("");
+  const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
+  const [replyImageName, setReplyImageName] = useState<string | null>(null);
+  const replyFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "most_liked">("newest");
+  const [reactions, setReactions] = useState<
+    Record<number, { userReaction: "like" | "dislike" | null; likeCount: number; dislikeCount: number }>
+  >({});
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
+  const [replyError, setReplyError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const router = useRouter();
 
-  // Build comment tree (hierarchy) from flat list
+  function getReaction(node: CommentNode) {
+    return (
+      reactions[node.id] ?? {
+        userReaction: node.userReaction ?? null,
+        likeCount: node.likeCount ?? 0,
+        dislikeCount: node.dislikeCount ?? 0,
+      }
+    );
+  }
+
+  // Build comment tree (hierarchy) from flat list and sort roots
   const commentTree = useMemo(() => {
     const map = new Map<number, CommentNode>();
     const roots: CommentNode[] = [];
@@ -70,19 +101,76 @@ export default function CommentSection({
       }
     });
 
+    // Sort roots based on selected sortMode
+    if (sortBy === "newest") {
+      roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortBy === "oldest") {
+      roots.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else if (sortBy === "most_liked") {
+      roots.sort((a, b) => {
+        const aLike = reactions[a.id]?.likeCount ?? a.likeCount ?? 0;
+        const bLike = reactions[b.id]?.likeCount ?? b.likeCount ?? 0;
+        return bLike - aLike;
+      });
+    }
+
     return roots;
-  }, [comments]);
+  }, [comments, sortBy, reactions]);
+
+  function handleFileSelect(
+    e: React.ChangeEvent<HTMLInputElement>,
+    onPreview: (url: string, name: string) => void,
+    onError: (msg: string) => void,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      onError("Please select a valid image file (PNG, JPG, WebP, etc.).");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      onError("Image size is too large (max 15MB).");
+      return;
+    }
+
+    compressImage(file, 1200, 0.82)
+      .then((compressedUrl) => {
+        onPreview(compressedUrl, file.name);
+      })
+      .catch(() => {
+        onError("Failed to process image.");
+      });
+  }
 
   // Handle Root Comment Submit
   function handleRootSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!rootBody.trim() || isPending) return;
+    if ((!rootBody.trim() && !rootImagePreview) || isPending) return;
     setError(null);
 
     startTransition(async () => {
       try {
-        await createComment(postId, rootBody, null);
+        let uploadedUrl: string | null = null;
+        if (rootImagePreview) {
+          const res = await fetch("/api/community/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              dataUrl: rootImagePreview,
+              filename: rootImageName || "comment-image.jpg",
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.url) throw new Error(data.error || "Failed to upload image");
+          uploadedUrl = data.url;
+        }
+
+        await createComment(postId, rootBody, null, uploadedUrl);
         setRootBody("");
+        setRootImagePreview(null);
+        setRootImageName(null);
+        if (rootFileInputRef.current) rootFileInputRef.current.value = "";
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to post comment.");
@@ -93,17 +181,35 @@ export default function CommentSection({
   // Handle Reply Submit
   function handleReplySubmit(e: React.FormEvent, parentId: number) {
     e.preventDefault();
-    if (!replyBody.trim() || isPending) return;
-    setError(null);
+    if ((!replyBody.trim() && !replyImagePreview) || isPending) return;
+    setReplyError(null);
 
     startTransition(async () => {
       try {
-        await createComment(postId, replyBody, parentId);
+        let uploadedUrl: string | null = null;
+        if (replyImagePreview) {
+          const res = await fetch("/api/community/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              dataUrl: replyImagePreview,
+              filename: replyImageName || "reply-image.jpg",
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.url) throw new Error(data.error || "Failed to upload image");
+          uploadedUrl = data.url;
+        }
+
+        await createComment(postId, replyBody, parentId, uploadedUrl);
         setReplyBody("");
+        setReplyImagePreview(null);
+        setReplyImageName(null);
         setActiveReplyId(null);
+        if (replyFileInputRef.current) replyFileInputRef.current.value = "";
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to post reply.");
+        setReplyError(err instanceof Error ? err.message : "Failed to post reply.");
       }
     });
   }
@@ -126,12 +232,60 @@ export default function CommentSection({
     });
   }
 
+  // Handle Like / Dislike reaction
+  async function handleReaction(node: CommentNode, type: "like" | "dislike") {
+    if (!isLoggedIn) {
+      router.push(`/login?redirect=/community/post/${postId}`);
+      return;
+    }
+
+    const current = getReaction(node);
+    let nextReaction: "like" | "dislike" | null = null;
+    let nextLike = current.likeCount;
+    let nextDislike = current.dislikeCount;
+
+    if (current.userReaction === type) {
+      nextReaction = null;
+      if (type === "like") nextLike = Math.max(0, nextLike - 1);
+      else nextDislike = Math.max(0, nextDislike - 1);
+    } else {
+      nextReaction = type;
+      if (type === "like") {
+        nextLike += 1;
+        if (current.userReaction === "dislike") nextDislike = Math.max(0, nextDislike - 1);
+      } else {
+        nextDislike += 1;
+        if (current.userReaction === "like") nextLike = Math.max(0, nextLike - 1);
+      }
+    }
+
+    setReactions((prev) => ({
+      ...prev,
+      [node.id]: { userReaction: nextReaction, likeCount: nextLike, dislikeCount: nextDislike },
+    }));
+
+    try {
+      const res = await toggleCommentReaction(node.id, type);
+      setReactions((prev) => ({
+        ...prev,
+        [node.id]: res,
+      }));
+    } catch {
+      // Revert optimistic update
+      setReactions((prev) => ({
+        ...prev,
+        [node.id]: current,
+      }));
+    }
+  }
+
   // Recursive Comment Node Component
   function renderCommentNode(node: CommentNode, depth: number = 0) {
     const isReplying = activeReplyId === node.id;
     const isOwner = currentUserId && node.userId === currentUserId;
     const isPostAuthor = postAuthorHandle && node.authorHandle === postAuthorHandle;
     const isDeleting = deletingId === node.id;
+    const reaction = getReaction(node);
 
     return (
       <div key={node.id} className="relative group/comment">
@@ -178,12 +332,97 @@ export default function CommentSection({
             </div>
 
             {/* Comment Text */}
-            <p className="text-[13.5px] sm:text-[14.5px] text-ink leading-relaxed mt-1 whitespace-pre-wrap break-words">
-              {node.body}
-            </p>
+            {node.body && (
+              <p className="text-[13.5px] sm:text-[14.5px] text-ink leading-relaxed mt-1 whitespace-pre-wrap break-words">
+                {node.body}
+              </p>
+            )}
 
-            {/* Comment Actions: Reply / Delete */}
-            <div className="flex items-center gap-4 mt-2">
+            {/* Comment Attached Image */}
+            {node.imageUrl && (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setLightboxImage(node.imageUrl || null)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    setLightboxImage(node.imageUrl || null);
+                  }
+                }}
+                className="mt-2 max-w-[280px] sm:max-w-[340px] rounded-xl overflow-hidden border border-border/80 bg-mauve-50/50 cursor-pointer group/cmtimg relative"
+                title="Click to view full screen"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={node.imageUrl}
+                  alt="Attached comment image"
+                  className="w-full h-auto max-h-[220px] object-cover group-hover/cmtimg:scale-102 group-hover/cmtimg:brightness-95 transition-all duration-200"
+                />
+                <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white p-1 rounded-md opacity-0 group-hover/cmtimg:opacity-100 transition-opacity">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                  </svg>
+                </div>
+              </div>
+            )}
+
+            {/* Comment Actions: Like / Dislike / Reply / Delete */}
+            <div className="flex items-center gap-3 sm:gap-4 mt-2">
+              {/* Like Button */}
+              <button
+                type="button"
+                onClick={() => handleReaction(node, "like")}
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors cursor-pointer select-none ${
+                  reaction.userReaction === "like"
+                    ? "text-rose bg-rose/10 font-bold"
+                    : "text-tan-dark hover:text-purple-deep hover:bg-mauve-50"
+                }`}
+                title="Like comment"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill={reaction.userReaction === "like" ? "currentColor" : "none"}
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                  />
+                </svg>
+                <span>{reaction.likeCount > 0 ? reaction.likeCount : ""}</span>
+              </button>
+
+              {/* Dislike Button */}
+              <button
+                type="button"
+                onClick={() => handleReaction(node, "dislike")}
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors cursor-pointer select-none ${
+                  reaction.userReaction === "dislike"
+                    ? "text-purple-deep bg-mauve-100 font-bold"
+                    : "text-tan-dark hover:text-purple-deep hover:bg-mauve-50"
+                }`}
+                title="Dislike comment"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill={reaction.userReaction === "dislike" ? "currentColor" : "none"}
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
+                  />
+                </svg>
+                <span>{reaction.dislikeCount > 0 ? reaction.dislikeCount : ""}</span>
+              </button>
+
+              {/* Reply Button */}
               {isLoggedIn ? (
                 <button
                   type="button"
@@ -191,9 +430,13 @@ export default function CommentSection({
                     if (isReplying) {
                       setActiveReplyId(null);
                       setReplyBody("");
+                      setReplyImagePreview(null);
+                      setReplyImageName(null);
                     } else {
                       setActiveReplyId(node.id);
                       setReplyBody("");
+                      setReplyImagePreview(null);
+                      setReplyImageName(null);
                     }
                   }}
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-tan-dark hover:text-purple-deep transition-colors cursor-pointer"
@@ -215,7 +458,7 @@ export default function CommentSection({
                 </button>
               ) : (
                 <Link
-                  href="/login"
+                  href={`/login?redirect=/community/post/${postId}`}
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-tan-dark hover:text-purple-deep transition-colors"
                 >
                   <svg
@@ -261,7 +504,7 @@ export default function CommentSection({
               )}
             </div>
 
-            {/* Inline Reply Form (Shown directly under this comment) */}
+            {/* Inline Reply Form */}
             {isReplying && (
               <form
                 onSubmit={(e) => handleReplySubmit(e, node.id)}
@@ -276,6 +519,8 @@ export default function CommentSection({
                     onClick={() => {
                       setActiveReplyId(null);
                       setReplyBody("");
+                      setReplyImagePreview(null);
+                      setReplyImageName(null);
                     }}
                     className="text-tan hover:text-purple-deep transition-colors"
                   >
@@ -291,23 +536,98 @@ export default function CommentSection({
                   autoFocus
                   className="w-full bg-white border border-border rounded-xl p-2.5 text-xs sm:text-sm text-purple-deep placeholder:text-tan outline-none focus:border-rose resize-none"
                 />
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-[10px] text-tan">{replyBody.length} / 1000</span>
-                  <div className="flex gap-2">
+
+                {/* Reply Attached Image Preview */}
+                {replyImagePreview && (
+                  <div className="relative mt-2 inline-block">
+                    <div className="rounded-xl overflow-hidden border border-border max-w-[160px] max-h-[120px] bg-white">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={replyImagePreview}
+                        alt="Reply preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyImagePreview(null);
+                        setReplyImageName(null);
+                        if (replyFileInputRef.current) replyFileInputRef.current.value = "";
+                      }}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-ink text-white flex items-center justify-center text-xs shadow-xs cursor-pointer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
+                {replyError && <p className="text-xs text-rose mt-1">{replyError}</p>}
+
+                <div className="flex items-center justify-between mt-2.5">
+                  {/* Attach Photo to Reply */}
+                  <div>
+                    <input
+                      type="file"
+                      ref={replyFileInputRef}
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                      onChange={(e) =>
+                        handleFileSelect(
+                          e,
+                          (url, name) => {
+                            setReplyImagePreview(url);
+                            setReplyImageName(name);
+                            setReplyError(null);
+                          },
+                          (msg) => setReplyError(msg),
+                        )
+                      }
+                      className="hidden"
+                      id={`reply-image-upload-${node.id}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => replyFileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-purple-deep hover:text-rose transition-colors cursor-pointer"
+                      title="Attach Photo"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <circle cx="9" cy="9" r="2" />
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                      </svg>
+                      <span>Photo</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-tan">{replyBody.length} / 1000</span>
                     <button
                       type="button"
                       onClick={() => {
                         setActiveReplyId(null);
                         setReplyBody("");
+                        setReplyImagePreview(null);
+                        setReplyImageName(null);
                       }}
-                      className="px-3 py-1.5 rounded-full text-xs font-semibold text-tan-dark hover:bg-white transition-colors cursor-pointer"
+                      className="px-3 py-1 rounded-full text-xs font-semibold text-tan-dark hover:bg-white transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      disabled={isPending || !replyBody.trim()}
-                      className="bg-purple-deep hover:bg-purple-deep/90 text-white rounded-full px-4 py-1.5 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+                      disabled={isPending || (!replyBody.trim() && !replyImagePreview)}
+                      className="bg-purple-deep hover:bg-purple-deep/90 text-white rounded-full px-4 py-1 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
                     >
                       {isPending ? "Posting…" : "Reply"}
                     </button>
@@ -361,16 +681,92 @@ export default function CommentSection({
             rows={3}
             className="w-full bg-mauve-50/40 border border-border rounded-xl p-3 text-sm text-purple-deep placeholder:text-tan outline-none focus:border-rose resize-none transition-colors"
           />
+
+          {/* Root Comment Attached Image Preview */}
+          {rootImagePreview && (
+            <div className="relative mt-2.5 mb-1 inline-block">
+              <div className="rounded-xl overflow-hidden border border-border max-w-[200px] max-h-[140px] bg-mauve-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={rootImagePreview}
+                  alt="Comment upload preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRootImagePreview(null);
+                  setRootImageName(null);
+                  if (rootFileInputRef.current) rootFileInputRef.current.value = "";
+                }}
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-ink/80 hover:bg-ink text-white flex items-center justify-center text-xs shadow-md transition-colors cursor-pointer"
+                title="Remove photo"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           {error && <p className="text-xs text-rose mt-1.5 font-medium">{error}</p>}
-          <div className="flex items-center justify-between mt-2.5">
-            <span className="text-[11px] text-tan">{rootBody.length} / 1000</span>
-            <button
-              type="submit"
-              disabled={isPending || !rootBody.trim()}
-              className="bg-purple-deep hover:bg-purple-deep/90 text-white rounded-full px-5 py-2 text-xs sm:text-sm font-bold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-            >
-              {isPending ? "Posting…" : "Post Comment"}
-            </button>
+
+          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
+            {/* Attach Image Button */}
+            <div>
+              <input
+                type="file"
+                ref={rootFileInputRef}
+                accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                onChange={(e) =>
+                  handleFileSelect(
+                    e,
+                    (url, name) => {
+                      setRootImagePreview(url);
+                      setRootImageName(name);
+                      setError(null);
+                    },
+                    (msg) => setError(msg),
+                  )
+                }
+                className="hidden"
+                id={`root-image-upload-${postId}`}
+              />
+              <button
+                type="button"
+                onClick={() => rootFileInputRef.current?.click()}
+                className="group inline-flex items-center gap-1.5 text-purple-deep hover:text-rose text-xs sm:text-sm font-semibold py-1 transition-colors duration-200 cursor-pointer select-none"
+                title="Attach photo to comment"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-transform duration-200 group-hover:scale-120"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                </svg>
+                <span>{rootImagePreview ? "Change Photo" : "Photo"}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-tan">{rootBody.length} / 1000</span>
+              <button
+                type="submit"
+                disabled={isPending || (!rootBody.trim() && !rootImagePreview)}
+                className="bg-purple-deep hover:bg-purple-deep/90 text-white rounded-full px-5 py-2 text-xs sm:text-sm font-bold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isPending ? "Posting…" : "Post Comment"}
+              </button>
+            </div>
           </div>
         </form>
       ) : (
@@ -382,7 +778,7 @@ export default function CommentSection({
             </p>
           </div>
           <Link
-            href="/login"
+            href={`/login?redirect=/community/post/${postId}`}
             className="bg-purple-deep hover:bg-purple-deep/90 text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all shadow-xs shrink-0"
           >
             Sign In to Comment
@@ -392,13 +788,56 @@ export default function CommentSection({
 
       {/* 2. Comments Count & Thread List */}
       <section id="comments" className="scroll-mt-6">
-        <div className="flex items-center justify-between pb-3 border-b border-border mb-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-3 border-b border-border mb-2">
           <h2 className="font-heading text-base sm:text-lg font-bold text-purple-deep flex items-center gap-2">
             <span>Comments & Replies</span>
             <span className="px-2 py-0.5 rounded-full bg-mauve-100 text-purple-deep text-xs font-bold">
               {comments.length}
             </span>
           </h2>
+
+          {/* Sorting Controls */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-tan-dark font-medium mr-0.5">Sort:</span>
+            <div className="inline-flex items-center bg-mauve-50/90 p-0.5 rounded-xl border border-border/70 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setSortBy("newest")}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  sortBy === "newest"
+                    ? "bg-white text-purple-deep shadow-2xs font-bold"
+                    : "text-tan hover:text-purple-deep"
+                }`}
+                title="Sort by Newest"
+              >
+                Newest
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortBy("oldest")}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  sortBy === "oldest"
+                    ? "bg-white text-purple-deep shadow-2xs font-bold"
+                    : "text-tan hover:text-purple-deep"
+                }`}
+                title="Sort by Oldest"
+              >
+                Oldest
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortBy("most_liked")}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  sortBy === "most_liked"
+                    ? "bg-white text-purple-deep shadow-2xs font-bold"
+                    : "text-tan hover:text-purple-deep"
+                }`}
+                title="Sort by Most Liked"
+              >
+                Most Liked
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Comment Tree */}
@@ -429,6 +868,16 @@ export default function CommentSection({
           </div>
         )}
       </section>
+
+      {/* Lightbox Modal for Comment Images */}
+      {lightboxImage && (
+        <ImageLightboxModal
+          isOpen={!!lightboxImage}
+          imageUrl={lightboxImage}
+          title="Attached Image"
+          onClose={() => setLightboxImage(null)}
+        />
+      )}
     </div>
   );
 }

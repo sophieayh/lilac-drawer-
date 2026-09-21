@@ -445,9 +445,6 @@ export default async function DealsPage() {
                 <Link href="/community" className="text-lilac/70">
                   Community
                 </Link>
-                <Link href="/profile" className="text-lilac/70">
-                  Profile
-                </Link>
                 <Link href="/fashion-collage" className="text-lilac/70">
                   Fashion Collage
                 </Link>

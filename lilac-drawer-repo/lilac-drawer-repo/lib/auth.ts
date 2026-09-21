@@ -46,6 +46,12 @@ export const auth = betterAuth({
         required: false,
         input: true,
       },
+      coverPosition: {
+        type: "string",
+        required: false,
+        defaultValue: "50",
+        input: true,
+      },
       // `input: false` — never settable via signup/update-user client calls;
       // only ever changed server-side (admin dashboard's Users page).
       role: {

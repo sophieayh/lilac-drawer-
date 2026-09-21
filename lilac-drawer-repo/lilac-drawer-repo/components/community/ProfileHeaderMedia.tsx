@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import FollowButton from "@/components/community/FollowButton";
 import ImageLightboxModal from "@/components/ImageLightboxModal";
+import { parseCoverPosition } from "@/lib/data";
 
 interface ProfileHeaderMediaProps {
   name: string;
   handle: string;
   coverImage?: string | null;
+  coverPosition?: string | number | null;
   image?: string | null;
   isOwnProfile: boolean;
   isFollowing: boolean;
@@ -20,6 +22,7 @@ export default function ProfileHeaderMedia({
   name,
   handle,
   coverImage,
+  coverPosition,
   image,
   isOwnProfile,
   isFollowing,
@@ -27,6 +30,7 @@ export default function ProfileHeaderMedia({
   isLoggedIn,
 }: ProfileHeaderMediaProps) {
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null);
+  const pos = parseCoverPosition(coverPosition);
 
   return (
     <>
@@ -42,6 +46,11 @@ export default function ProfileHeaderMedia({
             <img
               src={coverImage}
               alt={`${name} cover photo`}
+              style={{
+                objectPosition: `${pos.x}% ${pos.y}%`,
+                transform: `scale(${pos.z})`,
+                transformOrigin: `${pos.x}% ${pos.y}%`,
+              }}
               className="w-full h-full object-cover group-hover/cover:scale-[1.02] transition-transform duration-300"
             />
             {/* Hover overlay hint */}

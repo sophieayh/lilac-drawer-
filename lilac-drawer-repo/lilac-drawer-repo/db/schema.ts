@@ -177,6 +177,7 @@ export const communityPosts = pgTable("community_posts", {
   imageLabel: text("image_label"),
   hasImage: boolean("has_image").notNull().default(false),
   imageUrl: text("image_url"),
+  images: jsonb("images").$type<string[]>(),
   productId: integer("product_id").references((): AnyPgColumn => products.id, { onDelete: "set null" }),
   repostOfId: integer("repost_of_id").references((): AnyPgColumn => communityPosts.id, { onDelete: "cascade" }),
   articleId: integer("article_id").references((): AnyPgColumn => posts.id, { onDelete: "set null" }),
@@ -196,8 +197,28 @@ export const comments = pgTable("comments", {
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   parentId: integer("parent_id").references((): any => comments.id, { onDelete: "cascade" }),
   body: text("body").notNull(),
+  imageUrl: text("image_url"),
+  likeCount: integer("like_count").notNull().default(0),
+  dislikeCount: integer("dislike_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+/** Reactions (likes & dislikes) on comments — one row per (comment, user). */
+export const commentReactions = pgTable(
+  "comment_reactions",
+  {
+    id: serial("id").primaryKey(),
+    commentId: integer("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 10 }).notNull(), // "like" | "dislike"
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("comment_reactions_comment_user_unique").on(table.commentId, table.userId),
+    index("comment_reactions_comment_idx").on(table.commentId),
+    index("comment_reactions_user_idx").on(table.userId),
+  ],
+);
 
 /** A like on a community post — one row per (post, user). */
 export const likes = pgTable(

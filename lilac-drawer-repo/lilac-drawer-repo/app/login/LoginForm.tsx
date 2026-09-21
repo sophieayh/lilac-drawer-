@@ -15,7 +15,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/profile";
+  const redirectTo = searchParams.get("redirect") || "/community";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -124,7 +124,7 @@ export default function LoginForm() {
       <p className="text-xs text-tan text-center mt-1">
         Don&apos;t have an account yet?{" "}
         <Link
-          href={`/signup${redirectTo !== "/profile" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
+          href={`/signup${redirectTo !== "/community" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
           className="text-rose font-bold hover:underline"
         >
           Create an account

@@ -12,6 +12,7 @@ export interface CommunityPostItem {
   imageLabel: string | null;
   hasImage: boolean;
   imageUrl?: string | null;
+  images?: string[] | null;
   productId: number | null;
   repostOfId: number | null;
   articleId?: number | null;
@@ -29,6 +30,7 @@ export interface CommunityPostItem {
   originalImageLabel?: string | null;
   originalHasImage?: boolean | null;
   originalImageUrl?: string | null;
+  originalImages?: string[] | null;
   originalPostedAt?: Date | null;
   // Attached Article Details (for direct posts)
   articleTitle?: string | null;
@@ -69,6 +71,7 @@ export default function PostCard({
   const effectiveAuthorImage = isBareRepost ? (p.originalAuthorImage ?? p.authorImage) : p.authorImage;
   const effectiveBody = isBareRepost ? (p.originalBody || "") : p.body;
   const effectiveImageUrl = isBareRepost ? (p.originalImageUrl ?? p.imageUrl) : p.imageUrl;
+  const effectiveImages = isBareRepost ? (p.originalImages ?? p.images) : p.images;
 
   return (
     <article className="px-3.5 sm:px-6 py-4 sm:py-4.5 border-b border-border hover:bg-mauve-50/20 transition-colors">
@@ -132,6 +135,7 @@ export default function PostCard({
           {p.hasImage && (
             <PostImageMedia
               imageUrl={p.imageUrl}
+              images={p.images}
               imageLabel={p.imageLabel}
               maxHeight="max-h-[560px]"
             />
@@ -196,6 +200,7 @@ export default function PostCard({
                   {p.originalHasImage && (
                     <PostImageMedia
                       imageUrl={p.originalImageUrl}
+                      images={p.originalImages}
                       imageLabel={p.originalImageLabel || "Reposted image"}
                       maxHeight="max-h-[400px]"
                       className="mt-2"

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, index } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -15,6 +15,7 @@ export const user = pgTable("user", {
   handle: text("handle").notNull().unique(),
   bio: text("bio"),
   coverImage: text("cover_image"),
+  coverPosition: text("cover_position").default("50"),
   // Access-control flag for the admin dashboard (/admin). Not exposed as a
   // signup field — only settable by an existing admin via the dashboard's
   // Users page, or manually the very first time (see README).

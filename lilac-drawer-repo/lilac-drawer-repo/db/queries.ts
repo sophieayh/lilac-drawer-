@@ -2,7 +2,7 @@ import "server-only";
 import { desc, eq, asc, and, or, isNull, isNotNull, gt, ne, sql, inArray, ilike } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "./index";
-import { products, posts, siteCategories, communityPosts, trends, user, comments, likes, follows, banners, notifications } from "./schema";
+import { products, posts, siteCategories, communityPosts, trends, user, comments, commentReactions, likes, follows, banners, notifications } from "./schema";
 import { slugify } from "@/lib/slugify";
 
 // ---------- formatting helpers ----------
@@ -553,6 +553,7 @@ const postWithAuthor = {
   imageLabel: communityPosts.imageLabel,
   hasImage: communityPosts.hasImage,
   imageUrl: communityPosts.imageUrl,
+  images: communityPosts.images,
   productId: communityPosts.productId,
   repostOfId: communityPosts.repostOfId,
   articleId: communityPosts.articleId,
@@ -570,6 +571,7 @@ const postWithAuthor = {
   originalImageLabel: originalPosts.imageLabel,
   originalHasImage: originalPosts.hasImage,
   originalImageUrl: originalPosts.imageUrl,
+  originalImages: originalPosts.images,
   originalPostedAt: originalPosts.postedAt,
   originalRepostOfId: originalPosts.repostOfId,
   // Attached Article Details
@@ -602,6 +604,7 @@ async function resolveRepostChains<T extends {
   originalBody?: string | null;
   originalHasImage?: boolean | null;
   originalImageUrl?: string | null;
+  originalImages?: string[] | null;
   originalImageLabel?: string | null;
   originalAuthorName?: string | null;
   originalAuthorHandle?: string | null;
@@ -637,6 +640,7 @@ async function resolveRepostChains<T extends {
         imageLabel: communityPosts.imageLabel,
         hasImage: communityPosts.hasImage,
         imageUrl: communityPosts.imageUrl,
+        images: communityPosts.images,
         repostOfId: communityPosts.repostOfId,
         postedAt: communityPosts.postedAt,
         authorName: user.name,
@@ -669,6 +673,7 @@ async function resolveRepostChains<T extends {
         item.originalBody = root.body;
         item.originalHasImage = root.hasImage;
         item.originalImageUrl = root.imageUrl;
+        item.originalImages = root.images;
         item.originalImageLabel = root.imageLabel;
         item.originalPostedAt = root.postedAt;
         item.originalArticleId = root.articleId;
@@ -760,11 +765,14 @@ export async function getUserByHandle(handle: string) {
   return rows[0] ?? null;
 }
 
-export async function getCommentsForPost(postId: number) {
-  return db
+export async function getCommentsForPost(postId: number, viewerId?: string | null) {
+  const commentRows = await db
     .select({
       id: comments.id,
       body: comments.body,
+      imageUrl: comments.imageUrl,
+      likeCount: comments.likeCount,
+      dislikeCount: comments.dislikeCount,
       createdAt: comments.createdAt,
       parentId: comments.parentId,
       userId: comments.userId,
@@ -776,6 +784,34 @@ export async function getCommentsForPost(postId: number) {
     .innerJoin(user, eq(comments.userId, user.id))
     .where(eq(comments.postId, postId))
     .orderBy(asc(comments.createdAt));
+
+  if (!viewerId || commentRows.length === 0) {
+    return commentRows.map((c) => ({
+      ...c,
+      userReaction: null as "like" | "dislike" | null,
+    }));
+  }
+
+  const commentIds = commentRows.map((c) => c.id);
+  const reactions = await db
+    .select({
+      commentId: commentReactions.commentId,
+      type: commentReactions.type,
+    })
+    .from(commentReactions)
+    .where(
+      and(
+        inArray(commentReactions.commentId, commentIds),
+        eq(commentReactions.userId, viewerId),
+      ),
+    );
+
+  const reactionMap = new Map(reactions.map((r) => [r.commentId, r.type as "like" | "dislike"]));
+
+  return commentRows.map((c) => ({
+    ...c,
+    userReaction: reactionMap.get(c.id) ?? null,
+  }));
 }
 
 export async function hasUserLikedPost(postId: number, userId: string) {

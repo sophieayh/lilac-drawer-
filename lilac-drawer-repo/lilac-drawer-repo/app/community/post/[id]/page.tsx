@@ -72,7 +72,7 @@ export default async function CommunityPostPage({
   const effectivePostId = isBarePost && post.repostOfId ? post.repostOfId : post.id;
 
   const [postComments, originalPost, liked, reposted] = await Promise.all([
-    getCommentsForPost(post.id),
+    getCommentsForPost(post.id, userId),
     post.repostOfId ? getPostById(post.repostOfId) : Promise.resolve(null),
     userId ? hasUserLikedPost(effectivePostId, userId) : Promise.resolve(false),
     userId ? hasUserRepostedPost(effectivePostId, userId) : Promise.resolve(false),
@@ -167,6 +167,7 @@ export default async function CommunityPostPage({
                 {originalPost.hasImage && (
                   <PostImageMedia
                     imageUrl={originalPost.imageUrl}
+                    images={originalPost.images}
                     imageLabel={originalPost.imageLabel || "Reposted image"}
                     maxHeight="max-h-[420px]"
                     className="mt-2"
@@ -193,6 +194,7 @@ export default async function CommunityPostPage({
             {post.hasImage && (
               <PostImageMedia
                 imageUrl={post.imageUrl}
+                images={post.images}
                 imageLabel={post.imageLabel || "Post image"}
                 maxHeight="max-h-[600px]"
                 className="mb-4"

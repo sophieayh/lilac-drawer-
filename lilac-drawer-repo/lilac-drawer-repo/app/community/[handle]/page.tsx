@@ -11,7 +11,7 @@ import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
 import FollowButton from "@/components/community/FollowButton";
 import ProfileHeaderMedia from "@/components/community/ProfileHeaderMedia";
-import { communityNavItems, profileTabs } from "@/lib/data";
+import { profileTabs } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import {
@@ -124,6 +124,7 @@ export default async function CommunityProfilePage({
             name={person.name}
             handle={person.handle}
             coverImage={person.coverImage}
+            coverPosition={person.coverPosition ?? 50}
             image={person.image}
             isOwnProfile={isOwnProfile}
             isFollowing={isFollowing}
