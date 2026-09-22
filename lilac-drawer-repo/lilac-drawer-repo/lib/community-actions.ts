@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { likes, comments, commentReactions, communityPosts, follows, user } from "@/db/schema";
 import { createNotification } from "@/lib/notification-actions";
+import { assertNoExternalLinks } from "@/lib/link-moderation";
 
 async function requireUserId(): Promise<string> {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -104,6 +105,9 @@ export async function toggleRepost(
 ): Promise<{ reposted: boolean; repostCount: number }> {
   const userId = await requireUserId();
   const trimmedQuote = quote.trim().slice(0, 500);
+  if (trimmedQuote) {
+    assertNoExternalLinks(trimmedQuote, "reposts");
+  }
 
   // If the target post is a bare repost, resolve to the underlying original post
   let targetPostId = postId;
@@ -186,6 +190,9 @@ export async function createComment(
   const trimmed = body.trim();
   if (!trimmed && !imageUrl) throw new Error("Comment can't be empty.");
   if (trimmed.length > 1000) throw new Error("Comment is too long (max 1000 characters).");
+  if (trimmed) {
+    assertNoExternalLinks(trimmed, "comments");
+  }
 
   let parentUserId: string | null = null;
   if (parentId) {
@@ -299,8 +306,11 @@ export async function createPost(
   const effectiveImageUrl = effectiveImages ? effectiveImages[0] : (imageUrl ?? null);
   const hasImage = !!effectiveImageUrl;
 
-  if (!trimmed && !hasImage && !articleId) throw new Error("Post can't be empty.");
+  if (!trimmed && !hasImage && !articleId && !productId) throw new Error("Post can't be empty.");
   if (trimmed.length > 2000) throw new Error("Post is too long (max 2000 characters).");
+  if (trimmed) {
+    assertNoExternalLinks(trimmed, "posts");
+  }
 
   const [row] = await db
     .insert(communityPosts)
@@ -403,6 +413,13 @@ export async function shareArticleToCommunity(
   opinion: string,
 ): Promise<{ id: number }> {
   return createPost(opinion, undefined, undefined, undefined, articleId);
+}
+
+export async function shareProductToCommunity(
+  productId: number,
+  opinion: string,
+): Promise<{ id: number }> {
+  return createPost(opinion, productId, undefined, undefined, undefined);
 }
 
 export async function deletePost(postId: number): Promise<{ success: boolean }> {

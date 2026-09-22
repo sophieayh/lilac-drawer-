@@ -11,6 +11,7 @@ import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
 import FollowButton from "@/components/community/FollowButton";
 import ProfileHeaderMedia from "@/components/community/ProfileHeaderMedia";
+import CommunityText from "@/components/community/CommunityText";
 import { profileTabs } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
@@ -135,7 +136,12 @@ export default async function CommunityProfilePage({
           <div className="px-3.5 sm:px-6">
             <h1 className="font-heading text-lg sm:text-xl font-bold text-rose">{person.name}</h1>
             <div className="text-xs sm:text-sm text-tan mb-2.5 sm:mb-3">@{person.handle}</div>
-            {person.bio && <p className="text-sm sm:text-[15px] leading-relaxed text-ink mb-3 max-w-[480px]">{person.bio}</p>}
+            {person.bio && (
+              <CommunityText
+                text={person.bio}
+                className="text-sm sm:text-[15px] leading-relaxed text-ink mb-3 max-w-[480px] whitespace-pre-wrap break-words"
+              />
+            )}
             
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-semibold text-tan mb-4" suppressHydrationWarning>
               <div>
@@ -176,17 +182,31 @@ export default async function CommunityProfilePage({
           {activeTab === "Replies" ? (
             <>
               {replies.map((r) => (
-                <Link
+                <div
                   key={r.id}
-                  href={`/community/post/${r.postId}`}
                   className="block px-4 sm:px-6 py-4 sm:py-4.5 border-b border-border hover:bg-mauve-50/40 transition-colors"
                 >
                   <div className="text-xs text-tan mb-1.5">
-                    Replying to <span className="text-purple-deep font-semibold">@{r.postAuthorHandle}</span>
+                    Replying to{" "}
+                    <Link
+                      href={`/community/${r.postAuthorHandle}`}
+                      className="text-purple-deep font-semibold hover:underline"
+                    >
+                      @{r.postAuthorHandle}
+                    </Link>
                   </div>
-                  <p className="text-[15px] leading-relaxed text-ink mb-1.5">{r.body}</p>
-                  <span className="text-xs text-tan">{relativeTime(r.createdAt)} ago</span>
-                </Link>
+                  <CommunityText
+                    text={r.body}
+                    navigateOnCardClick={`/community/post/${r.postId}`}
+                    className="text-[15px] leading-relaxed text-ink mb-1.5 cursor-pointer whitespace-pre-wrap break-words"
+                  />
+                  <Link
+                    href={`/community/post/${r.postId}`}
+                    className="text-xs text-tan hover:underline"
+                  >
+                    {relativeTime(r.createdAt)} ago
+                  </Link>
+                </div>
               ))}
               {replies.length === 0 && <p className="text-sm text-tan px-6 py-8">No replies yet.</p>}
             </>

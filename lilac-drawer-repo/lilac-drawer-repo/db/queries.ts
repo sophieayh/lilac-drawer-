@@ -546,6 +546,8 @@ export function findRelatedArticleForProduct(
 const originalPosts = alias(communityPosts, "original_posts");
 const originalUser = alias(user, "original_user");
 const originalArticle = alias(posts, "original_article");
+const originalProduct = alias(products, "original_product");
+const commentPostAuthor = alias(user, "comment_post_author");
 
 const postWithAuthor = {
   id: communityPosts.id,
@@ -554,6 +556,7 @@ const postWithAuthor = {
   hasImage: communityPosts.hasImage,
   imageUrl: communityPosts.imageUrl,
   images: communityPosts.images,
+  collageData: communityPosts.collageData,
   productId: communityPosts.productId,
   repostOfId: communityPosts.repostOfId,
   articleId: communityPosts.articleId,
@@ -572,6 +575,7 @@ const postWithAuthor = {
   originalHasImage: originalPosts.hasImage,
   originalImageUrl: originalPosts.imageUrl,
   originalImages: originalPosts.images,
+  originalCollageData: originalPosts.collageData,
   originalPostedAt: originalPosts.postedAt,
   originalRepostOfId: originalPosts.repostOfId,
   // Attached Article Details
@@ -591,6 +595,33 @@ const postWithAuthor = {
   originalArticleImageLabel: originalArticle.imageLabel,
   originalArticleCategory: originalArticle.category,
   originalArticleAuthor: originalArticle.author,
+  // Attached Product Details (for direct posts)
+  productName: products.name,
+  productSlug: products.slug,
+  productSubtitle: products.subtitle,
+  productImageUrl: products.imageUrl,
+  productImageLabel: products.imageLabel,
+  productCategory: products.category,
+  productPriceCents: products.priceCents,
+  productCompareAtPriceCents: products.compareAtPriceCents,
+  productDiscountPercent: products.discountPercent,
+  productBadge: products.badge,
+  productInStock: products.inStock,
+  productAffiliateUrl: products.affiliateUrl,
+  // Attached Product Details (for original post in reposts)
+  originalProductId: originalPosts.productId,
+  originalProductName: originalProduct.name,
+  originalProductSlug: originalProduct.slug,
+  originalProductSubtitle: originalProduct.subtitle,
+  originalProductImageUrl: originalProduct.imageUrl,
+  originalProductImageLabel: originalProduct.imageLabel,
+  originalProductCategory: originalProduct.category,
+  originalProductPriceCents: originalProduct.priceCents,
+  originalProductCompareAtPriceCents: originalProduct.compareAtPriceCents,
+  originalProductDiscountPercent: originalProduct.discountPercent,
+  originalProductBadge: originalProduct.badge,
+  originalProductInStock: originalProduct.inStock,
+  originalProductAffiliateUrl: originalProduct.affiliateUrl,
 };
 
 /**
@@ -606,6 +637,7 @@ async function resolveRepostChains<T extends {
   originalImageUrl?: string | null;
   originalImages?: string[] | null;
   originalImageLabel?: string | null;
+  originalCollageData?: any | null;
   originalAuthorName?: string | null;
   originalAuthorHandle?: string | null;
   originalAuthorImage?: string | null;
@@ -618,9 +650,22 @@ async function resolveRepostChains<T extends {
   originalArticleImageLabel?: string | null;
   originalArticleCategory?: string | null;
   originalArticleAuthor?: string | null;
+  originalProductId?: number | null;
+  originalProductName?: string | null;
+  originalProductSlug?: string | null;
+  originalProductSubtitle?: string | null;
+  originalProductImageUrl?: string | null;
+  originalProductImageLabel?: string | null;
+  originalProductCategory?: string | null;
+  originalProductPriceCents?: number | null;
+  originalProductCompareAtPriceCents?: number | null;
+  originalProductDiscountPercent?: number | null;
+  originalProductBadge?: string | null;
+  originalProductInStock?: boolean | null;
+  originalProductAffiliateUrl?: string | null;
 }>(items: T[]): Promise<T[]> {
   const needsResolution = items.filter(
-    (item) => item.repostOfId && item.originalRepostOfId && (!item.originalBody || !item.originalBody.trim()) && !item.originalHasImage && !item.originalArticleTitle
+    (item) => item.repostOfId && item.originalRepostOfId && (!item.originalBody || !item.originalBody.trim()) && !item.originalHasImage && !item.originalArticleTitle && !item.originalProductName
   );
 
   if (needsResolution.length === 0) return items;
@@ -641,6 +686,7 @@ async function resolveRepostChains<T extends {
         hasImage: communityPosts.hasImage,
         imageUrl: communityPosts.imageUrl,
         images: communityPosts.images,
+        collageData: communityPosts.collageData,
         repostOfId: communityPosts.repostOfId,
         postedAt: communityPosts.postedAt,
         authorName: user.name,
@@ -654,10 +700,24 @@ async function resolveRepostChains<T extends {
         articleImageLabel: posts.imageLabel,
         articleCategory: posts.category,
         articleAuthor: posts.author,
+        productId: products.id,
+        productName: products.name,
+        productSlug: products.slug,
+        productSubtitle: products.subtitle,
+        productImageUrl: products.imageUrl,
+        productImageLabel: products.imageLabel,
+        productCategory: products.category,
+        productPriceCents: products.priceCents,
+        productCompareAtPriceCents: products.compareAtPriceCents,
+        productDiscountPercent: products.discountPercent,
+        productBadge: products.badge,
+        productInStock: products.inStock,
+        productAffiliateUrl: products.affiliateUrl,
       })
       .from(communityPosts)
       .innerJoin(user, eq(communityPosts.userId, user.id))
       .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+      .leftJoin(products, eq(communityPosts.productId, products.id))
       .where(inArray(communityPosts.id, targetIds));
 
     const rootMap = new Map(rootRows.map((r) => [r.id, r]));
@@ -674,6 +734,7 @@ async function resolveRepostChains<T extends {
         item.originalHasImage = root.hasImage;
         item.originalImageUrl = root.imageUrl;
         item.originalImages = root.images;
+        item.originalCollageData = root.collageData;
         item.originalImageLabel = root.imageLabel;
         item.originalPostedAt = root.postedAt;
         item.originalArticleId = root.articleId;
@@ -684,9 +745,22 @@ async function resolveRepostChains<T extends {
         item.originalArticleImageLabel = root.articleImageLabel;
         item.originalArticleCategory = root.articleCategory;
         item.originalArticleAuthor = root.articleAuthor;
+        item.originalProductId = root.productId;
+        item.originalProductName = root.productName;
+        item.originalProductSlug = root.productSlug;
+        item.originalProductSubtitle = root.productSubtitle;
+        item.originalProductImageUrl = root.productImageUrl;
+        item.originalProductImageLabel = root.productImageLabel;
+        item.originalProductCategory = root.productCategory;
+        item.originalProductPriceCents = root.productPriceCents;
+        item.originalProductCompareAtPriceCents = root.productCompareAtPriceCents;
+        item.originalProductDiscountPercent = root.productDiscountPercent;
+        item.originalProductBadge = root.productBadge;
+        item.originalProductInStock = root.productInStock;
+        item.originalProductAffiliateUrl = root.productAffiliateUrl;
         item.originalRepostOfId = root.repostOfId;
 
-        if (root.repostOfId && (!root.body || !root.body.trim()) && !root.hasImage && !root.articleTitle) {
+        if (root.repostOfId && (!root.body || !root.body.trim()) && !root.hasImage && !root.articleTitle && !root.productName) {
           nextPending.push(item);
         }
       }
@@ -706,6 +780,8 @@ export async function getCommunityFeed(limit = 10) {
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .leftJoin(posts, eq(communityPosts.articleId, posts.id))
     .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
+    .leftJoin(products, eq(communityPosts.productId, products.id))
+    .leftJoin(originalProduct, eq(originalPosts.productId, originalProduct.id))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
   return resolveRepostChains(rows);
@@ -724,10 +800,211 @@ export async function getCommunityBuzzPosts(limit = 3) {
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .leftJoin(posts, eq(communityPosts.articleId, posts.id))
     .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
+    .leftJoin(products, eq(communityPosts.productId, products.id))
+    .leftJoin(originalProduct, eq(originalPosts.productId, originalProduct.id))
     .where(and(ne(communityPosts.body, ""), sql`trim(${communityPosts.body}) != ''`))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
   return resolveRepostChains(rows);
+}
+
+export interface FeaturedCommunityComment {
+  id: number;
+  postId: number;
+  body: string;
+  imageUrl: string | null;
+  likeCount: number;
+  createdAt: Date;
+  authorName: string;
+  authorHandle: string;
+  authorImage: string | null;
+  postBody: string;
+  postAuthorName: string | null;
+  postAuthorHandle: string | null;
+}
+
+/**
+ * Returns community posts ranked strictly by engagement evaluated over the last 24 hours
+ * (highest likes, comments, and reposts in the last 24 hours, falling back to overall highest).
+ */
+export async function getTopCommunityPosts(limit = 10) {
+  const scoreExpr = sql<number>`(
+    (
+      COALESCE((SELECT COUNT(*) FROM "likes" WHERE "likes"."post_id" = "community_posts"."id" AND "likes"."created_at" >= NOW() - INTERVAL '24 hours'), 0) * 3 +
+      COALESCE((SELECT COUNT(*) FROM "comments" WHERE "comments"."post_id" = "community_posts"."id" AND "comments"."created_at" >= NOW() - INTERVAL '24 hours'), 0) * 2 +
+      COALESCE((SELECT COUNT(*) FROM "community_posts" cp_rep WHERE cp_rep."repost_of_id" = "community_posts"."id" AND cp_rep."posted_at" >= NOW() - INTERVAL '24 hours'), 0) * 3 +
+      CASE WHEN "community_posts"."posted_at" >= NOW() - INTERVAL '24 hours' THEN ("community_posts"."like_count" * 3 + "community_posts"."comment_count" * 2 + "community_posts"."repost_count" * 3) ELSE 0 END
+    ) * 1000 +
+    ("community_posts"."like_count" * 3 + "community_posts"."comment_count" * 2 + "community_posts"."repost_count" * 3)
+  )`;
+
+  const rows = await db
+    .select(postWithAuthor)
+    .from(communityPosts)
+    .innerJoin(user, eq(communityPosts.userId, user.id))
+    .leftJoin(originalPosts, eq(communityPosts.repostOfId, originalPosts.id))
+    .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
+    .leftJoin(posts, eq(communityPosts.articleId, posts.id))
+    .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
+    .leftJoin(products, eq(communityPosts.productId, products.id))
+    .leftJoin(originalProduct, eq(originalPosts.productId, originalProduct.id))
+    .where(and(ne(communityPosts.body, ""), sql`trim(${communityPosts.body}) != ''`))
+    .orderBy(desc(scoreExpr), desc(communityPosts.postedAt))
+    .limit(limit);
+
+  return resolveRepostChains(rows);
+}
+
+/**
+ * Returns community comments ranked strictly by engagement evaluated over the last 24 hours
+ * (highest likes and reactions in the last 24 hours, falling back to overall highest likes).
+ */
+export async function getTopCommunityComments(limit = 10): Promise<FeaturedCommunityComment[]> {
+  const commentScoreExpr = sql<number>`(
+    (
+      COALESCE((SELECT COUNT(*) FROM "comment_reactions" cr WHERE cr."comment_id" = "comments"."id" AND cr."type" = 'like' AND cr."created_at" >= NOW() - INTERVAL '24 hours'), 0) * 3 +
+      CASE WHEN "comments"."created_at" >= NOW() - INTERVAL '24 hours' THEN "comments"."like_count" * 3 ELSE 0 END
+    ) * 1000 +
+    "comments"."like_count"
+  )`;
+
+  const rows = await db
+    .select({
+      id: comments.id,
+      postId: comments.postId,
+      body: comments.body,
+      imageUrl: comments.imageUrl,
+      likeCount: comments.likeCount,
+      createdAt: comments.createdAt,
+      authorName: user.name,
+      authorHandle: user.handle,
+      authorImage: user.image,
+      postBody: communityPosts.body,
+      postAuthorName: commentPostAuthor.name,
+      postAuthorHandle: commentPostAuthor.handle,
+    })
+    .from(comments)
+    .innerJoin(user, eq(comments.userId, user.id))
+    .innerJoin(communityPosts, eq(comments.postId, communityPosts.id))
+    .leftJoin(commentPostAuthor, eq(communityPosts.userId, commentPostAuthor.id))
+    .where(and(ne(comments.body, ""), sql`trim(${comments.body}) != ''`))
+    .orderBy(desc(commentScoreExpr), desc(comments.createdAt))
+    .limit(limit);
+
+  return rows;
+}
+
+export type CommunityHighlightItem =
+  | { type: "post"; post: any }
+  | { type: "comment"; comment: FeaturedCommunityComment };
+
+export interface DailyHomeCommunityHighlights {
+  sidebarItem: CommunityHighlightItem | null;
+  bannerPost: any | null;
+  readerComment: FeaturedCommunityComment | null;
+  spotlightItems: CommunityHighlightItem[];
+  spotlightItem?: CommunityHighlightItem | null;
+}
+
+/**
+ * Evaluates the top-performing community posts and comments over the last 24 hours
+ * and assigns them to scattered locations on the homepage.
+ *
+ * Guarantees that the highest-ranked post and highest-ranked comment are always
+ * prominently featured, while distributing other top items across the page.
+ */
+export async function getDailyHomeCommunityHighlights(): Promise<DailyHomeCommunityHighlights> {
+  const [topPosts, topComments] = await Promise.all([
+    getTopCommunityPosts(6),
+    getTopCommunityComments(6),
+  ]);
+
+  // #1 Post is always the featured Banner post (most prominent position)
+  const bannerPost = topPosts[0] ?? null;
+
+  // #1 Comment is always the featured Reader Take quote
+  const readerComment = topComments[0] ?? null;
+
+  // For hero sidebar, alternate daily between #2 Post and #2 Comment
+  const dayEpoch = Math.floor(Date.now() / 86400000);
+  const alternate = dayEpoch % 2 === 0;
+
+  const post2 = topPosts[1] ?? null;
+  const comment2 = topComments[1] ?? null;
+
+  let sidebarItem: CommunityHighlightItem | null = null;
+
+  if (alternate) {
+    if (post2) {
+      sidebarItem = { type: "post", post: post2 };
+    } else if (comment2) {
+      sidebarItem = { type: "comment", comment: comment2 };
+    }
+  } else {
+    if (comment2) {
+      sidebarItem = { type: "comment", comment: comment2 };
+    } else if (post2) {
+      sidebarItem = { type: "post", post: post2 };
+    }
+  }
+
+  // Community Buzz: always display 2 items side-by-side
+  const spotlightItems: CommunityHighlightItem[] = [];
+  const usedPostIds = new Set<string>();
+  const usedCommentIds = new Set<number>();
+
+  if (bannerPost?.id) usedPostIds.add(String(bannerPost.id));
+  if (readerComment?.id) usedCommentIds.add(readerComment.id);
+  if (sidebarItem?.type === "post" && sidebarItem.post?.id) usedPostIds.add(String(sidebarItem.post.id));
+  if (sidebarItem?.type === "comment" && sidebarItem.comment?.id) usedCommentIds.add(sidebarItem.comment.id);
+
+  const remainingComments = topComments.filter((c) => !usedCommentIds.has(c.id));
+  const remainingPosts = topPosts.filter((p) => !usedPostIds.has(String(p.id)));
+
+  // Ideally display 1 comment and 1 post in Community Buzz for visual and conversational balance
+  if (alternate) {
+    if (remainingComments[0]) spotlightItems.push({ type: "comment", comment: remainingComments[0] });
+    if (remainingPosts[0]) spotlightItems.push({ type: "post", post: remainingPosts[0] });
+  } else {
+    if (remainingPosts[0]) spotlightItems.push({ type: "post", post: remainingPosts[0] });
+    if (remainingComments[0]) spotlightItems.push({ type: "comment", comment: remainingComments[0] });
+  }
+
+  // Fill up to 2 items if one category ran out
+  for (const c of remainingComments) {
+    if (spotlightItems.length >= 2) break;
+    if (!spotlightItems.some((item) => item.type === "comment" && item.comment.id === c.id)) {
+      spotlightItems.push({ type: "comment", comment: c });
+    }
+  }
+  for (const p of remainingPosts) {
+    if (spotlightItems.length >= 2) break;
+    if (!spotlightItems.some((item) => item.type === "post" && item.post.id === p.id)) {
+      spotlightItems.push({ type: "post", post: p });
+    }
+  }
+
+  // Graceful fallback for sparse databases: use any available top posts or comments
+  for (const p of topPosts) {
+    if (spotlightItems.length >= 2) break;
+    if (!spotlightItems.some((item) => item.type === "post" && item.post.id === p.id)) {
+      spotlightItems.push({ type: "post", post: p });
+    }
+  }
+  for (const c of topComments) {
+    if (spotlightItems.length >= 2) break;
+    if (!spotlightItems.some((item) => item.type === "comment" && item.comment.id === c.id)) {
+      spotlightItems.push({ type: "comment", comment: c });
+    }
+  }
+
+  return {
+    sidebarItem,
+    bannerPost,
+    readerComment,
+    spotlightItems,
+    spotlightItem: spotlightItems[0] ?? null,
+  };
 }
 
 export async function getPostsByHandle(handle: string, limit = 10) {
@@ -739,6 +1016,8 @@ export async function getPostsByHandle(handle: string, limit = 10) {
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .leftJoin(posts, eq(communityPosts.articleId, posts.id))
     .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
+    .leftJoin(products, eq(communityPosts.productId, products.id))
+    .leftJoin(originalProduct, eq(originalPosts.productId, originalProduct.id))
     .where(eq(user.handle, handle))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
@@ -754,10 +1033,16 @@ export async function getPostById(id: number) {
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .leftJoin(posts, eq(communityPosts.articleId, posts.id))
     .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
+    .leftJoin(products, eq(communityPosts.productId, products.id))
+    .leftJoin(originalProduct, eq(originalPosts.productId, originalProduct.id))
     .where(eq(communityPosts.id, id))
     .limit(1);
   const resolved = await resolveRepostChains(rows);
   return resolved[0] ?? null;
+}
+
+export async function getCollagePostById(id: number) {
+  return getPostById(id);
 }
 
 export async function getUserByHandle(handle: string) {
@@ -882,6 +1167,8 @@ export async function getMediaPostsByHandle(handle: string, limit = 20) {
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .leftJoin(posts, eq(communityPosts.articleId, posts.id))
     .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
+    .leftJoin(products, eq(communityPosts.productId, products.id))
+    .leftJoin(originalProduct, eq(originalPosts.productId, originalProduct.id))
     .where(and(eq(user.handle, handle), eq(communityPosts.hasImage, true)))
     .orderBy(desc(communityPosts.postedAt))
     .limit(limit);
@@ -899,6 +1186,8 @@ export async function getLikedPostsByUserId(userId: string, limit = 20) {
     .leftJoin(originalUser, eq(originalPosts.userId, originalUser.id))
     .leftJoin(posts, eq(communityPosts.articleId, posts.id))
     .leftJoin(originalArticle, eq(originalPosts.articleId, originalArticle.id))
+    .leftJoin(products, eq(communityPosts.productId, products.id))
+    .leftJoin(originalProduct, eq(originalPosts.productId, originalProduct.id))
     .where(eq(likes.userId, userId))
     .orderBy(desc(likes.createdAt))
     .limit(limit);

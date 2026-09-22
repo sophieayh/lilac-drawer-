@@ -3,31 +3,41 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { shareArticleToCommunity } from "@/lib/community-actions";
+import { shareProductToCommunity } from "@/lib/community-actions";
 import { useSession } from "@/lib/auth-client";
+import { formatPrice, formatPriceFixed } from "@/lib/format";
 import { checkExternalLinks } from "@/lib/link-moderation";
+import ImageSlot from "@/components/ImageSlot";
 
-interface ShareToCommunityModalProps {
-  articleId: number;
-  articleTitle: string;
-  articleSlug: string;
-  articleExcerpt?: string;
-  articleImageUrl?: string | null;
-  articleCategory?: string;
-  articleAuthor?: string;
+interface ShareProductToCommunityModalProps {
+  productId: number;
+  productName: string;
+  productSlug: string;
+  productSubtitle?: string | null;
+  productImageUrl?: string | null;
+  productImageLabel?: string | null;
+  productCategory?: string | null;
+  productPriceCents?: number | null;
+  productCompareAtPriceCents?: number | null;
+  productDiscountPercent?: number | null;
+  productBadge?: string | null;
   variant?: "button" | "banner";
 }
 
-export default function ShareToCommunityModal({
-  articleId,
-  articleTitle,
-  articleSlug,
-  articleExcerpt,
-  articleImageUrl,
-  articleCategory,
-  articleAuthor,
+export default function ShareProductToCommunityModal({
+  productId,
+  productName,
+  productSlug,
+  productSubtitle,
+  productImageUrl,
+  productImageLabel,
+  productCategory,
+  productPriceCents,
+  productCompareAtPriceCents,
+  productDiscountPercent,
+  productBadge,
   variant = "button",
-}: ShareToCommunityModalProps) {
+}: ShareProductToCommunityModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [opinion, setOpinion] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +51,7 @@ export default function ShareToCommunityModal({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isLoggedIn) {
-      router.push(`/login?redirect=/blog/${articleSlug}`);
+      router.push(`/login?redirect=/deals/${productSlug}`);
       return;
     }
 
@@ -57,12 +67,12 @@ export default function ShareToCommunityModal({
     setError(null);
     startTransition(async () => {
       try {
-        await shareArticleToCommunity(articleId, trimmed);
+        await shareProductToCommunity(productId, trimmed);
         setSuccess(true);
         setOpinion("");
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to share article.");
+        setError(err instanceof Error ? err.message : "Failed to share product.");
       }
     });
   }
@@ -78,12 +88,12 @@ export default function ShareToCommunityModal({
             setSuccess(false);
             setError(null);
           }}
-          className="shrink-0 bg-purple-deep hover:bg-lilac text-white text-xs font-semibold rounded-full px-4 py-1.5 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+          className="shrink-0 bg-purple-deep hover:bg-lilac text-white text-xs font-semibold rounded-full px-4 py-2.5 sm:py-2 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
           </svg>
-          <span>Share with Opinion</span>
+          <span>Share to Community</span>
         </button>
       ) : (
         <div className="rounded-3xl border border-border/90 bg-gradient-to-br from-mauve-50 via-white to-cream p-6 sm:p-7 shadow-[0_4px_20px_rgba(90,47,69,0.05)] my-8">
@@ -96,10 +106,10 @@ export default function ShareToCommunityModal({
                 </span>
               </div>
               <h3 className="font-heading text-lg sm:text-xl font-bold text-purple-deep mb-1">
-                Have thoughts or recommendations on this guide?
+                Have thoughts or styling tips on this piece?
               </h3>
               <p className="text-xs sm:text-[13px] text-tan-dark leading-relaxed">
-                Share your personal experience, styling advice, or product reviews directly to the Lilac Drawer community.
+                Share your personal review, sizing advice, or styling tips directly with the Lilac Drawer community.
               </p>
             </div>
 
@@ -132,13 +142,13 @@ export default function ShareToCommunityModal({
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-mauve-50/70">
               <div className="flex items-center gap-2">
                 <span className="w-8 h-8 rounded-full bg-lilac/30 text-purple-deep flex items-center justify-center font-bold text-sm">
-                  💬
+                  🛍️
                 </span>
                 <div>
                   <h3 className="font-heading text-base font-bold text-purple-deep leading-tight">
-                    Share to Community
+                    Share Product to Community
                   </h3>
-                  <p className="text-[11px] text-tan-dark">Add your thoughts to this article</p>
+                  <p className="text-[11px] text-tan-dark">Add your thoughts, styling tips, or review</p>
                 </div>
               </div>
               <button
@@ -163,7 +173,7 @@ export default function ShareToCommunityModal({
                     Posted Successfully!
                   </h4>
                   <p className="text-xs text-tan-dark max-w-[340px] mb-6 leading-relaxed">
-                    Your commentary and the article have been published to the community feed.
+                    Your recommendation and the product deal have been published to the community feed.
                   </p>
                   <div className="flex items-center gap-3">
                     <Link
@@ -193,10 +203,10 @@ export default function ShareToCommunityModal({
                     Sign in Required
                   </h4>
                   <p className="text-xs text-tan-dark max-w-[340px] mb-5 leading-relaxed">
-                    You need to be signed in to post and share your opinion with the Lilac Drawer community.
+                    You need to be signed in to post and share your recommendations with the Lilac Drawer community.
                   </p>
                   <Link
-                    href={`/login?redirect=/blog/${articleSlug}`}
+                    href={`/login?redirect=/deals/${productSlug}`}
                     className="bg-purple-deep hover:bg-lilac text-white px-6 py-2.5 rounded-full text-xs font-bold transition-all shadow-xs"
                   >
                     Sign In to Continue
@@ -216,16 +226,16 @@ export default function ShareToCommunityModal({
                   {/* Opinion Textarea */}
                   <div>
                     <div className="flex justify-between items-baseline mb-1.5">
-                      <label htmlFor="share-opinion" className="text-xs font-bold text-purple-deep uppercase tracking-wider">
-                        Your Thoughts & Opinion
+                      <label htmlFor="product-share-opinion" className="text-xs font-bold text-purple-deep uppercase tracking-wider">
+                        Your Thoughts & Recommendations
                       </label>
                       <span className="text-[11px] text-tan">{opinion.length} / 2000</span>
                     </div>
                     <textarea
-                      id="share-opinion"
+                      id="product-share-opinion"
                       value={opinion}
                       onChange={(e) => setOpinion(e.target.value)}
-                      placeholder="What are your thoughts on this guide? Recommend products, share your personal tips, or start a discussion…"
+                      placeholder="Why do you recommend this piece? Share sizing tips, pairing ideas, or your honest review…"
                       rows={4}
                       maxLength={2000}
                       autoFocus
@@ -233,33 +243,61 @@ export default function ShareToCommunityModal({
                     />
                   </div>
 
-                  {/* Embedded Article Attachment Preview */}
+                  {/* Embedded Product Attachment Preview */}
                   <div className="rounded-2xl border border-border bg-mauve-50/60 p-3.5 flex items-center gap-3">
-                    {articleImageUrl ? (
+                    {productImageUrl ? (
                       <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-border bg-white">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={articleImageUrl}
-                          alt={articleTitle}
+                          src={productImageUrl}
+                          alt={productName}
                           className="w-full h-full object-cover"
                         />
                       </div>
+                    ) : productImageLabel ? (
+                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-border bg-white">
+                        <ImageSlot
+                          label={productImageLabel}
+                          className="w-full h-full"
+                          shape="rounded"
+                          radius={10}
+                          tone="mauve"
+                        />
+                      </div>
                     ) : (
-                      <div className="w-16 h-16 rounded-xl bg-lilac/20 flex items-center justify-center text-xs font-bold text-purple-deep shrink-0">
-                        📄
+                      <div className="w-16 h-16 rounded-xl bg-lilac/20 flex items-center justify-center text-base font-bold text-purple-deep shrink-0">
+                        🛍️
                       </div>
                     )}
 
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-bold text-rose uppercase tracking-wider block">
-                        {articleCategory || "Article"}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {productCategory && (
+                          <span className="text-[10px] font-bold text-rose uppercase tracking-wider">
+                            {productCategory}
+                          </span>
+                        )}
+                        {productDiscountPercent && productDiscountPercent > 0 && (
+                          <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-600 text-white">
+                            -{productDiscountPercent}%
+                          </span>
+                        )}
+                      </div>
                       <h5 className="font-heading text-xs sm:text-sm font-bold text-purple-deep truncate">
-                        {articleTitle}
+                        {productName}
                       </h5>
-                      <p className="text-[11px] text-tan-dark truncate">
-                        {articleExcerpt || "Lilac Drawer Editorial Guide"}
-                      </p>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        {productPriceCents != null && (
+                          <span className="font-heading font-bold text-xs sm:text-sm text-rose">
+                            {formatPrice(productPriceCents)}
+                          </span>
+                        )}
+                        {productCompareAtPriceCents != null && (
+                          <span className="text-[10px] text-tan line-through">
+                            {formatPriceFixed(productCompareAtPriceCents)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 

@@ -5,7 +5,8 @@ import Link from "next/link";
 import ImageSlot from "@/components/ImageSlot";
 import { formatPriceFixed } from "@/lib/format";
 import { useSession } from "@/lib/auth-client";
-import type { products as productsSchema } from "@/db/schema";
+import { renderCollageToDataUrl } from "@/lib/collage-renderer";
+import type { products as productsSchema, CollageData } from "@/db/schema";
 
 type Product = typeof productsSchema.$inferSelect;
 
@@ -30,13 +31,36 @@ export interface CanvasItem {
   opacity?: number;
 }
 
-interface Props {
-  initialProducts?: Product[];
+export interface SharedCollageInfo {
+  postId: number;
+  authorName: string;
+  authorHandle: string;
+  authorImage?: string | null;
+  body: string;
+  collageData: CollageData;
 }
 
-export default function FashionCollageBoard({ initialProducts = [] }: Props) {
+interface Props {
+  initialProducts?: Product[];
+  sharedCollage?: SharedCollageInfo | null;
+}
+
+export default function FashionCollageBoard({
+  initialProducts = [],
+  sharedCollage = null,
+}: Props) {
   const { data: session, isPending: isSessionPending } = useSession();
   const [mounted, setMounted] = useState(false);
+
+  // Viewing someone else's shared collage
+  const [viewingShared, setViewingShared] = useState<SharedCollageInfo | null>(sharedCollage ?? null);
+
+  // Sync viewingShared when sharedCollage prop changes
+  useEffect(() => {
+    if (sharedCollage) {
+      setViewingShared(sharedCollage);
+    }
+  }, [sharedCollage]);
 
   // Storage key based on user account or guest
   const storageKey = useMemo(() => {
@@ -63,6 +87,15 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
   const [items, setItems] = useState<CanvasItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  // Share to Community Modal States
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  const [sharePreviewUrl, setSharePreviewUrl] = useState<string | null>(null);
+  const [shareCaption, setShareCaption] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState<{ postId: number } | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   // Total Look Pricing Calculation
   const totalLookCents = useMemo(() => {
@@ -108,7 +141,7 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
     setMounted(true);
   }, []);
 
-  // 1. Load saved items from localStorage for this account (smooth session-aware loader)
+  // 1. Load saved items from localStorage or sharedCollage (smooth session-aware loader)
   useEffect(() => {
     if (!mounted || typeof window === "undefined" || isSessionPending) return;
 
@@ -116,23 +149,32 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
     let timeoutId: NodeJS.Timeout;
 
     try {
-      const savedData = localStorage.getItem(storageKey);
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setItems(parsed);
-          setHistory([parsed]);
-          setHistoryIndex(0);
+      if (viewingShared?.collageData?.items) {
+        setItems(viewingShared.collageData.items);
+        setHistory([viewingShared.collageData.items]);
+        setHistoryIndex(0);
+        if (viewingShared.collageData.canvasBg) {
+          setCanvasBg(viewingShared.collageData.canvasBg);
+        }
+      } else {
+        const savedData = localStorage.getItem(storageKey);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setItems(parsed);
+            setHistory([parsed]);
+            setHistoryIndex(0);
+          } else {
+            setItems([]);
+            setHistory([[]]);
+            setHistoryIndex(0);
+          }
         } else {
+          // First time visit -> Completely empty
           setItems([]);
           setHistory([[]]);
           setHistoryIndex(0);
         }
-      } else {
-        // First time visit -> Completely empty
-        setItems([]);
-        setHistory([[]]);
-        setHistoryIndex(0);
       }
 
       // Load user uploads
@@ -155,11 +197,11 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [storageKey, isSessionPending, mounted]);
+  }, [storageKey, isSessionPending, mounted, viewingShared]);
 
-  // 2. Save items automatically whenever items change (after initial load)
+  // 2. Save items automatically whenever items change (only if not viewing someone else's shared collage)
   useEffect(() => {
-    if (!isLoaded || typeof window === "undefined") return;
+    if (!isLoaded || typeof window === "undefined" || viewingShared) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify(items));
       setLastSavedTime(
@@ -168,7 +210,30 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
     } catch (e) {
       console.error("Error saving sandbox state:", e);
     }
-  }, [items, storageKey, isLoaded]);
+  }, [items, storageKey, isLoaded, viewingShared]);
+
+  // Restore user's own local sandbox if they want to exit viewing shared collage
+  const handleRestoreMySandbox = useCallback(() => {
+    setViewingShared(null);
+    if (typeof window !== "undefined") {
+      const savedData = localStorage.getItem(storageKey);
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          const loaded = Array.isArray(parsed) ? parsed : [];
+          setItems(loaded);
+          setHistory([loaded]);
+          setHistoryIndex(0);
+        } catch {
+          setItems([]);
+        }
+      } else {
+        setItems([]);
+        setHistory([[]]);
+        setHistoryIndex(0);
+      }
+    }
+  }, [storageKey]);
 
   // Push state to history
   const pushHistory = useCallback((newItems: CanvasItem[]) => {
@@ -394,239 +459,115 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
     }
   }, [items, pushHistory]);
 
-  // Export / Download Snapshot (Full Card with Aspect Ratio, Title, Price, and Shadow)
-  const exportCanvasAsImage = useCallback(() => {
+  // Export / Download Snapshot
+  const exportCanvasAsImage = useCallback(async () => {
     if (items.length === 0) {
-      alert("Your sandbox is currently empty. Add some pieces first before exporting!");
+      alert("Your moodboard is currently empty. Add some pieces first before exporting!");
       return;
     }
 
-    // Helper: Draw rounded rectangle path
-    function drawRoundedRect(
-      ctx: CanvasRenderingContext2D,
-      x: number,
-      y: number,
-      width: number,
-      height: number,
-      radius: number
-    ) {
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + width - radius, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-      ctx.lineTo(x + width, y + height - radius);
-      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-      ctx.lineTo(x + radius, y + height);
-      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
-    }
-
-    // Helper: Draw image with object-contain (preserving true natural aspect ratio)
-    function drawImageContained(
-      ctx: CanvasRenderingContext2D,
-      img: HTMLImageElement,
-      x: number,
-      y: number,
-      w: number,
-      h: number
-    ) {
-      const naturalW = img.naturalWidth || w;
-      const naturalH = img.naturalHeight || h;
-      const imgAspect = naturalW / naturalH;
-      const boxAspect = w / h;
-
-      let drawW = w;
-      let drawH = h;
-      let drawX = x;
-      let drawY = y;
-
-      if (imgAspect > boxAspect) {
-        drawW = w;
-        drawH = w / imgAspect;
-        drawY = y + (h - drawH) / 2;
-      } else {
-        drawH = h;
-        drawW = h * imgAspect;
-        drawX = x + (w - drawW) / 2;
+    try {
+      const dataUrl = await renderCollageToDataUrl(items, canvasBg, showGrid);
+      if (!dataUrl) {
+        alert("Could not generate moodboard image.");
+        return;
       }
-
-      ctx.drawImage(img, drawX, drawY, drawW, drawH);
-    }
-
-    // 1. Calculate dynamic bounding box of all placed items
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    for (const it of items) {
-      minX = Math.min(minX, it.x);
-      minY = Math.min(minY, it.y);
-      maxX = Math.max(maxX, it.x + it.width);
-      maxY = Math.max(maxY, it.y + it.height);
-    }
-
-    const margin = 80;
-    const headerH = 100;
-    const contentW = Math.max(800, maxX - minX);
-    const contentH = Math.max(500, maxY - minY);
-
-    const exportCanvas = document.createElement("canvas");
-    exportCanvas.width = Math.round(contentW + margin * 2);
-    exportCanvas.height = Math.round(contentH + margin * 2 + headerH);
-
-    const ctx = exportCanvas.getContext("2d");
-    if (!ctx) return;
-
-    // Background color
-    const bgColor =
-      canvasBg === "white"
-        ? "#ffffff"
-        : canvasBg === "cream"
-        ? "#fbf6f0"
-        : canvasBg === "mauve"
-        ? "#f6eff8"
-        : "#edf4ea";
-
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-
-    // Optional Dot Grid in background
-    if (showGrid) {
-      ctx.fillStyle = "rgba(122, 90, 140, 0.15)";
-      for (let gx = 0; gx < exportCanvas.width; gx += 24) {
-        for (let gy = 0; gy < exportCanvas.height; gy += 24) {
-          ctx.beginPath();
-          ctx.arc(gx, gy, 1, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-
-    // Header Branding & Timestamp
-    ctx.fillStyle = "#4a3058";
-    ctx.font = "bold 26px 'Poppins', sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText("Lilac Drawer Moodboard", margin, 50);
-
-    ctx.fillStyle = "#9a8898";
-    ctx.font = "13px 'Poppins', sans-serif";
-    ctx.fillText(
-      new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-      margin,
-      74
-    );
-
-    // Sort items by zIndex
-    const sorted = [...items].sort((a, b) => a.zIndex - b.zIndex);
-    let loadedCount = 0;
-    const totalCount = sorted.length;
-
-    function finalizeAndDownload() {
       const link = document.createElement("a");
-      link.download = `lilac-moodboard-${Date.now()}.png`;
-      link.href = exportCanvas.toDataURL("image/png");
+      link.download = `lilac-moodboard-${Date.now()}.jpg`;
+      link.href = dataUrl;
       link.click();
+    } catch (err) {
+      console.error("Export error:", err);
+      alert("An error occurred while exporting the moodboard.");
     }
+  }, [items, canvasBg, showGrid]);
 
-    if (totalCount === 0) {
-      finalizeAndDownload();
+  // Open Share to Community Modal
+  const handleOpenShareModal = useCallback(async () => {
+    if (items.length === 0) {
+      alert("Your moodboard is currently empty. Add some pieces first before sharing to the community!");
+      return;
+    }
+    if (!session?.user) {
+      const confirmLogin = confirm(
+        "You must be signed in to share your moodboard to the Lilac Drawer community.\nWould you like to sign in now?"
+      );
+      if (confirmLogin && typeof window !== "undefined") {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      }
       return;
     }
 
-    sorted.forEach((item) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
+    setIsShareModalOpen(true);
+    setPublishSuccess(null);
+    setPublishError(null);
+    setIsGeneratingPreview(true);
 
-      const renderCard = (imageLoaded: boolean) => {
-        ctx.save();
+    try {
+      const dataUrl = await renderCollageToDataUrl(items, canvasBg, showGrid);
+      setSharePreviewUrl(dataUrl);
+    } catch (err) {
+      console.error("Failed to render collage preview:", err);
+      setPublishError("Could not prepare moodboard image preview. Please try again.");
+    } finally {
+      setIsGeneratingPreview(false);
+    }
+  }, [items, canvasBg, showGrid, session?.user]);
 
-        // Calculate card center coordinates relative to dynamic bounding box
-        const cardW = item.width;
-        const cardH = item.height;
-        const cardCenterX = item.x - minX + margin + cardW / 2;
-        const cardCenterY = item.y - minY + margin + headerH + cardH / 2;
+  // Publish Collage Post to Community Feed
+  const handlePublishToCommunity = async () => {
+    if (!sharePreviewUrl || isPublishing) return;
+    setIsPublishing(true);
+    setPublishError(null);
 
-        ctx.translate(cardCenterX, cardCenterY);
-        ctx.rotate((item.rotation * Math.PI) / 180);
-
-        // 1. Draw outer white card with shadow
-        ctx.shadowColor = "rgba(100, 70, 90, 0.14)";
-        ctx.shadowBlur = 18;
-        ctx.shadowOffsetY = 6;
-        ctx.fillStyle = "#ffffff";
-        ctx.strokeStyle = "rgba(220, 205, 225, 0.85)";
-        ctx.lineWidth = 1;
-
-        drawRoundedRect(ctx, -cardW / 2, -cardH / 2, cardW, cardH, 16);
-        ctx.fill();
-        ctx.shadowColor = "transparent";
-        ctx.stroke();
-
-        // 2. Draw inner image container
-        const padding = 12;
-        const innerX = -cardW / 2 + padding;
-        const innerY = -cardH / 2 + padding;
-        const innerW = cardW - padding * 2;
-        const innerH = cardH - padding * 2 - 28;
-
-        ctx.fillStyle = "rgba(244, 235, 248, 0.45)";
-        drawRoundedRect(ctx, innerX, innerY, innerW, innerH, 10);
-        ctx.fill();
-
-        // 3. Draw image with object-contain (natural proportions, no squishing)
-        if (imageLoaded && img.naturalWidth) {
-          drawImageContained(ctx, img, innerX + 6, innerY + 6, innerW - 12, innerH - 12);
-        } else {
-          ctx.fillStyle = "#7a5a8c";
-          ctx.font = "12px sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(item.title, 0, innerY + innerH / 2);
-        }
-
-        // 4. Draw bottom label bar (Title + Price)
-        const labelY = innerY + innerH + 18;
-        ctx.fillStyle = "#4a3058";
-        ctx.font = "bold 12px sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "middle";
-
-        const priceText = item.priceCents != null ? formatPriceFixed(item.priceCents) : "";
-        const priceWidth = priceText ? ctx.measureText(priceText).width + 12 : 0;
-        const maxTitleWidth = innerW - priceWidth;
-
-        let displayTitle = item.title;
-        if (ctx.measureText(displayTitle).width > maxTitleWidth) {
-          while (displayTitle.length > 3 && ctx.measureText(displayTitle + "…").width > maxTitleWidth) {
-            displayTitle = displayTitle.slice(0, -1);
-          }
-          displayTitle += "…";
-        }
-        ctx.fillText(displayTitle, innerX + 2, labelY);
-
-        if (priceText) {
-          ctx.fillStyle = "#d4708f";
-          ctx.font = "bold 12px sans-serif";
-          ctx.textAlign = "right";
-          ctx.fillText(priceText, innerX + innerW - 2, labelY);
-        }
-
-        ctx.restore();
-
-        loadedCount++;
-        if (loadedCount === totalCount) {
-          finalizeAndDownload();
-        }
+    try {
+      const payload = {
+        body: shareCaption.trim(),
+        imageUrl: sharePreviewUrl,
+        images: [sharePreviewUrl],
+        imageLabel: "Fashion Moodboard",
+        collageData: {
+          items: items.map((it) => ({
+            id: it.id,
+            sourceType: it.sourceType,
+            productId: it.productId,
+            productSlug: it.productSlug,
+            title: it.title,
+            imageUrl: it.imageUrl,
+            priceCents: it.priceCents,
+            category: it.category,
+            x: it.x,
+            y: it.y,
+            width: it.width,
+            height: it.height,
+            rotation: it.rotation,
+            zIndex: it.zIndex,
+            opacity: it.opacity,
+          })),
+          canvasBg,
+          itemCount: items.length,
+          totalLookCents,
+        },
       };
 
-      img.onload = () => renderCard(true);
-      img.onerror = () => renderCard(false);
-      img.src = item.imageUrl || "/placeholder.png";
-    });
-  }, [items, canvasBg, showGrid]);
+      const res = await fetch("/api/community/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to publish moodboard to community");
+      }
+
+      setPublishSuccess({ postId: data.id });
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : "An error occurred while publishing to community");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -968,15 +909,91 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
           {/* Export / Download Moodboard */}
           <button
             onClick={exportCanvasAsImage}
-            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-purple-deep text-white text-xs font-bold hover:bg-purple-deep/90 shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-border text-purple-deep hover:bg-mauve-50 text-xs font-bold transition-all cursor-pointer"
+            title="Download Snapshot as JPG"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            <span className="hidden sm:inline">Export Image</span>
+            <span className="hidden sm:inline">Export JPG</span>
+          </button>
+
+          {/* Share to Community */}
+          <button
+            onClick={handleOpenShareModal}
+            disabled={items.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-purple-deep via-purple-deep to-rose text-white text-xs font-bold hover:opacity-95 shadow-xs transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Share moodboard to Lilac Drawer community"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            <span className="hidden sm:inline">Share to Community</span>
+            <span className="sm:hidden">Share</span>
           </button>
         </div>
       </header>
+
+      {/* VIEWING SHARED MOODBOARD BANNER */}
+      {viewingShared && (
+        <div className="bg-gradient-to-r from-mauve-100 via-cream to-mauve-100 border-b border-lilac/30 px-3.5 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs z-30 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-7 h-7 rounded-xl bg-purple-deep/10 text-purple-deep flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-purple-deep" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <p className="font-semibold text-purple-deep truncate">
+                Viewing moodboard shared by{" "}
+                <Link
+                  href={`/community/${viewingShared.authorHandle}`}
+                  className="font-bold underline text-purple-deep hover:text-rose"
+                >
+                  @{viewingShared.authorHandle}
+                </Link>{" "}
+                ({viewingShared.authorName})
+              </p>
+              {viewingShared.body && (
+                <p className="text-[11px] text-tan-dark truncate italic">
+                  &ldquo;{viewingShared.body}&rdquo;
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/community/post/${viewingShared.postId}`}
+              className="px-3 py-1.5 rounded-xl bg-white border border-border text-purple-deep hover:bg-mauve-50 font-semibold text-xs shadow-2xs transition-colors flex items-center gap-1"
+            >
+              <span>View in Community</span>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </Link>
+
+            <button
+              onClick={() => {
+                localStorage.setItem(storageKey, JSON.stringify(items));
+                setViewingShared(null);
+                alert("A copy of this moodboard has been saved to your personal sandbox!");
+              }}
+              className="px-3 py-1.5 rounded-xl bg-purple-deep text-white font-semibold text-xs hover:bg-purple-deep/90 shadow-2xs transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <span>Save Copy to My Board</span>
+            </button>
+
+            <button
+              onClick={handleRestoreMySandbox}
+              className="px-2.5 py-1.5 rounded-xl border border-border text-tan-dark hover:text-purple-deep hover:bg-white text-xs font-medium transition-colors cursor-pointer"
+              title="Return to my previous sandbox"
+            >
+              My Sandbox ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. MAIN WORKSPACE (DRAWER + UNIFIED FULL-VIEWPORT SANDBOX) */}
       <div className="flex-1 min-h-0 flex relative overflow-hidden">
@@ -1750,6 +1767,174 @@ export default function FashionCollageBoard({ initialProducts = [] }: Props) {
           </div>
         </main>
       </div>
+
+      {/* SHARE TO COMMUNITY MODAL */}
+      {isShareModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4 animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isPublishing) {
+              setIsShareModalOpen(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col border border-lilac/30 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-mauve-50/70 to-cream">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-deep/10 text-purple-deep flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-purple-deep font-heading">
+                    Share Moodboard to Community
+                  </h3>
+                  <p className="text-[11px] text-tan-dark">
+                    Will be published as an interactive image with piece breakdown and sandbox access
+                  </p>
+                </div>
+              </div>
+
+              {!isPublishing && (
+                <button
+                  type="button"
+                  onClick={() => setIsShareModalOpen(false)}
+                  className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-tan-dark hover:text-purple-deep hover:bg-mauve-50 transition-colors cursor-pointer text-sm"
+                  title="Close"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 space-y-4">
+              {publishSuccess ? (
+                <div className="py-6 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-inner font-bold">
+                    ✓
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-purple-deep font-heading">
+                      Moodboard Published Successfully
+                    </h4>
+                    <p className="text-xs text-tan-dark mt-1 max-w-sm mx-auto">
+                      Your moodboard is now live in the Lilac Drawer community feed. Others can view the full look and explore its pieces.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                    <Link
+                      href={`/community/post/${publishSuccess.postId}`}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-deep text-white text-xs font-bold hover:bg-purple-deep/90 shadow-xs transition-all text-center"
+                    >
+                      View Post in Community
+                    </Link>
+                    <Link
+                      href="/community"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-border text-purple-deep text-xs font-semibold hover:bg-mauve-50 transition-colors text-center"
+                    >
+                      Browse Community
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setIsShareModalOpen(false)}
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-tan-dark text-xs hover:text-purple-deep transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Image Preview */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-semibold text-purple-deep">
+                      <span>Post Image Preview</span>
+                      <span className="text-[11px] text-tan-dark">
+                        {items.length} {items.length === 1 ? "Piece" : "Pieces"}
+                        {totalLookCents > 0 && ` · Total: ${formatPriceFixed(totalLookCents)}`}
+                      </span>
+                    </div>
+
+                    <div className="rounded-2xl border border-border/80 bg-mauve-50/40 overflow-hidden flex items-center justify-center relative min-h-[180px] max-h-[260px] p-2">
+                      {isGeneratingPreview ? (
+                        <div className="flex flex-col items-center gap-2 py-8 text-tan-dark">
+                          <span className="w-6 h-6 border-2 border-purple-deep border-t-transparent rounded-full animate-spin" />
+                          <span className="text-xs font-medium">Generating high-resolution moodboard preview...</span>
+                        </div>
+                      ) : sharePreviewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={sharePreviewUrl}
+                          alt="Collage Preview"
+                          className="max-h-[240px] w-auto max-w-full object-contain rounded-xl shadow-xs"
+                        />
+                      ) : (
+                        <span className="text-xs text-tan italic">Unable to generate preview</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Caption Input */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-purple-deep">
+                      Add thoughts or styling commentary (optional):
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={shareCaption}
+                      onChange={(e) => setShareCaption(e.target.value)}
+                      placeholder="Share the inspiration behind this look or styling tips with the community..."
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-border bg-mauve-50/40 text-xs text-ink placeholder:text-tan outline-none focus:border-rose focus:bg-white transition-all resize-none"
+                    />
+                  </div>
+
+                  {/* Error Notification */}
+                  {publishError && (
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
+                      {publishError}
+                    </div>
+                  )}
+
+                  {/* Modal Footer */}
+                  <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-border">
+                    <button
+                      type="button"
+                      disabled={isPublishing}
+                      onClick={() => setIsShareModalOpen(false)}
+                      className="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-tan-dark hover:text-purple-deep hover:bg-mauve-50 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isPublishing || isGeneratingPreview || !sharePreviewUrl}
+                      onClick={handlePublishToCommunity}
+                      className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-deep to-rose text-white text-xs font-bold hover:opacity-95 shadow-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {isPublishing ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Publishing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Publish to Community</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

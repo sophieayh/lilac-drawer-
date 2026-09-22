@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
 import ImageLightboxModal from "@/components/ImageLightboxModal";
 import ImageSlot from "@/components/ImageSlot";
 
@@ -10,6 +11,8 @@ interface PostImageMediaProps {
   imageLabel?: string | null;
   className?: string;
   maxHeight?: string;
+  linkHref?: string | null;
+  linkBadgeText?: string | null;
 }
 
 export default function PostImageMedia({
@@ -18,6 +21,8 @@ export default function PostImageMedia({
   imageLabel,
   className = "",
   maxHeight = "max-h-[580px]",
+  linkHref,
+  linkBadgeText,
 }: PostImageMediaProps) {
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -93,37 +98,58 @@ export default function PostImageMedia({
     <>
       {/* 1 Image: Single natural photo view */}
       {total === 1 && (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setActiveImage(imageList[0]);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
+        linkHref ? (
+          <Link
+            href={linkHref}
+            className={`rounded-2xl overflow-hidden border border-border/80 bg-mauve-50/40 flex items-center justify-center my-2.5 group/postimg cursor-pointer relative select-none ${className}`}
+            title="Open interactive moodboard"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageList[0]}
+              alt={imageLabel || "Post image"}
+              className={`w-auto max-w-full ${maxHeight} object-contain rounded-2xl group-hover/postimg:scale-[1.01] group-hover/postimg:brightness-95 transition-all duration-200`}
+            />
+            <div className="absolute bottom-3 right-3 bg-purple-deep/90 backdrop-blur-xs text-white px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl opacity-90 sm:opacity-75 group-hover/postimg:opacity-100 group-hover/postimg:scale-105 transition-all duration-200 flex items-center gap-1.5 text-xs font-semibold shadow-lg pointer-events-none">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+              <span>{linkBadgeText || "Open Moodboard"}</span>
+            </div>
+          </Link>
+        ) : (
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setActiveImage(imageList[0]);
-            }
-          }}
-          className={`rounded-2xl overflow-hidden border border-border/80 bg-mauve-50/40 flex items-center justify-center my-2.5 group/postimg cursor-pointer relative select-none ${className}`}
-          title="Click to view full screen"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageList[0]}
-            alt={imageLabel || "Post image"}
-            className={`w-auto max-w-full ${maxHeight} object-contain rounded-2xl group-hover/postimg:scale-[1.01] group-hover/postimg:brightness-95 transition-all duration-200`}
-          />
-          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white px-2.5 py-1.5 rounded-xl opacity-0 group-hover/postimg:opacity-100 transition-all duration-200 flex items-center gap-1.5 text-xs font-semibold shadow-lg pointer-events-none">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-            </svg>
-            <span>Full Screen</span>
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveImage(imageList[0]);
+              }
+            }}
+            className={`rounded-2xl overflow-hidden border border-border/80 bg-mauve-50/40 flex items-center justify-center my-2.5 group/postimg cursor-pointer relative select-none ${className}`}
+            title="Click to view full screen"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageList[0]}
+              alt={imageLabel || "Post image"}
+              className={`w-auto max-w-full ${maxHeight} object-contain rounded-2xl group-hover/postimg:scale-[1.01] group-hover/postimg:brightness-95 transition-all duration-200`}
+            />
+            <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white px-2.5 py-1.5 rounded-xl opacity-0 group-hover/postimg:opacity-100 transition-all duration-200 flex items-center gap-1.5 text-xs font-semibold shadow-lg pointer-events-none">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+              </svg>
+              <span>Full Screen</span>
+            </div>
           </div>
-        </div>
+        )
       )}
 
       {/* Multiple Images (2, 3 or more): Banner-style Carousel Slider */}

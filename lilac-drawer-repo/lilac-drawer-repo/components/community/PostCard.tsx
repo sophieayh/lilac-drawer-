@@ -3,7 +3,10 @@ import ImageSlot from "@/components/ImageSlot";
 import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
 import ArticleEmbedCard from "@/components/community/ArticleEmbedCard";
+import ProductEmbedCard from "@/components/community/ProductEmbedCard";
 import PostImageMedia from "@/components/community/PostImageMedia";
+import CommunityText from "@/components/community/CommunityText";
+import type { CollageData } from "@/db/schema";
 import { relativeTime } from "@/lib/format";
 
 export interface CommunityPostItem {
@@ -13,6 +16,7 @@ export interface CommunityPostItem {
   hasImage: boolean;
   imageUrl?: string | null;
   images?: string[] | null;
+  collageData?: CollageData | null;
   productId: number | null;
   repostOfId: number | null;
   articleId?: number | null;
@@ -31,6 +35,7 @@ export interface CommunityPostItem {
   originalHasImage?: boolean | null;
   originalImageUrl?: string | null;
   originalImages?: string[] | null;
+  originalCollageData?: CollageData | null;
   originalPostedAt?: Date | null;
   // Attached Article Details (for direct posts)
   articleTitle?: string | null;
@@ -49,6 +54,33 @@ export interface CommunityPostItem {
   originalArticleImageLabel?: string | null;
   originalArticleCategory?: string | null;
   originalArticleAuthor?: string | null;
+  // Attached Product Details (for direct posts)
+  productName?: string | null;
+  productSlug?: string | null;
+  productSubtitle?: string | null;
+  productImageUrl?: string | null;
+  productImageLabel?: string | null;
+  productCategory?: string | null;
+  productPriceCents?: number | null;
+  productCompareAtPriceCents?: number | null;
+  productDiscountPercent?: number | null;
+  productBadge?: string | null;
+  productInStock?: boolean | null;
+  productAffiliateUrl?: string | null;
+  // Attached Product Details (for reposted posts)
+  originalProductId?: number | null;
+  originalProductName?: string | null;
+  originalProductSlug?: string | null;
+  originalProductSubtitle?: string | null;
+  originalProductImageUrl?: string | null;
+  originalProductImageLabel?: string | null;
+  originalProductCategory?: string | null;
+  originalProductPriceCents?: number | null;
+  originalProductCompareAtPriceCents?: number | null;
+  originalProductDiscountPercent?: number | null;
+  originalProductBadge?: string | null;
+  originalProductInStock?: boolean | null;
+  originalProductAffiliateUrl?: string | null;
 }
 
 interface PostCardProps {
@@ -126,18 +158,22 @@ export default function PostCard({
 
           {/* User's commentary / post text (if not empty) */}
           {p.body.trim() && (
-            <Link href={`/community/post/${p.id}`} className="block group/posttext">
-              <p className="my-1.5 mb-2.5 text-[15px] leading-relaxed text-ink group-hover/posttext:text-purple-deep transition-colors">{p.body}</p>
-            </Link>
+            <CommunityText
+              text={p.body}
+              navigateOnCardClick={`/community/post/${p.id}`}
+              className="my-1.5 mb-2.5 text-[15px] leading-relaxed text-ink group-hover/posttext:text-purple-deep transition-colors cursor-pointer whitespace-pre-wrap break-words"
+            />
           )}
 
-          {/* User's own image (if present) with natural aspect-ratio and full-screen view */}
-          {p.hasImage && (
+          {/* User's own image (if present) with natural aspect-ratio, moodboard navigation or full-screen view */}
+          {(p.hasImage || !!p.collageData) && (
             <PostImageMedia
               imageUrl={p.imageUrl}
               images={p.images}
-              imageLabel={p.imageLabel}
+              imageLabel={p.imageLabel || (p.collageData ? "Fashion Moodboard" : null)}
               maxHeight="max-h-[560px]"
+              linkHref={p.collageData ? `/fashion-collage?post=${p.id}` : undefined}
+              linkBadgeText="Open Moodboard"
             />
           )}
 
@@ -152,6 +188,25 @@ export default function PostCard({
                 imageLabel: p.articleImageLabel,
                 category: p.articleCategory,
                 author: p.articleAuthor,
+              }}
+            />
+          )}
+
+          {/* Attached Shared Product with User Opinion */}
+          {p.productId && p.productSlug && p.productName && (
+            <ProductEmbedCard
+              product={{
+                name: p.productName,
+                slug: p.productSlug,
+                subtitle: p.productSubtitle,
+                imageUrl: p.productImageUrl,
+                imageLabel: p.productImageLabel,
+                category: p.productCategory,
+                priceCents: p.productPriceCents,
+                compareAtPriceCents: p.productCompareAtPriceCents,
+                discountPercent: p.productDiscountPercent,
+                badge: p.productBadge,
+                inStock: p.productInStock,
               }}
             />
           )}
@@ -193,17 +248,21 @@ export default function PostCard({
                   </div>
 
                   {p.originalBody && (
-                    <Link href={`/community/post/${p.repostOfId}`} className="block group/reposttext">
-                      <p className="text-[14.5px] leading-relaxed text-ink mb-1.5 group-hover/reposttext:text-purple-deep transition-colors">{p.originalBody}</p>
-                    </Link>
+                    <CommunityText
+                      text={p.originalBody}
+                      navigateOnCardClick={`/community/post/${p.repostOfId}`}
+                      className="text-[14.5px] leading-relaxed text-ink mb-1.5 group-hover/reposttext:text-purple-deep transition-colors cursor-pointer whitespace-pre-wrap break-words"
+                    />
                   )}
-                  {p.originalHasImage && (
+                  {(p.originalHasImage || !!p.originalCollageData) && (
                     <PostImageMedia
                       imageUrl={p.originalImageUrl}
                       images={p.originalImages}
-                      imageLabel={p.originalImageLabel || "Reposted image"}
+                      imageLabel={p.originalImageLabel || (p.originalCollageData ? "Fashion Moodboard" : "Reposted image")}
                       maxHeight="max-h-[400px]"
                       className="mt-2"
+                      linkHref={p.originalCollageData ? `/fashion-collage?post=${p.repostOfId}` : undefined}
+                      linkBadgeText="Open Moodboard"
                     />
                   )}
 
@@ -218,6 +277,25 @@ export default function PostCard({
                         imageLabel: p.originalArticleImageLabel,
                         category: p.originalArticleCategory,
                         author: p.originalArticleAuthor,
+                      }}
+                    />
+                  )}
+
+                  {/* Attached Original Product inside Repost */}
+                  {p.originalProductName && p.originalProductSlug && (
+                    <ProductEmbedCard
+                      product={{
+                        name: p.originalProductName,
+                        slug: p.originalProductSlug,
+                        subtitle: p.originalProductSubtitle,
+                        imageUrl: p.originalProductImageUrl,
+                        imageLabel: p.originalProductImageLabel,
+                        category: p.originalProductCategory,
+                        priceCents: p.originalProductPriceCents,
+                        compareAtPriceCents: p.originalProductCompareAtPriceCents,
+                        discountPercent: p.originalProductDiscountPercent,
+                        badge: p.originalProductBadge,
+                        inStock: p.originalProductInStock,
                       }}
                     />
                   )}

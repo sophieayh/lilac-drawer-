@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { checkExternalLinks } from "@/lib/link-moderation";
 
 // These collide with real routes under /community/[handle] (e.g. "post" is
 // also /community/post/[id]) — a user with one of these usernames would
@@ -69,6 +70,25 @@ export const auth = betterAuth({
           const handle = (userData as { handle?: string }).handle;
           if (handle && RESERVED_HANDLES.has(handle.toLowerCase())) {
             throw new APIError("BAD_REQUEST", { message: "That username isn't available." });
+          }
+          const bio = (userData as { bio?: string }).bio;
+          if (bio) {
+            const check = checkExternalLinks(bio);
+            if (check.hasExternalLink) {
+              throw new APIError("BAD_REQUEST", { message: "External links are not allowed in your profile bio." });
+            }
+          }
+          return { data: userData };
+        },
+      },
+      update: {
+        before: async (userData) => {
+          const bio = (userData as { bio?: string }).bio;
+          if (bio) {
+            const check = checkExternalLinks(bio);
+            if (check.hasExternalLink) {
+              throw new APIError("BAD_REQUEST", { message: "External links are not allowed in your profile bio." });
+            }
           }
           return { data: userData };
         },

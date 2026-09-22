@@ -165,6 +165,32 @@ export const siteCategories = pgTable("site_categories", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export interface CollageItemData {
+  id: string;
+  sourceType: "catalog" | "upload";
+  productId?: number;
+  productSlug?: string;
+  title: string;
+  imageUrl?: string | null;
+  imageLabel?: string;
+  priceCents?: number;
+  category?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  zIndex: number;
+  opacity?: number;
+}
+
+export interface CollageData {
+  items: CollageItemData[];
+  canvasBg: "cream" | "white" | "mauve" | "sage";
+  itemCount: number;
+  totalLookCents: number;
+}
+
 /** Community/social feed posts (used identically on /community and, on each
  * user's own profile). A "repost with opinion" is just another row here —
  * `repostOfId` points at the original post and `body` holds the reposter's
@@ -178,6 +204,7 @@ export const communityPosts = pgTable("community_posts", {
   hasImage: boolean("has_image").notNull().default(false),
   imageUrl: text("image_url"),
   images: jsonb("images").$type<string[]>(),
+  collageData: jsonb("collage_data").$type<CollageData>(),
   productId: integer("product_id").references((): AnyPgColumn => products.id, { onDelete: "set null" }),
   repostOfId: integer("repost_of_id").references((): AnyPgColumn => communityPosts.id, { onDelete: "cascade" }),
   articleId: integer("article_id").references((): AnyPgColumn => posts.id, { onDelete: "set null" }),

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient, signOut } from "@/lib/auth-client";
 import { parseCoverPosition, type CoverPositionData } from "@/lib/data";
+import { checkExternalLinks } from "@/lib/link-moderation";
 
 export default function EditProfileForm({
   handle,
@@ -214,6 +215,16 @@ export default function EditProfileForm({
     setProfileError(null);
     setProfileSuccess(null);
     setProfileLoading(true);
+
+    const trimmedBio = bio.trim();
+    if (trimmedBio) {
+      const linkCheck = checkExternalLinks(trimmedBio);
+      if (linkCheck.hasExternalLink) {
+        setProfileLoading(false);
+        setProfileError(linkCheck.errorMessage || "External links are not allowed in your profile bio.");
+        return;
+      }
+    }
 
     try {
       const currentPosString = JSON.stringify({

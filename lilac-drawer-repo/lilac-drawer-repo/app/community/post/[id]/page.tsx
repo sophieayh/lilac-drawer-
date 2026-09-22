@@ -9,7 +9,9 @@ import LikeButton from "@/components/community/LikeButton";
 import RepostButton from "@/components/community/RepostButton";
 import CommentSection from "@/components/community/CommentSection";
 import ArticleEmbedCard from "@/components/community/ArticleEmbedCard";
+import ProductEmbedCard from "@/components/community/ProductEmbedCard";
 import PostImageMedia from "@/components/community/PostImageMedia";
+import CommunityText from "@/components/community/CommunityText";
 import { auth } from "@/lib/auth";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import { getPostById, getCommentsForPost, hasUserLikedPost, hasUserRepostedPost, relativeTime } from "@/db/queries";
@@ -160,17 +162,21 @@ export default async function CommunityPostPage({
                   <span className="text-tan text-xs">@{originalPost.authorHandle}</span>
                 </div>
                 {originalPost.body && (
-                  <Link href={`/community/post/${originalPost.id}`} className="block group/reposttext">
-                    <p className="text-sm text-tan-dark leading-relaxed group-hover/reposttext:text-purple-deep transition-colors">{originalPost.body}</p>
-                  </Link>
+                  <CommunityText
+                    text={originalPost.body}
+                    navigateOnCardClick={`/community/post/${originalPost.id}`}
+                    className="text-sm text-tan-dark leading-relaxed group-hover/reposttext:text-purple-deep transition-colors cursor-pointer whitespace-pre-wrap break-words"
+                  />
                 )}
-                {originalPost.hasImage && (
+                {(originalPost.hasImage || !!originalPost.collageData) && (
                   <PostImageMedia
                     imageUrl={originalPost.imageUrl}
                     images={originalPost.images}
-                    imageLabel={originalPost.imageLabel || "Reposted image"}
+                    imageLabel={originalPost.imageLabel || (originalPost.collageData ? "Fashion Moodboard" : "Reposted image")}
                     maxHeight="max-h-[420px]"
                     className="mt-2"
+                    linkHref={originalPost.collageData ? `/fashion-collage?post=${originalPost.id}` : undefined}
+                    linkBadgeText="Open Moodboard"
                   />
                 )}
 
@@ -187,17 +193,40 @@ export default async function CommunityPostPage({
                     }}
                   />
                 )}
+
+                {originalPost.productName && originalPost.productSlug && (
+                  <ProductEmbedCard
+                    product={{
+                      name: originalPost.productName,
+                      slug: originalPost.productSlug,
+                      subtitle: originalPost.productSubtitle,
+                      imageUrl: originalPost.productImageUrl,
+                      imageLabel: originalPost.productImageLabel,
+                      category: originalPost.productCategory,
+                      priceCents: originalPost.productPriceCents,
+                      compareAtPriceCents: originalPost.productCompareAtPriceCents,
+                      discountPercent: originalPost.productDiscountPercent,
+                      badge: originalPost.productBadge,
+                      inStock: originalPost.productInStock,
+                    }}
+                  />
+                )}
               </div>
             )}
 
-            <p className="text-[17px] leading-relaxed mb-4">{post.body}</p>
-            {post.hasImage && (
+            <CommunityText
+              text={post.body}
+              className="text-[17px] leading-relaxed mb-4 whitespace-pre-wrap break-words"
+            />
+            {(post.hasImage || !!post.collageData) && (
               <PostImageMedia
                 imageUrl={post.imageUrl}
                 images={post.images}
-                imageLabel={post.imageLabel || "Post image"}
+                imageLabel={post.imageLabel || (post.collageData ? "Fashion Moodboard" : "Post image")}
                 maxHeight="max-h-[600px]"
                 className="mb-4"
+                linkHref={post.collageData ? `/fashion-collage?post=${post.id}` : undefined}
+                linkBadgeText="Open Moodboard"
               />
             )}
 
@@ -213,6 +242,27 @@ export default async function CommunityPostPage({
                     imageLabel: post.articleImageLabel,
                     category: post.articleCategory,
                     author: post.articleAuthor,
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Attached Shared Product with Opinion */}
+            {post.productId && post.productSlug && post.productName && (
+              <div className="mb-4">
+                <ProductEmbedCard
+                  product={{
+                    name: post.productName,
+                    slug: post.productSlug,
+                    subtitle: post.productSubtitle,
+                    imageUrl: post.productImageUrl,
+                    imageLabel: post.productImageLabel,
+                    category: post.productCategory,
+                    priceCents: post.productPriceCents,
+                    compareAtPriceCents: post.productCompareAtPriceCents,
+                    discountPercent: post.productDiscountPercent,
+                    badge: post.productBadge,
+                    inStock: post.productInStock,
                   }}
                 />
               </div>

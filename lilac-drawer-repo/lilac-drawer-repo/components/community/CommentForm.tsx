@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createComment } from "@/lib/community-actions";
+import { checkExternalLinks } from "@/lib/link-moderation";
 
 export default function CommentForm({ postId, isLoggedIn }: { postId: number; isLoggedIn: boolean }) {
   const [body, setBody] = useState("");
@@ -21,6 +22,13 @@ export default function CommentForm({ postId, isLoggedIn }: { postId: number; is
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!body.trim() || isPending) return;
+
+    const linkCheck = checkExternalLinks(body);
+    if (linkCheck.hasExternalLink) {
+      setError(linkCheck.errorMessage || "External links are not allowed in comments.");
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
       try {

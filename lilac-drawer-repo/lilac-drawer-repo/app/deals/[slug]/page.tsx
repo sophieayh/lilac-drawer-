@@ -5,6 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ImageSlot from "@/components/ImageSlot";
 import JsonLd from "@/components/JsonLd";
+import ShareProductToCommunityModal from "@/components/product/ShareProductToCommunityModal";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
 import {
   getProductBySlug,
@@ -123,20 +124,37 @@ export default async function ProductDetailPage({
 
       <main className="bg-cream text-purple-deep min-h-screen py-5 sm:py-8 px-4 sm:px-6 md:px-12">
         <div className="max-w-[1200px] mx-auto">
-          {/* Breadcrumb Navigation */}
-          <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs text-tan mb-4 sm:mb-6">
-            <Link href="/" className="hover:text-purple-deep">
-              Home
-            </Link>
-            <span>/</span>
-            <Link href="/deals" className="hover:text-purple-deep">
-              Deals
-            </Link>
-            <span>/</span>
-            <span className="text-purple-deep font-medium truncate max-w-[200px] sm:max-w-[280px]">
-              {product.name}
-            </span>
-          </nav>
+          {/* Breadcrumb Navigation & Top Community Share Action */}
+          <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 flex-wrap">
+            <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs text-tan">
+              <Link href="/" className="hover:text-purple-deep">
+                Home
+              </Link>
+              <span>/</span>
+              <Link href="/deals" className="hover:text-purple-deep">
+                Deals
+              </Link>
+              <span>/</span>
+              <span className="text-purple-deep font-medium truncate max-w-[200px] sm:max-w-[280px]">
+                {product.name}
+              </span>
+            </nav>
+
+            <ShareProductToCommunityModal
+              productId={product.id}
+              productName={product.name}
+              productSlug={product.slug}
+              productSubtitle={product.subtitle}
+              productImageUrl={product.imageUrl}
+              productImageLabel={product.imageLabel}
+              productCategory={product.category}
+              productPriceCents={product.priceCents}
+              productCompareAtPriceCents={product.compareAtPriceCents}
+              productDiscountPercent={product.discountPercent}
+              productBadge={product.badge}
+              variant="button"
+            />
+          </div>
 
           {/* Main Product Card */}
           <div className="bg-white rounded-3xl border border-border p-4 sm:p-6 md:p-10 shadow-sm mb-12">
@@ -287,6 +305,22 @@ export default async function ProductDetailPage({
               </div>
             </div>
           </div>
+
+          {/* Community Discussion Callout Banner */}
+          <ShareProductToCommunityModal
+            productId={product.id}
+            productName={product.name}
+            productSlug={product.slug}
+            productSubtitle={product.subtitle}
+            productImageUrl={product.imageUrl}
+            productImageLabel={product.imageLabel}
+            productCategory={product.category}
+            productPriceCents={product.priceCents}
+            productCompareAtPriceCents={product.compareAtPriceCents}
+            productDiscountPercent={product.discountPercent}
+            productBadge={product.badge}
+            variant="banner"
+          />
 
           {/* Related Deals Section */}
           {relatedProducts.length > 0 && (

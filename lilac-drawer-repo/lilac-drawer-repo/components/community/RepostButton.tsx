@@ -4,6 +4,7 @@ import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toggleRepost } from "@/lib/community-actions";
+import { checkExternalLinks } from "@/lib/link-moderation";
 
 interface RepostButtonProps {
   postId: number;
@@ -98,7 +99,15 @@ export default function RepostButton({
   function handleQuoteSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (isPending) return;
-    performRepostToggle(opinion.trim());
+    const trimmed = opinion.trim();
+    if (trimmed) {
+      const linkCheck = checkExternalLinks(trimmed);
+      if (linkCheck.hasExternalLink) {
+        setError(linkCheck.errorMessage || "External links are not allowed in quote reposts.");
+        return;
+      }
+    }
+    performRepostToggle(trimmed);
   }
 
   function performRepostToggle(quoteText: string) {

@@ -7,6 +7,8 @@ import Reveal from "@/components/Reveal";
 import JsonLd from "@/components/JsonLd";
 import InlineNewsletterForm from "@/components/InlineNewsletterForm";
 import { siteConfig, absoluteUrl, buildMetadata } from "@/lib/site";
+import HomeCommunityPostCard from "@/components/community/HomeCommunityPostCard";
+import HomeCommunityCommentCard from "@/components/community/HomeCommunityCommentCard";
 import {
   getHomeSpreadPosts,
   getNewHomePosts,
@@ -16,6 +18,7 @@ import {
   getHomeBlogPreview,
   getHomeGuidePost,
   getHomeHeroPost,
+  getDailyHomeCommunityHighlights,
   formatPrice,
   daysAgoLabel,
   formatDate,
@@ -40,6 +43,7 @@ export default async function HomePage() {
     homeBlogPreview,
     homeGuidePost,
     homeHeroPost,
+    communityHighlights,
   ] = await Promise.all([
     getHomeSpreadPosts(2),
     getNewHomePosts(),
@@ -49,6 +53,7 @@ export default async function HomePage() {
     getHomeBlogPreview(),
     getHomeGuidePost(),
     getHomeHeroPost(),
+    getDailyHomeCommunityHighlights(),
   ]);
 
   const topSpread = spreadPosts[0];
@@ -236,6 +241,15 @@ export default async function HomePage() {
                   <div className="text-xs text-tan mt-1.5 uppercase tracking-wide">{daysAgoLabel(p.publishedAt)}</div>
                 </Link>
               ))}
+
+              {/* 24h Community Highlight - Slot 1 (Sidebar) */}
+              {communityHighlights.sidebarItem && (
+                communityHighlights.sidebarItem.type === "post" ? (
+                  <HomeCommunityPostCard post={communityHighlights.sidebarItem.post} variant="compact" />
+                ) : (
+                  <HomeCommunityCommentCard comment={communityHighlights.sidebarItem.comment} variant="compact" />
+                )
+              )}
             </aside>
           </section>
         </Reveal>
@@ -273,6 +287,13 @@ export default async function HomePage() {
           </section>
         </Reveal>
 
+        {/* 24h Trending Post Banner - Slot 2 */}
+        {communityHighlights.bannerPost && (
+          <Reveal delay={100}>
+            <HomeCommunityPostCard post={communityHighlights.bannerPost} variant="banner" />
+          </Reveal>
+        )}
+
         {/* latest reviews */}
         <Reveal delay={100}>
           <section id="reviews" className="px-4 sm:px-6 md:px-12 pb-12 sm:pb-20 max-w-[1400px] mx-auto">
@@ -309,6 +330,13 @@ export default async function HomePage() {
             </div>
           </section>
         </Reveal>
+
+        {/* 24h Reader Thoughts - Slot 3 */}
+        {communityHighlights.readerComment && (
+          <Reveal delay={100}>
+            <HomeCommunityCommentCard comment={communityHighlights.readerComment} variant="quote" />
+          </Reveal>
+        )}
 
         {/* buying guide banner */}
         {homeGuidePost && (
@@ -375,6 +403,43 @@ export default async function HomePage() {
             </div>
           </section>
         </Reveal>
+
+        {/* 24h Community Buzz / Spotlight - Slot 4 (Two Cards) */}
+        {communityHighlights.spotlightItems && communityHighlights.spotlightItems.length > 0 && (
+          <Reveal delay={100}>
+            <section className="px-4 sm:px-6 md:px-12 pb-12 sm:pb-16 max-w-[1400px] mx-auto">
+              <div className="flex justify-between items-baseline mb-6 border-b-2 border-border-mauve pb-3.5">
+                <h2 className="font-heading text-xl sm:text-[26px] text-purple-deep m-0">
+                  Community Buzz
+                </h2>
+                <Link
+                  href="/community"
+                  className="text-xs font-bold tracking-wider uppercase text-purple-deep hover:text-rose transition-colors inline-flex items-center gap-1 group"
+                >
+                  <span>Join Conversation</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </Link>
+              </div>
+              <div className="grid md:grid-cols-2 gap-5 sm:gap-6 items-stretch">
+                {communityHighlights.spotlightItems.map((item, idx) =>
+                  item.type === "post" ? (
+                    <HomeCommunityPostCard
+                      key={`buzz-post-${item.post.id}-${idx}`}
+                      post={item.post}
+                      variant="spotlight"
+                    />
+                  ) : (
+                    <HomeCommunityCommentCard
+                      key={`buzz-comment-${item.comment.id}-${idx}`}
+                      comment={item.comment}
+                      variant="spotlight"
+                    />
+                  )
+                )}
+              </div>
+            </section>
+          </Reveal>
+        )}
 
         {/* newsletter */}
         <Reveal delay={100}>

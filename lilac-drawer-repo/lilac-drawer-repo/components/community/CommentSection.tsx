@@ -7,6 +7,8 @@ import { createComment, deleteComment, toggleCommentReaction } from "@/lib/commu
 import { relativeTime } from "@/lib/format";
 import ImageLightboxModal from "@/components/ImageLightboxModal";
 import { compressImage } from "@/lib/image-utils";
+import { checkExternalLinks } from "@/lib/link-moderation";
+import CommunityText from "@/components/community/CommunityText";
 
 export interface CommentItem {
   id: number;
@@ -147,6 +149,15 @@ export default function CommentSection({
   function handleRootSubmit(e: React.FormEvent) {
     e.preventDefault();
     if ((!rootBody.trim() && !rootImagePreview) || isPending) return;
+
+    if (rootBody.trim()) {
+      const linkCheck = checkExternalLinks(rootBody);
+      if (linkCheck.hasExternalLink) {
+        setError(linkCheck.errorMessage || "External links are not allowed in comments.");
+        return;
+      }
+    }
+
     setError(null);
 
     startTransition(async () => {
@@ -182,6 +193,15 @@ export default function CommentSection({
   function handleReplySubmit(e: React.FormEvent, parentId: number) {
     e.preventDefault();
     if ((!replyBody.trim() && !replyImagePreview) || isPending) return;
+
+    if (replyBody.trim()) {
+      const linkCheck = checkExternalLinks(replyBody);
+      if (linkCheck.hasExternalLink) {
+        setReplyError(linkCheck.errorMessage || "External links are not allowed in replies.");
+        return;
+      }
+    }
+
     setReplyError(null);
 
     startTransition(async () => {
@@ -333,9 +353,10 @@ export default function CommentSection({
 
             {/* Comment Text */}
             {node.body && (
-              <p className="text-[13.5px] sm:text-[14.5px] text-ink leading-relaxed mt-1 whitespace-pre-wrap break-words">
-                {node.body}
-              </p>
+              <CommunityText
+                text={node.body}
+                className="text-[13.5px] sm:text-[14.5px] text-ink leading-relaxed mt-1 whitespace-pre-wrap break-words"
+              />
             )}
 
             {/* Comment Attached Image */}

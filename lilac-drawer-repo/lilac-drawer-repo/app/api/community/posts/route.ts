@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { communityPosts, user } from "@/db/schema";
+import { assertNoExternalLinks } from "@/lib/link-moderation";
 
 export async function POST(request: Request) {
   try {
@@ -14,20 +15,28 @@ export async function POST(request: Request) {
     }
 
     const bodyData = await request.json();
-    const { body = "", productId, articleId, imageLabel, images } = bodyData;
+    const { body = "", productId, articleId, imageLabel, images, imageUrl, collageData } = bodyData;
     const trimmed = typeof body === "string" ? body.trim() : "";
 
-    const effectiveImages: string[] | null =
-      Array.isArray(images) && images.length > 0 ? images.slice(0, 3) : null;
+    let effectiveImages: string[] | null = null;
+    if (Array.isArray(images) && images.length > 0) {
+      effectiveImages = images.slice(0, 3);
+    } else if (typeof imageUrl === "string" && imageUrl) {
+      effectiveImages = [imageUrl];
+    }
     const effectiveImageUrl = effectiveImages ? effectiveImages[0] : null;
     const hasImage = !!effectiveImageUrl;
 
-    if (!trimmed && !hasImage && !articleId) {
+    if (!trimmed && !hasImage && !articleId && !productId && !collageData) {
       return NextResponse.json({ error: "Post cannot be empty." }, { status: 400 });
     }
 
     if (trimmed.length > 2000) {
       return NextResponse.json({ error: "Post is too long (max 2000 characters)." }, { status: 400 });
+    }
+
+    if (trimmed) {
+      assertNoExternalLinks(trimmed, "posts");
     }
 
     const [row] = await db
@@ -40,7 +49,8 @@ export async function POST(request: Request) {
         hasImage,
         imageUrl: effectiveImageUrl,
         images: effectiveImages,
-        imageLabel: imageLabel ?? (hasImage ? "Attached photo" : null),
+        imageLabel: imageLabel ?? (collageData ? "Fashion Moodboard" : (hasImage ? "Attached photo" : null)),
+        collageData: collageData ?? null,
       })
       .returning();
 
